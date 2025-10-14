@@ -1,5 +1,5 @@
 <a href="https://capyboop.github.io/capy/">https://capyboop.github.io/capy/</a>
-<a href="https://capyboop.github.io/capy/branch">https://capyboop.github.io/capy/branch</a>
+<a href="https://capyboop.github.io/capy/branch.html">https://capyboop.github.io/capy/branch.html</a>
 <a href="https://github.com/capyboop/paint">https://github.com/capyboop/paint</a>
 
 # Capy Image Generator
