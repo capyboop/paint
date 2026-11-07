@@ -1,0 +1,6 @@
+{
+  "name": "Capy - Color by Number",
+  "description": "Vector color-by-number application with adaptive multi-strategy quantization, interior centroid labeling, and pinch/pan canvas.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}
