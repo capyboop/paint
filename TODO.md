@@ -14,14 +14,6 @@ For target-specific deep dives, see also:
 
 ---
 
-## Post-Merge Repository Maintenance
-
-- [ ] **Archive or Delete Redundant Secondary Repositories**:
-  - Archive or delete `capyboop/paint-g`, `capyboop/paint-g2`, `capyboop/paint-web`, and `capyboop/paintg` on GitHub now that all active code and history are unified in `capyboop/paint`.
-  - Detach the retired repositories from workspace resources so all future development targets `capyboop/paint` exclusively.
-
----
-
 ## Milestone 1: Replay Animation Export & Advanced Gestures
 
 - [ ] **Replay Animation Video and GIF Export**:
