@@ -3,8 +3,7 @@ import path from 'path';
 import fs from 'fs';
 
 const OUT_DIRS = [
-  path.resolve('/home/dev environment/capyboop/paint/docs/gallery'),
-  path.resolve('/home/dev environment/capyboop/paint/web/public/gallery'),
+  path.resolve(import.meta.dirname, '../../docs/gallery'),
 ];
 
 OUT_DIRS.forEach((d) => fs.mkdirSync(d, { recursive: true }));
