@@ -1,557 +1,538 @@
-# Changelog -- Capy Monorepo ([`web/`](./web), [`app/`](./app))
+### 2.5 - 2026-11-11
 
-All notable changes to the **Capy** color-by-number suite across the Web Application ([`web/`](./web)), Unified Native Android Launcher ([`app/`](./app)), and pre-monorepo Legacy Web1 milestones (`0.1.0`--`0.9.3`) are recorded in this file.
+- Compact changelog headings for mobile, remove preamble, and group same-day patch releases #469
+- Standardize historical PR metadata, move changelog rules to project docs, and add full PR history #468
+- Resolve all remaining audit bugfixes from TODO #466
+- Fix resize clamping, IndexedDB palette recovery, and Pixel API 33+ haptics #465
+- Add YouTube-style playback scrubber and preserve viewport on replay #464
+- Consolidate test suite, enhance save-load replay, and add AAA TODO roadmap #463
 
-For Semantic Versioning rules (`MAJOR.MINOR.PATCH`), Android `versionCode` derivation, and changelog formatting guidelines, see `project docs`.
+### 2.4 - 2026-11-10
 
----
+- Add modular cloud provider drivers and Google Drive cross-device sync #461
 
-## [2.5.4] - 2026-11-11 (PR #468, Android `versionCode`: `20504`)
+### 2.3 - 2026-11-10
 
-- Standardize pull request titles, descriptions, labels, and retrospective `0.1.0`--`0.9.3` versions across all historical PRs, move changelog guidelines to `project docs`, and record full PR history in `CHANGELOG.md` (PR #468)
+- Fix runtime sample resolution, canvas undo repaint, bundle splitting, and prioritize TODO.md #462
 
-## [2.5.3] - 2026-11-11 (PR #466, Android `versionCode`: `20503`)
-
-- Resolve all remaining audit bugfixes from TODO (PR #466)
-
-## [2.5.2] - 2026-11-11 (PR #465, Android `versionCode`: `20502`)
-
-- Fix resize clamping, IndexedDB palette recovery, and Pixel API 33+ haptics (PR #465)
-
-## [2.5.1] - 2026-11-10 (PR #464, Android `versionCode`: `20501`)
-
-- Add YouTube-style playback scrubber and preserve viewport on replay (PR #464)
-
-## [2.5.0] - 2026-11-10 (PR #463, Android `versionCode`: `20500`)
-
-- Consolidate test suite, enhance save-load replay, and add AAA TODO roadmap (PR #463)
-
-## [2.4.0] - 2026-11-10 (PR #461, Android `versionCode`: `20400`)
-
-- Add modular cloud provider drivers and Google Drive cross-device sync (PR #461)
-
-## [2.3.0] - 2026-11-10 (PR #462, Android `versionCode`: `20300`)
-
-- Fix runtime sample resolution, canvas undo repaint, bundle splitting, and prioritize TODO.md (PR #462)
-
-## [2.2.0] - 2026-11-10 (PR #460, Android `versionCode`: `20200`)
-
-- Add shareable progress links, simultaneous Co-op, CRDT Cloud Sync, and Play Store compliance (PR #460)
-
-## [2.1.0] - 2026-11-10 (PR #459, Android `versionCode`: `20100`)
-
-- Preload sample save archive for instant first-launch gameplay (PR #459)
-
-## [2.0.0] - 2026-11-10 (PR #458, Android `versionCode`: `20000`)
-
-- Add Compact Binary Storage v2 (.capy v2) and fix engine edge cases (PR #458)
-
-## [1.4.0] - 2026-11-09 (PR #457, PR #456, PR #455, PR #454, Android `versionCode`: `10400`)
-
-- Add min/max label size options, guarantee region fit, and redo circle-free hint color (PR #457)
-- Set Fast Mode puzzle generation progress as default (PR #456)
-- Show real generation metrics and live palette swatches during segmentation (PR #455)
-- Add loading progress detail toggle and fast mode (PR #454)
-
-## [1.3.0] - 2026-11-09 (PR #449--PR #453, Android `versionCode`: `10300`)
-
-- Update project docs: Refine contributor and contributor operational rules (PR #453)
-- Add PWA offline support and manifest (PR #452)
-- Add working thoughts display and Web engine conventions to project docs (PR #451)
-- Add ci and deps GitHub pull request labels to project docs (PR #450)
-- Add thumbnails grid view, save pinning, and toolbar to Saves gallery (PR #449)
-
-## [1.2.0] - 2026-11-09 (PR #448, PR #447, PR #446, Android `versionCode`: `10200`)
-
-- Fix Undo/Redo state synchronization and add post-replay auto-resume (PR #448)
-- Add undo timeline scrubber and multi-step redo (PR #447)
-- Add animated puzzle replay and region undo (PR #446)
-
-## [1.1.0] - 2026-11-09 (PR #445, PR #444, PR #443, PR #442, Android `versionCode`: `10100`)
-
-- Add screenshot showcase gallery and capture script (PR #445)
-- Improve zoom pan gestures and color pickers (PR #444)
-- Add PR merge approval rule and preview lifecycle docs (PR #443)
-- Calibrate pan zoom gestures and sync preview assets (PR #442)
-
-## [1.0.0] - 2026-11-08 (PR #431--PR #441, Android `versionCode`: `10000`)
-
-- Add web architecture documentation (PR #441)
-- Optimize CI builds and Pages deployment pipeline (PR #440)
-- Add Free Colour mode, custom palette swatches, and Mushroom Forest sample (PR #439)
-- Parallelize Web and Android CI workflows and streamline target execution (PR #438)
-- Update Web dependencies, enable parallel Gradle sync, and add maintenance guides (PR #437)
-- Add Android WebView debugging, bundle validation, and developer tooling (PR #436)
-- Realign root architecture documentation and prune completed roadmap items (PR #435)
-- Add automated closed pull request preview pruning for GitHub Pages (PR #434)
-- Fix active color sync and auto-pan jumps and add victory celebration export (PR #433)
-- Unify Web and Android single-codebase architecture with WebViewAssetLoader (PR #432)
-- Consolidate Web, Legacy Web1, and Android apps into unified monorepo (PR #431)
-
-## [0.9.3] - 2026-09-24 (PR #419--PR #430)
-
-- Fix runtime bootstrap scope, default artwork loading, and UI load tests (PR #430)
-- Rename menu and relocate advanced settings toggle (PR #429)
-- Fix save manager SVG export handler (PR #428)
-- Reorder settings tabs around Saves and Create (PR #427)
-- Add SVG snapshot export to save manager (PR #425)
-- Fix autosave refresh and smoke coverage (PR #424)
-- Rework settings header layout (PR #423)
-- Simplify controls layout in settings menu (PR #421)
-- Move hint intensity controls to basics tab (PR #420)
-- Drop raster save artifacts and rebuild maps from vector scenes (PR #419)
-
-## [0.9.2] - 2025-12-05 (PR #409--PR #418)
-
-- Wrap mobile settings tabs and update settings-menu.json schema (PR #418)
-- Reduce settings sheet minimum dimensions and safe-area gaps on mobile (PR #417)
-- Add configurable region cleanup controls (PR #416)
-- Lower generator defaults for simpler puzzles (PR #415)
-- Enforce upload resizing to stay within source image limit (PR #414)
-- Clarify branch baseline guidance (PR #413)
-- Render labels with SVG (PR #412)
-- Remove binary artifact and document policy (PR #411)
-- Polish vector sample rendering and docs (PR #410)
-- Add vector scene loader and refresh sample puzzle (PR #409)
-
-## [0.9.1] - 2025-12-04 (PR #399--PR #408)
-
-- Handle save quota failures by trimming previews (PR #408)
-- Fix deploy workflow concurrency scope and env URL (PR #407)
-- Prefer human-readable region maps (PR #406)
-- Enhance smoke test logging report (PR #405)
-- Add render preview support to svg renderer (PR #404)
-- Handle renderer resize safely (PR #403)
-- Auto-generate settings sheet from JSON definition (PR #402)
-- Prune unused runtime modules (PR #401)
-- Consolidate runtime into capy.js (PR #400)
-- Summarize processed branches in cleanup workflow (PR #399)
-
-## [0.9.0] - 2025-11-28 (PR #389--PR #398)
-
-- Expose runtime APIs as module exports (PR #398)
-- Rewrite Pages deployment workflow (PR #397)
-- Temporarily disable service worker and offline cache (PR #396)
-- Simplify runtime to SVG renderer (PR #395)
-- Expose runtime API via global object (PR #394)
-- Preserve gh-pages preview directories during main deploy (PR #393)
-- Export renderer controller inline (PR #392)
-- Harden renderer controller fallback (PR #391)
-- Avoid duplicate createRendererController export (PR #390)
-- Refresh start hint onboarding UI (PR #389)
-
-## [0.8.3] - 2025-11-28 (PR #379--PR #388)
-
-- Restore renderer pipeline and fixtures (PR #388)
-- Improve renderer wiring and tests (PR #387)
-- Delete merged branches without cutoff (PR #386)
-- Refine Playwright skip handling (PR #385)
-- Enhance branch cleanup diagnostics (PR #384)
-- Add debug listing to deploy workflow (PR #383)
-- Refine responsive settings navigation and input control styles (PR #382)
-- Handle gh-pages root cleanup (PR #381)
-- Fix deployment artifact path for branch previews (PR #380)
-- Remove outdated menu screenshot artifact (PR #379)
-
-## [0.8.2] - 2025-11-27 (PR #369--PR #378)
-
-- Add responsive tab stacking and themed input controls to settings sheet (PR #378)
-- Register renderer mode change handler (PR #377)
-- Add iterative development feedback loop guide (PR #376)
-- Clarify renderer controller exports (PR #375)
-- Simplify branch preview comment output (PR #374)
-- Simplify runtime exports (PR #373)
-- Fix service worker cache script loading on GitHub Pages (PR #372)
-- Add console error check to UI smoke test (PR #371)
-- Ensure deploy previews checkout into PR-specific pull directories (PR #370)
-- Consolidate runtime exports (PR #369)
-
-## [0.8.1] - 2025-11-26 (PR #359--PR #368)
-
-- Fix duplicate renderer controller export (PR #368)
-- Fix Pages artifact path for main deployments (PR #367)
-- Fix runtime controller export (PR #366)
-- Remove Pico CSS (PR #365)
-- Restore custom styles and remove Pico import (PR #364)
-- Add gh-pages artifact diagnostics to deploy workflows (PR #363)
-- Add preboot metric fallbacks for blocked storage (PR #362)
-- Fix branch deployment setup and linkify preview comments (PR #361)
-- Improve deploy preview logging (PR #360)
-- Gate Pages deploys to open PRs and refresh docs (PR #359)
-
-## [0.8.0] - 2025-11-26 (PR #349--PR #358)
-
-- Add renderer follow-up tasks (PR #358)
-- Exclude project files from Pages deploy (PR #357)
-- Improve SVG renderer sizing and tests (PR #356)
-- Rename changelog file and update guidance (PR #355)
-- Use PR-numbered preview URLs and cleanup on close (PR #354)
-- Simplify branch preview URLs (PR #353)
-- Refine settings tabs and layout (PR #352)
-- Fix deploy workflow concurrency group expression (PR #351)
-- Fix branch preview deployment path (PR #350)
-- Adjust deploy target directory for main Pages deployment (PR #349)
-
-## [0.7.3] - 2025-11-24 (PR #338--PR #348)
-
-- Improve responsive settings layout (PR #348)
-- Fix duplicate createRendererController export (PR #347)
-- Remove legacy renderer module files (PR #346)
-- Simplify bootstrap to SVG renderer (PR #345)
-- Improve deployment log visibility (PR #344)
-- Remove unsupported screenshot artifact (PR #343)
-- Add session kick-off workflow reminder (PR #342)
-- Move contributor guide to root, mirror Pages HTML, and relocate planning docs (PR #340)
-- Trim and document remaining CSS (PR #339)
-- Add service worker status and debug logging (PR #338)
-
-## [0.7.2] - 2025-11-23 (PR #327--PR #337)
-
-- Move contributor guide to root and mirror Pages HTML (PR #337)
-- Remove deployment gating for branch deploys (PR #336)
-- Add gh-pages preview cleanup to branch maintenance workflow (PR #335)
-- Handle workflow dispatch triggers in post-deploy tests (PR #334)
-- Improve settings sheet mobile layout (PR #333)
-- Retarget branch cleanup to feature prefix (PR #332)
-- Fix deploy workflow eligibility for PR branches (PR #331)
-- Remove README link from help panel (PR #329)
-- Add rerun Pages deploy button to PR comments (PR #328)
-- Improve branch cleanup logging and cutoff (PR #327)
-
-## [0.7.1] - 2025-11-21 (PR #316--PR #326)
-
-- Add manual dispatch for branch deploys and rerun button (PR #326)
-- Fix settings tab layout wrappers (PR #325)
-- Refactor render.js to lean SVG renderer (PR #324)
-- Add merge conflict handling checklist (PR #323)
-- Synchronize modular renderer refactor with updated deployment workflows (PR #322)
-- Clarify git remote and rebase expectations (PR #321)
-- Handle preview screenshot failures gracefully (PR #320)
-- Fix deploy workflow environment expression (PR #318)
-- Enhance post-deploy Playwright coverage (PR #317)
-- Adjust deploy workflow environment per branch (PR #316)
-
-## [0.7.0] - 2025-11-21 (PR #305--PR #315)
-
-- Stabilize settings toggle and mute test network noise (PR #315)
-- Simplify settings bootstrap with JSON export (PR #314)
-- Update deployment documentation (PR #313)
-- Add feedback form with analytics reporting (PR #312)
-- Improve deploy reporting and always deploy (PR #311)
-- Add global error toast for runtime failures (PR #310)
-- Allow deploy workflow on all branches (PR #309)
-- Adopt templating helper for save manager UI (PR #308)
-- Simplify post-deploy preview comment (PR #307)
-- Auto prune stale Pages previews (PR #305)
-
-## [0.6.3] - 2025-11-18 (PR #290--PR #303)
-
-- Remove legacy autosave migration (PR #303)
-- Add settings sheet toggle test (PR #302)
-- Add drag deadzone for settings launcher (PR #301)
-- Move cleanup script into project scripts (PR #298)
-- Document deploy workflow env guardrails (PR #296)
-- Adopt rich save preview cards and flattened sticky settings layout (PR #295)
-- Remove job-level environment context reference from deploy sync step (PR #294)
-- Update README with offline and local dev notes (PR #292)
-- Compute deploy workflow concurrency group directly without env context (PR #291)
-- Add terminal output guidance to onboarding (PR #290)
-
-## [0.6.2] - 2025-11-16 (PR #277--PR #288)
-
-- Refactor UI wiring into components (PR #288)
-- Make branch cleanup asynchronous (PR #287)
-- Optimize GitHub Pages deployment speed (PR #286)
-- Refine developer onboarding guidance (PR #284)
-- Add organic superpixel generator (PR #283)
-- Add project roadmap and TODO tracking (PR #282)
-- Add offline caching and local file access (PR #280)
-- Add simplicity guidance to workflow instructions (PR #279)
-- Consolidate runtime bootstrap into single module (PR #278)
-- Extract runtime styles into stylesheet (PR #277)
-
-## [0.6.1] - 2025-11-16 (PR #261--PR #276)
-
-- Fix branch cleanup ref encoding (PR #276)
-- Combine renderer performance updates and testing stack (PR #275)
-- Handle WebGL label cache updates for UI scale changes (PR #274)
-- Update TECH.md for modular runtime documentation (PR #273)
-- Update Playwright setup script workflow (PR #272)
-- Organize runtime assets under dedicated directory (PR #270)
-- Add unit tests for render controller fallbacks (PR #269)
-- Add documentation for helper scripts (PR #264)
-- Run branch cleanup after deployments (PR #262)
-- Refresh TECH.md test harness and branch deployment documentation (PR #261)
-
-## [0.6.0] - 2025-11-15 (PR #250--PR #260)
-
-- Restructure repository around project workspace (PR #260)
-- Reuse counters for tiny region merging (PR #259)
-- Center active palette colour (PR #258)
-- Unify settings, generator, saves, and help into one menu (PR #257)
-- Add nearby difficulty that auto-selects adjacent colours (PR #256)
-- Refactor neighbor iteration in segmentation routines (PR #255)
-- Optimize smoothing histogram reuse (PR #254)
-- Allow dots in post-deploy slug derivation (PR #252)
-- Fix post-deploy artifact naming sanitization (PR #251)
-- Ensure Playwright browsers install with docs (PR #250)
-
-## [0.5.3] - 2025-11-15 (PR #238--PR #249)
-
-- Simplify branch overview page (PR #249)
-- Restore stable renderer pipeline with performance logging (PR #248)
-- Persist palette sort preference (PR #245)
-- Improve zoom smoothness with compositor-driven scaling (PR #244)
-- Flush autosave on page lifecycle events (PR #243)
-- Fix WebGL label rendering (PR #242)
-- Add branch slug preparation job to post-deploy tests workflow (PR #241)
-- Adjust zoom defaults and expose configurable max zoom (PR #240)
-- Preserve palette numbering when colours complete (PR #239)
-- Fix UI scale flash during boot (PR #238)
-
-## [0.5.2] - 2025-10-26 (PR #228--PR #237)
-
-- Rename palette sort label and renumber swatches (PR #237)
-- Switch CI workflow to Ubuntu runners (PR #236)
-- Limit Playwright smoke test to Chromium page load (PR #235)
-- Simplify Pages deployment workflow (PR #234)
-- Enhance palette sorting with spectrum and warmth modes (PR #233)
-- Prefer autosave when restoring sessions (PR #232)
-- Sanitize post-deploy concurrency group branch names (PR #231)
-- Improve region label placement and sizing (PR #230)
-- Improve region label placement with polylabel (PR #229)
-- Fix settings persistence when no puzzle is loaded (PR #228)
-
-## [0.5.1] - 2025-10-25 (PR #217--PR #227)
-
-- Render region numbers continuously across all zoom levels (PR #227)
-- Remove user settings from exported save files (PR #226)
-- Fix post-deploy workflow concurrency expression (PR #225)
-- Configure Playwright UI review artifacts (PR #224)
-- Streamline Playwright smoke test for quick load check (PR #223)
-- Improve remote image URL workflow (PR #222)
-- Add support for loading puzzles from external image URLs (PR #221)
-- Adjust region label layout to respect zoom ratio (PR #220)
-- Support zoom-aware region label layout (PR #219)
-- Persist user settings in browser storage (PR #217)
-
-## [0.5.0] - 2025-10-24 (PR #206--PR #216)
-
-- Fix right-click select colour when pan drag is configured (PR #216)
-- Default to medium detail with larger regions (PR #215)
-- Revamp Manage Saves autosave slot layout (PR #214)
-- Render puzzles over stored base image (PR #212)
-- Add compact puzzle export option (PR #211)
-- Add tabbed settings layout and refine UI scale defaults (PR #210)
-- Fix WebGL fill updates and refine zoom controls (PR #209)
-- Add renderer selector UI and SVG backend (PR #208)
-- Ensure branch deployments include JSON assets (PR #207)
-- Include all root JS assets in branch deploys (PR #206)
-
-## [0.4.3] - 2025-10-21 (PR #196--PR #205)
-
-- Expand interface scale limits (PR #205)
-- Include JS assets in branch deployments (PR #204)
-- Add textured passes to WebGL renderer (PR #203)
-- Ensure allow_without_pr input is evaluated correctly (PR #202)
-- Fix deploy workflow expressions for manual inputs (PR #201)
-- Fix branch deploy workflow env quoting (PR #200)
-- Ensure post-deploy tests install Playwright browsers (PR #199)
-- Restore Playwright UI smoke coverage (PR #198)
-- Add WebGL renderer implementation (PR #197)
-- Stabilize UI smoke tests with automation helpers (PR #196)
-
-## [0.4.2] - 2025-10-20 (PR #184--PR #195)
-
-- Document renderer controller and active Playwright smoke run (PR #195)
-- Add hint type toggles to settings sheet (PR #194)
-- Add Playwright tests for painting and save completion (PR #193)
-- Allow manual deploys to target any branch (PR #192)
-- Synchronize work branch with updated deployment workflows and scripts (PR #191)
-- Add post-deploy branch smoke tests workflow (PR #188)
-- Use fetch to build deployment metadata (PR #187)
-- Add multiple puzzle generation algorithms and documentation updates (PR #186)
-- Point deployment environment URL to branch preview (PR #185)
-- Allow pan and zoom gestures from viewport margins (PR #184)
-
-## [0.4.1] - 2025-10-18 (PR #173--PR #183)
-
-- Use GitHub Markdown API for README builds (PR #183)
-- Modularize puzzle renderer via controller abstraction (PR #181)
-- Rewrite README for player-focused guidance (PR #180)
-- Hide puzzle outlines for filled regions (PR #179)
-- Harden branch deployment workflow data handling (PR #178)
-- Fix deploy workflow by moving inline scripts to dedicated files (PR #177)
-- Fix deploy workflow heredoc terminators (PR #176)
-- Use actions/deploy-pages v4 (PR #175)
-- Fix deploy workflow README conversion block indentation (PR #174)
-- Fix deploy workflow manifest JSON generation (PR #173)
-
-## [0.4.0] - 2025-10-17 (PR #162--PR #172)
-
-- Prune inactive branch deployments during Pages sync (PR #172)
-- Update GitHub Actions deploy-pages workflow action from v4 to v5 (PR #171)
-- Revamp branch deployment index layout with compact timeline rows (PR #170)
-- Fix README core asset reference (PR #169)
-- Generate README HTML during branch deployments (PR #168)
-- Limit branch previews to runtime assets (PR #167)
-- Embed hosted README inside help panel (PR #166)
-- Include weekday in branch deployment timestamps (PR #164)
-- Add npm scaffolding and placeholder test runner (PR #163)
-- Add prompt image prompt helper to generator tab (PR #162)
-
-## [0.3.3] - 2025-10-17 (PR #152--PR #161)
-
-- Improve save management autosave experience (PR #161)
-- Auto-start generation and relocate saves export (PR #160)
-- Improve mobile gesture responsiveness (PR #159)
-- Add reset progress button to save manager (PR #158)
-- Simplify branch deploy index cards (PR #157)
-- Streamline branch deploy index metadata (PR #156)
-- Align main and preview commit metadata in branch deployment listings (PR #155)
-- Localize branch deployment commit timestamps to 12-hour browser time (PR #154)
-- Remove onboarding start hint and add quick start actions to Saves sheet (PR #153)
-- Improve branch deployment summary layout (PR #152)
-
-## [0.3.2] - 2025-10-16 (PR #137--PR #151)
-
-- Document branch update workflow (PR #151)
-- Fix deploy workflow heredoc indentation (PR #150)
-- Render branch deployment dashboard metadata via jq pipeline (PR #149)
-- Replace jq branch page generation with Node (PR #148)
-- Restore branch index metadata generation and open-PR deploy gating (PR #147)
-- Prevent branch deployments without open PRs (PR #144)
-- Include PR links in branch deployment dashboard (PR #142)
-- Require import confirmation and show progress inside generator sheet (PR #140)
-- Remove idle Ready to paint status line (PR #139)
-- Simplify branch deployments (PR #137)
-
-## [0.3.1] - 2025-10-15 (PR #121--PR #136)
-
-- Restrict status bar to generation progress (PR #136)
-- Enable concurrency cancellation for GitHub Pages deployments to prevent 400 errors (PR #135)
-- Fix GitHub Pages deployment workflow failure caused by rsync removing .git directory (PR #130)
-- Fix gh-pages deployment failure by auto-recovering from invalid git repository state (PR #129)
-- Prevent branch deployment cleanup job failures on missing directories (PR #128)
-- Update git remote guidance (PR #127)
-- Streamline command rail buttons (PR #126)
-- Improve tooltip contrast for light palette colors (PR #123)
-- Enhance hint highlights and add easy difficulty (PR #122)
-- Review and update branch-deployments.md documentation for accuracy (PR #121)
-
-## [0.3.0] - 2025-10-14 (PR #110--PR #119)
-
-- Add clickable commit and PR links to branch deployment history (PR #119)
-- Enhance branch deployment with commit and PR links in Recent History (PR #118)
-- Implement shared save metadata templates (PR #117)
-- Fix gh-pages cache validation to prevent "fatal: not in a git directory" errors (PR #116)
-- Enhance GitHub Pages branch deployment workflow with commit history and timezone conversion (PR #115)
-- Restore project links at the top of README.md (PR #114)
-- Unify start screen and save manager (PR #113)
-- Ensure preview render matches puzzle scale (PR #112)
-- Add configurable hint fade, intensity, and right-click color selection (PR #111)
-- Restore capy.json and add fallback puzzle metadata (PR #110)
-
-## [0.2.3] - 2025-10-13 (PR #97--PR #109)
-
-- Simplify preview mode to color canvas in place (PR #109)
-- Ensure palette swatches respond to right-click (PR #105)
-- Add region label support and palette-colored hint flashes (PR #104)
-- Add configurable region flash durations and hover hint previews (PR #103)
-- Allow right-click palette selection (PR #102)
-- Improve tap hit-testing performance by caching canvas bounds (PR #101)
-- Add toggle to control status bar visibility (PR #100)
-- Speed up wrong-color hint flashes and highlight matching regions on tap (PR #99)
-- Reconcile touch tap responsiveness handlers in index.html (PR #98)
-- Optimize deployment workflow for 40-60% faster builds (PR #97)
-
-## [0.2.2] - 2025-10-13 (PR #86--PR #96)
-
-- Trigger region fills on touch pointer events to remove tap delay (PR #96)
-- Centralize canvas fill validation for touch and click events (PR #95)
-- Render puzzle geometry at zoom scale (PR #94)
-- Add async generation progress feedback and modularize generator (PR #93)
-- Fix touch pan and pinch gesture behavior (PR #91)
-- Optimize outline rendering and allow unlimited zoom (PR #90)
-- Fix palette dock overflow on small viewports (PR #89)
-- Fix command rail layout wrapping (PR #88)
-- Handle command rail wrapping metrics (PR #87)
-- Constrain floating command rail within right safe-area inset (PR #86)
-
-## [0.2.1] - 2025-10-11 (PR #75--PR #85)
-
-- Fix command rail overflow on narrow viewports (PR #85)
-- Simplify play surface layout (PR #84)
-- Fix branch index to save to branch.html instead of index.html (PR #82)
-- Prioritize main branch deployment and list PR metadata on branch index (PR #81)
-- Hide completed colours and shrink UI scale (PR #80)
-- Optimize deploy-branch workflow execution performance (PR #79)
-- Enable double-click sampling of puzzle colours (PR #78)
-- Summarize local save storage in help and drop cloud sync (PR #77)
-- Add region number visibility toggle (PR #76)
-- Add contributor repository instructions (PR #75)
-
-## [0.2.0] - 2025-10-09 (PR #60--PR #72)
-
-- Apply edge-to-edge flat palette swatch layout to index.html (PR #72)
-- Show original artwork behind regions and streamline colour selection (PR #71)
-- Adopt edge-to-edge palette swatch styling and safe-area padding (PR #69)
-- Refine luminance-based swatch label contrast presets (PR #68)
-- Fix deploy-branch workflow to push newly initialized gh-pages branch (PR #67)
-- Fix git authentication in deploy-branch.yml workflow (PR #66)
-- Configure git credentials in deploy-branch workflow (PR #65)
-- Update deploy-branch workflow to use index.html instead of branchindex.html (PR #63)
-- Flatten palette dock into edge-to-edge swatches with adaptive contrast (PR #62)
-- Streamline palette dock to swatches only (PR #60)
-
-## [0.1.3] - 2025-10-08 (PR #49--PR #59)
-
-- Fix authentication for deploy-branch job using GITHUB_TOKEN (PR #59)
-- Collapse command rail into responsive icon buttons and harden zoom guard (PR #58)
-- Document resolved zoom guard handler structure in merge conflict report (PR #56)
-- Simplify Playwright smoke tests for faster runs (PR #55)
-- Fix deploy-branch workflow to handle missing gh-pages branch (PR #54)
-- Enhance palette focus and responsive command rail (PR #53)
-- Add horizontal wheel scrolling and status copy to palette dock (PR #52)
-- Strip stray UTF-8 BOM from package.json and add ripgrep ignore rules (PR #51)
-- Improve viewport sizing and zoom handling (PR #50)
-- Refresh contributor onboarding guidance (PR #49)
-
-## [0.1.2] - 2025-10-07 (PR #30--PR #48)
-
-- Add custom cursor tooltip for puzzle regions (PR #48)
-- Add automatic GitHub Pages deployment for all branches (PR #44)
-- Trim unused assets and refresh documentation (PR #42)
-- Improve region label readability and palette hints (PR #41)
-- Add sample detail presets, UI scale controls, and mobile zoom guard (PR #39)
-- Reconcile autosave and cloud-sync gameplay session documentation (PR #38)
-- Improve DOM rendering for save list entries (PR #37)
-- Document upstream git remote (PR #34)
-- Derive export titles from source metadata (PR #33)
-- Add sample detail presets and region legend (PR #30)
-
-## [0.1.1] - 2025-10-06 (PR #16--PR #29)
-
-- Add autosave restore flow and cloud backup sync (PR #29)
-- Guard pan move updates without a loaded puzzle (PR #28)
-- Allow touch pans without blocking taps (PR #27)
-- Enhance capybara sample illustration (PR #26)
-- Add generator test hooks and end-to-end Playwright review suite (PR #23)
-- Rebuild fullscreen drop interface for puzzle generator (PR #20)
-- Flash palette hint when tapping wrong colors (PR #19)
-- Add terraced market starter art (PR #18)
-- Remove redundant header buttons and stabilize drag panning (PR #17)
-- Document starter scene regression checks in PR review notes (PR #16)
-
-## [0.1.0] - 2025-10-04 (PR #1--PR #15)
-
-- Update smoke test alias to target UI review harness (PR #15)
-- Restore Babel runtime and unblock starter art loading (PR #14)
-- Preserve stored starter titles when merging updates (PR #11)
-- Bundle Lagoon starter scenes and add local art library (PR #10)
-- Streamline canvas toolbar interactions (PR #9)
-- Refine lagoon segmentation and unblock progress (PR #8)
-- Enable SVG artwork imports and refresh help content (PR #6)
-- Refine capybara art layout (PR #5)
-- Surface README overview through an in-app options panel (PR #3)
-- Build simple color-by-number web app (PR #1)
+### 2.2 - 2026-11-10
+
+- Add shareable progress links, simultaneous Co-op, CRDT Cloud Sync, and Play Store compliance #460
+
+### 2.1 - 2026-11-10
+
+- Preload sample save archive for instant first-launch gameplay #459
+
+### 2.0 - 2026-11-10
+
+- Add Compact Binary Storage v2 (.capy v2) and fix engine edge cases #458
+
+### 1.4 - 2026-11-09
+
+- Add min/max label size options, guarantee region fit, and redo circle-free hint color #457
+- Set Fast Mode puzzle generation progress as default #456
+- Show real generation metrics and live palette swatches during segmentation #455
+- Add loading progress detail toggle and fast mode #454
+
+### 1.3 - 2026-11-09
+
+- Update project docs: Refine contributor and contributor operational rules #453
+- Add PWA offline support and manifest #452
+- Add working thoughts display and Web engine conventions to project docs #451
+- Add ci and deps GitHub pull request labels to project docs #450
+- Add thumbnails grid view, save pinning, and toolbar to Saves gallery #449
+
+### 1.2 - 2026-11-09
+
+- Fix Undo/Redo state synchronization and add post-replay auto-resume #448
+- Add undo timeline scrubber and multi-step redo #447
+- Add animated puzzle replay and region undo #446
+
+### 1.1 - 2026-11-09
+
+- Add screenshot showcase gallery and capture script #445
+- Improve zoom pan gestures and color pickers #444
+- Add PR merge approval rule and preview lifecycle docs #443
+- Calibrate pan zoom gestures and sync preview assets #442
+
+### 1.0 - 2026-11-08
+
+- Add web architecture documentation #441
+- Optimize CI builds and Pages deployment pipeline #440
+- Add Free Colour mode, custom palette swatches, and Mushroom Forest sample #439
+- Parallelize Web and Android CI workflows and streamline target execution #438
+- Update Web dependencies, enable parallel Gradle sync, and add maintenance guides #437
+- Add Android WebView debugging, bundle validation, and developer tooling #436
+- Realign root architecture documentation and prune completed roadmap items #435
+- Add automated closed pull request preview pruning for GitHub Pages #434
+- Fix active color sync and auto-pan jumps and add victory celebration export #433
+- Unify Web and Android single-codebase architecture with WebViewAssetLoader #432
+- Consolidate Web, Legacy Web1, and Android apps into unified monorepo #431
+
+### 0.9.3 - 2026-09-24
+
+- Fix runtime bootstrap scope, default artwork loading, and UI load tests #430
+- Rename menu and relocate advanced settings toggle #429
+- Fix save manager SVG export handler #428
+- Reorder settings tabs around Saves and Create #427
+- Add SVG snapshot export to save manager #425
+- Fix autosave refresh and smoke coverage #424
+- Rework settings header layout #423
+- Simplify controls layout in settings menu #421
+- Move hint intensity controls to basics tab #420
+- Drop raster save artifacts and rebuild maps from vector scenes #419
+
+### 0.9.2 - 2025-12-05
+
+- Wrap mobile settings tabs and update settings-menu.json schema #418
+- Reduce settings sheet minimum dimensions and safe-area gaps on mobile #417
+- Add configurable region cleanup controls #416
+- Lower generator defaults for simpler puzzles #415
+- Enforce upload resizing to stay within source image limit #414
+- Clarify branch baseline guidance #413
+- Render labels with SVG #412
+- Remove binary artifact and document policy #411
+- Polish vector sample rendering and docs #410
+- Add vector scene loader and refresh sample puzzle #409
+
+### 0.9.1 - 2025-12-04
+
+- Handle save quota failures by trimming previews #408
+- Fix deploy workflow concurrency scope and env URL #407
+- Prefer human-readable region maps #406
+- Enhance smoke test logging report #405
+- Add render preview support to svg renderer #404
+- Handle renderer resize safely #403
+- Auto-generate settings sheet from JSON definition #402
+- Prune unused runtime modules #401
+- Consolidate runtime into capy.js #400
+- Summarize processed branches in cleanup workflow #399
+
+### 0.9.0 - 2025-11-28
+
+- Expose runtime APIs as module exports #398
+- Rewrite Pages deployment workflow #397
+- Temporarily disable service worker and offline cache #396
+- Simplify runtime to SVG renderer #395
+- Expose runtime API via global object #394
+- Preserve gh-pages preview directories during main deploy #393
+- Export renderer controller inline #392
+- Harden renderer controller fallback #391
+- Avoid duplicate createRendererController export #390
+- Refresh start hint onboarding UI #389
+
+### 0.8.3 - 2025-11-28
+
+- Restore renderer pipeline and fixtures #388
+- Improve renderer wiring and tests #387
+- Delete merged branches without cutoff #386
+- Refine Playwright skip handling #385
+- Enhance branch cleanup diagnostics #384
+- Add debug listing to deploy workflow #383
+- Refine responsive settings navigation and input control styles #382
+- Handle gh-pages root cleanup #381
+- Fix deployment artifact path for branch previews #380
+- Remove outdated menu screenshot artifact #379
+
+### 0.8.2 - 2025-11-27
+
+- Add responsive tab stacking and themed input controls to settings sheet #378
+- Register renderer mode change handler #377
+- Add iterative development feedback loop guide #376
+- Clarify renderer controller exports #375
+- Simplify branch preview comment output #374
+- Simplify runtime exports #373
+- Fix service worker cache script loading on GitHub Pages #372
+- Add console error check to UI smoke test #371
+- Ensure deploy previews checkout into PR-specific pull directories #370
+- Consolidate runtime exports #369
+
+### 0.8.1 - 2025-11-26
+
+- Fix duplicate renderer controller export #368
+- Fix Pages artifact path for main deployments #367
+- Fix runtime controller export #366
+- Remove Pico CSS #365
+- Restore custom styles and remove Pico import #364
+- Add gh-pages artifact diagnostics to deploy workflows #363
+- Add preboot metric fallbacks for blocked storage #362
+- Fix branch deployment setup and linkify preview comments #361
+- Improve deploy preview logging #360
+- Gate Pages deploys to open PRs and refresh docs #359
+
+### 0.8.0 - 2025-11-26
+
+- Add renderer follow-up tasks #358
+- Exclude project files from Pages deploy #357
+- Improve SVG renderer sizing and tests #356
+- Rename changelog file and update guidance #355
+- Use PR-numbered preview URLs and cleanup on close #354
+- Simplify branch preview URLs #353
+- Refine settings tabs and layout #352
+- Fix deploy workflow concurrency group expression #351
+- Fix branch preview deployment path #350
+- Adjust deploy target directory for main Pages deployment #349
+
+### 0.7.3 - 2025-11-24
+
+- Improve responsive settings layout #348
+- Fix duplicate createRendererController export #347
+- Remove legacy renderer module files #346
+- Simplify bootstrap to SVG renderer #345
+- Improve deployment log visibility #344
+- Remove unsupported screenshot artifact #343
+- Add session kick-off workflow reminder #342
+- Move contributor guide to root, mirror Pages HTML, and relocate planning docs #340
+- Trim and document remaining CSS #339
+- Add service worker status and debug logging #338
+
+### 0.7.2 - 2025-11-23
+
+- Move contributor guide to root and mirror Pages HTML #337
+- Remove deployment gating for branch deploys #336
+- Add gh-pages preview cleanup to branch maintenance workflow #335
+- Handle workflow dispatch triggers in post-deploy tests #334
+- Improve settings sheet mobile layout #333
+- Retarget branch cleanup to feature prefix #332
+- Fix deploy workflow eligibility for PR branches #331
+- Remove README link from help panel #329
+- Add rerun Pages deploy button to PR comments #328
+- Improve branch cleanup logging and cutoff #327
+
+### 0.7.1 - 2025-11-21
+
+- Add manual dispatch for branch deploys and rerun button #326
+- Fix settings tab layout wrappers #325
+- Refactor render.js to lean SVG renderer #324
+- Add merge conflict handling checklist #323
+- Synchronize modular renderer refactor with updated deployment workflows #322
+- Clarify git remote and rebase expectations #321
+- Handle preview screenshot failures gracefully #320
+- Fix deploy workflow environment expression #318
+- Enhance post-deploy Playwright coverage #317
+- Adjust deploy workflow environment per branch #316
+
+### 0.7.0 - 2025-11-21
+
+- Stabilize settings toggle and mute test network noise #315
+- Simplify settings bootstrap with JSON export #314
+- Update deployment documentation #313
+- Add feedback form with analytics reporting #312
+- Improve deploy reporting and always deploy #311
+- Add global error toast for runtime failures #310
+- Allow deploy workflow on all branches #309
+- Adopt templating helper for save manager UI #308
+- Simplify post-deploy preview comment #307
+- Auto prune stale Pages previews #305
+
+### 0.6.3 - 2025-11-18
+
+- Remove legacy autosave migration #303
+- Add settings sheet toggle test #302
+- Add drag deadzone for settings launcher #301
+- Move cleanup script into project scripts #298
+- Document deploy workflow env guardrails #296
+- Adopt rich save preview cards and flattened sticky settings layout #295
+- Remove job-level environment context reference from deploy sync step #294
+- Update README with offline and local dev notes #292
+- Compute deploy workflow concurrency group directly without env context #291
+- Add terminal output guidance to onboarding #290
+
+### 0.6.2 - 2025-11-16
+
+- Refactor UI wiring into components #288
+- Make branch cleanup asynchronous #287
+- Optimize GitHub Pages deployment speed #286
+- Refine developer onboarding guidance #284
+- Add organic superpixel generator #283
+- Add project roadmap and TODO tracking #282
+- Add offline caching and local file access #280
+- Add simplicity guidance to workflow instructions #279
+- Consolidate runtime bootstrap into single module #278
+- Extract runtime styles into stylesheet #277
+
+### 0.6.1 - 2025-11-16
+
+- Fix branch cleanup ref encoding #276
+- Combine renderer performance updates and testing stack #275
+- Handle WebGL label cache updates for UI scale changes #274
+- Update TECH.md for modular runtime documentation #273
+- Update Playwright setup script workflow #272
+- Organize runtime assets under dedicated directory #270
+- Add unit tests for render controller fallbacks #269
+- Add documentation for helper scripts #264
+- Run branch cleanup after deployments #262
+- Refresh TECH.md test harness and branch deployment documentation #261
+
+### 0.6.0 - 2025-11-15
+
+- Restructure repository around project workspace #260
+- Reuse counters for tiny region merging #259
+- Center active palette colour #258
+- Unify settings, generator, saves, and help into one menu #257
+- Add nearby difficulty that auto-selects adjacent colours #256
+- Refactor neighbor iteration in segmentation routines #255
+- Optimize smoothing histogram reuse #254
+- Allow dots in post-deploy slug derivation #252
+- Fix post-deploy artifact naming sanitization #251
+- Ensure Playwright browsers install with docs #250
+
+### 0.5.3 - 2025-11-15
+
+- Simplify branch overview page #249
+- Restore stable renderer pipeline with performance logging #248
+- Persist palette sort preference #245
+- Improve zoom smoothness with compositor-driven scaling #244
+- Flush autosave on page lifecycle events #243
+- Fix WebGL label rendering #242
+- Add branch slug preparation job to post-deploy tests workflow #241
+- Adjust zoom defaults and expose configurable max zoom #240
+- Preserve palette numbering when colours complete #239
+- Fix UI scale flash during boot #238
+
+### 0.5.2 - 2025-10-26
+
+- Rename palette sort label and renumber swatches #237
+- Switch CI workflow to Ubuntu runners #236
+- Limit Playwright smoke test to Chromium page load #235
+- Simplify Pages deployment workflow #234
+- Enhance palette sorting with spectrum and warmth modes #233
+- Prefer autosave when restoring sessions #232
+- Sanitize post-deploy concurrency group branch names #231
+- Improve region label placement and sizing #230
+- Improve region label placement with polylabel #229
+- Fix settings persistence when no puzzle is loaded #228
+
+### 0.5.1 - 2025-10-25
+
+- Render region numbers continuously across all zoom levels #227
+- Remove user settings from exported save files #226
+- Fix post-deploy workflow concurrency expression #225
+- Configure Playwright UI review artifacts #224
+- Streamline Playwright smoke test for quick load check #223
+- Improve remote image URL workflow #222
+- Add support for loading puzzles from external image URLs #221
+- Adjust region label layout to respect zoom ratio #220
+- Support zoom-aware region label layout #219
+- Persist user settings in browser storage #217
+
+### 0.5.0 - 2025-10-24
+
+- Fix right-click select colour when pan drag is configured #216
+- Default to medium detail with larger regions #215
+- Revamp Manage Saves autosave slot layout #214
+- Render puzzles over stored base image #212
+- Add compact puzzle export option #211
+- Add tabbed settings layout and refine UI scale defaults #210
+- Fix WebGL fill updates and refine zoom controls #209
+- Add renderer selector UI and SVG backend #208
+- Ensure branch deployments include JSON assets #207
+- Include all root JS assets in branch deploys #206
+
+### 0.4.3 - 2025-10-21
+
+- Expand interface scale limits #205
+- Include JS assets in branch deployments #204
+- Add textured passes to WebGL renderer #203
+- Ensure allow_without_pr input is evaluated correctly #202
+- Fix deploy workflow expressions for manual inputs #201
+- Fix branch deploy workflow env quoting #200
+- Ensure post-deploy tests install Playwright browsers #199
+- Restore Playwright UI smoke coverage #198
+- Add WebGL renderer implementation #197
+- Stabilize UI smoke tests with automation helpers #196
+
+### 0.4.2 - 2025-10-20
+
+- Document renderer controller and active Playwright smoke run #195
+- Add hint type toggles to settings sheet #194
+- Add Playwright tests for painting and save completion #193
+- Allow manual deploys to target any branch #192
+- Synchronize work branch with updated deployment workflows and scripts #191
+- Add post-deploy branch smoke tests workflow #188
+- Use fetch to build deployment metadata #187
+- Add multiple puzzle generation algorithms and documentation updates #186
+- Point deployment environment URL to branch preview #185
+- Allow pan and zoom gestures from viewport margins #184
+
+### 0.4.1 - 2025-10-18
+
+- Use GitHub Markdown API for README builds #183
+- Modularize puzzle renderer via controller abstraction #181
+- Rewrite README for player-focused guidance #180
+- Hide puzzle outlines for filled regions #179
+- Harden branch deployment workflow data handling #178
+- Fix deploy workflow by moving inline scripts to dedicated files #177
+- Fix deploy workflow heredoc terminators #176
+- Use actions/deploy-pages v4 #175
+- Fix deploy workflow README conversion block indentation #174
+- Fix deploy workflow manifest JSON generation #173
+
+### 0.4.0 - 2025-10-17
+
+- Prune inactive branch deployments during Pages sync #172
+- Update GitHub Actions deploy-pages workflow action from v4 to v5 #171
+- Revamp branch deployment index layout with compact timeline rows #170
+- Fix README core asset reference #169
+- Generate README HTML during branch deployments #168
+- Limit branch previews to runtime assets #167
+- Embed hosted README inside help panel #166
+- Include weekday in branch deployment timestamps #164
+- Add npm scaffolding and placeholder test runner #163
+- Add prompt image prompt helper to generator tab #162
+
+### 0.3.3 - 2025-10-17
+
+- Improve save management autosave experience #161
+- Auto-start generation and relocate saves export #160
+- Improve mobile gesture responsiveness #159
+- Add reset progress button to save manager #158
+- Simplify branch deploy index cards #157
+- Streamline branch deploy index metadata #156
+- Align main and preview commit metadata in branch deployment listings #155
+- Localize branch deployment commit timestamps to 12-hour browser time #154
+- Remove onboarding start hint and add quick start actions to Saves sheet #153
+- Improve branch deployment summary layout #152
+
+### 0.3.2 - 2025-10-16
+
+- Document branch update workflow #151
+- Fix deploy workflow heredoc indentation #150
+- Render branch deployment dashboard metadata via jq pipeline #149
+- Replace jq branch page generation with Node #148
+- Restore branch index metadata generation and open-PR deploy gating #147
+- Prevent branch deployments without open PRs #144
+- Include PR links in branch deployment dashboard #142
+- Require import confirmation and show progress inside generator sheet #140
+- Remove idle Ready to paint status line #139
+- Simplify branch deployments #137
+
+### 0.3.1 - 2025-10-15
+
+- Restrict status bar to generation progress #136
+- Enable concurrency cancellation for GitHub Pages deployments to prevent 400 errors #135
+- Fix GitHub Pages deployment workflow failure caused by rsync removing .git directory #130
+- Fix gh-pages deployment failure by auto-recovering from invalid git repository state #129
+- Prevent branch deployment cleanup job failures on missing directories #128
+- Update git remote guidance #127
+- Streamline command rail buttons #126
+- Improve tooltip contrast for light palette colors #123
+- Enhance hint highlights and add easy difficulty #122
+- Review and update branch-deployments.md documentation for accuracy #121
+
+### 0.3.0 - 2025-10-14
+
+- Add clickable commit and PR links to branch deployment history #119
+- Enhance branch deployment with commit and PR links in Recent History #118
+- Implement shared save metadata templates #117
+- Fix gh-pages cache validation to prevent "fatal: not in a git directory" errors #116
+- Enhance GitHub Pages branch deployment workflow with commit history and timezone conversion #115
+- Restore project links at the top of README.md #114
+- Unify start screen and save manager #113
+- Ensure preview render matches puzzle scale #112
+- Add configurable hint fade, intensity, and right-click color selection #111
+- Restore capy.json and add fallback puzzle metadata #110
+
+### 0.2.3 - 2025-10-13
+
+- Simplify preview mode to color canvas in place #109
+- Ensure palette swatches respond to right-click #105
+- Add region label support and palette-colored hint flashes #104
+- Add configurable region flash durations and hover hint previews #103
+- Allow right-click palette selection #102
+- Improve tap hit-testing performance by caching canvas bounds #101
+- Add toggle to control status bar visibility #100
+- Speed up wrong-color hint flashes and highlight matching regions on tap #99
+- Reconcile touch tap responsiveness handlers in index.html #98
+- Optimize deployment workflow for 40-60% faster builds #97
+
+### 0.2.2 - 2025-10-13
+
+- Trigger region fills on touch pointer events to remove tap delay #96
+- Centralize canvas fill validation for touch and click events #95
+- Render puzzle geometry at zoom scale #94
+- Add async generation progress feedback and modularize generator #93
+- Fix touch pan and pinch gesture behavior #91
+- Optimize outline rendering and allow unlimited zoom #90
+- Fix palette dock overflow on small viewports #89
+- Fix command rail layout wrapping #88
+- Handle command rail wrapping metrics #87
+- Constrain floating command rail within right safe-area inset #86
+
+### 0.2.1 - 2025-10-11
+
+- Fix command rail overflow on narrow viewports #85
+- Simplify play surface layout #84
+- Fix branch index to save to branch.html instead of index.html #82
+- Prioritize main branch deployment and list PR metadata on branch index #81
+- Hide completed colours and shrink UI scale #80
+- Optimize deploy-branch workflow execution performance #79
+- Enable double-click sampling of puzzle colours #78
+- Summarize local save storage in help and drop cloud sync #77
+- Add region number visibility toggle #76
+- Add contributor repository instructions #75
+
+### 0.2.0 - 2025-10-09
+
+- Apply edge-to-edge flat palette swatch layout to index.html #72
+- Show original artwork behind regions and streamline colour selection #71
+- Adopt edge-to-edge palette swatch styling and safe-area padding #69
+- Refine luminance-based swatch label contrast presets #68
+- Fix deploy-branch workflow to push newly initialized gh-pages branch #67
+- Fix git authentication in deploy-branch.yml workflow #66
+- Configure git credentials in deploy-branch workflow #65
+- Update deploy-branch workflow to use index.html instead of branchindex.html #63
+- Flatten palette dock into edge-to-edge swatches with adaptive contrast #62
+- Streamline palette dock to swatches only #60
+
+### 0.1.3 - 2025-10-08
+
+- Fix authentication for deploy-branch job using GITHUB_TOKEN #59
+- Collapse command rail into responsive icon buttons and harden zoom guard #58
+- Document resolved zoom guard handler structure in merge conflict report #56
+- Simplify Playwright smoke tests for faster runs #55
+- Fix deploy-branch workflow to handle missing gh-pages branch #54
+- Enhance palette focus and responsive command rail #53
+- Add horizontal wheel scrolling and status copy to palette dock #52
+- Strip stray UTF-8 BOM from package.json and add ripgrep ignore rules #51
+- Improve viewport sizing and zoom handling #50
+- Refresh contributor onboarding guidance #49
+
+### 0.1.2 - 2025-10-07
+
+- Add custom cursor tooltip for puzzle regions #48
+- Add automatic GitHub Pages deployment for all branches #44
+- Trim unused assets and refresh documentation #42
+- Improve region label readability and palette hints #41
+- Add sample detail presets, UI scale controls, and mobile zoom guard #39
+- Reconcile autosave and cloud-sync gameplay session documentation #38
+- Improve DOM rendering for save list entries #37
+- Document upstream git remote #34
+- Derive export titles from source metadata #33
+- Add sample detail presets and region legend #30
+
+### 0.1.1 - 2025-10-06
+
+- Add autosave restore flow and cloud backup sync #29
+- Guard pan move updates without a loaded puzzle #28
+- Allow touch pans without blocking taps #27
+- Enhance capybara sample illustration #26
+- Add generator test hooks and end-to-end Playwright review suite #23
+- Rebuild fullscreen drop interface for puzzle generator #20
+- Flash palette hint when tapping wrong colors #19
+- Add terraced market starter art #18
+- Remove redundant header buttons and stabilize drag panning #17
+- Document starter scene regression checks in PR review notes #16
+
+### 0.1.0 - 2025-10-04
+
+- Update smoke test alias to target UI review harness #15
+- Restore Babel runtime and unblock starter art loading #14
+- Preserve stored starter titles when merging updates #11
+- Bundle Lagoon starter scenes and add local art library #10
+- Streamline canvas toolbar interactions #9
+- Refine lagoon segmentation and unblock progress #8
+- Enable SVG artwork imports and refresh help content #6
+- Refine capybara art layout #5
+- Surface README overview through an in-app options panel #3
+- Build simple color-by-number web app #1
