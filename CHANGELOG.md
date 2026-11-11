@@ -1,5 +1,6 @@
 ### 2.5 - 2026-11-11
 
+- Standardize TODO.md under Lean Agile epics, stories, and collapsible task specs #470
 - Add DEV.md, streamline project docs, and overhaul repository documentation and privacy policy #467
 - Compact changelog headings for mobile, remove preamble, and group same-day patch releases #469
 - Standardize historical PR metadata, move changelog rules to project docs, and add full PR history #468
