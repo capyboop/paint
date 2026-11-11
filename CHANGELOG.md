@@ -1,224 +1,557 @@
-# Changelog & Versioning Scheme -- Capy Monorepo ([`web/`](./web), [`app/`](./app))
+# Changelog -- Capy Monorepo ([`web/`](./web), [`app/`](./app))
 
-All notable changes to the **Capy** color-by-number suite across the Web Application ([`web/`](./web)) and Unified Native Android Launcher ([`app/`](./app)) are documented in this file.
+All notable changes to the **Capy** color-by-number suite across the Web Application ([`web/`](./web)), Unified Native Android Launcher ([`app/`](./app)), and pre-monorepo Legacy Web1 milestones (`0.1.0`--`0.9.3`) are recorded in this file.
 
-The format is based on [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning 2.0.0](https://semver.org/spec/v2.0.0.html).
-
-> [!NOTE]
-> **Documentation Hygiene**: Never include unicode emojis or ASCII box-drawing diagrams in [`CHANGELOG.md`](./CHANGELOG.md). Every feature, bugfix, or architectural pull request must bump the version in [`web/package.json`](./web/package.json) according to the scheme below and record its changes under a matching version heading in this file.
+For Semantic Versioning rules (`MAJOR.MINOR.PATCH`), Android `versionCode` derivation, and changelog formatting guidelines, see `project docs`.
 
 ---
 
-## Versioning Scheme & Cross-Target Synchronization
+## [2.5.4] - 2026-11-11 (PR #468, Android `versionCode`: `20504`)
 
-Capy uses a unified **Semantic Versioning (`MAJOR.MINOR.PATCH`)** scheme shared across all targets from a single source of truth:
+- Standardize pull request titles, descriptions, labels, and retrospective `0.1.0`--`0.9.3` versions across all historical PRs, move changelog guidelines to `project docs`, and record full PR history in `CHANGELOG.md` (PR #468)
 
-| Component | Source / Location | Rule & Formula | Current Value |
-| :--- | :--- | :--- | :--- |
-| **Canonical SemVer** | [`web/package.json`](./web/package.json) (`"version"`) | Single source of truth formatted as `MAJOR.MINOR.PATCH` (`0 <= MINOR <= 99`, `0 <= PATCH <= 99`). | `2.5.3` |
-| **Web Runtime Constant** | [`web/src/version.ts`](./web/src/version.ts) (`APP_VERSION`, `APP_VERSION_CODE`) | Imported directly from [`web/package.json`](./web/package.json) and displayed in [`SettingsModal.tsx`](./web/src/components/SettingsModal.tsx) (`data-testid="app-version-badge"`). | `v2.5.3` (`20503`) |
-| **Android `versionName`** | [`app/build.gradle.kts`](./app/build.gradle.kts) (`capyVersionName`) | Automatically parsed at Gradle configuration time from [`../web/package.json`](./web/package.json). | `"2.5.3"` |
-| **Android `versionCode`** | [`app/build.gradle.kts`](./app/build.gradle.kts) (`capyVersionCode`) | Deterministically computed as `(MAJOR * 10000) + (MINOR * 100) + PATCH` for strictly monotonic Google Play Console uploads. | `20503` |
+## [2.5.3] - 2026-11-11 (PR #466, Android `versionCode`: `20503`)
 
-### When to Increment Each Version Segment
+- Resolve all remaining audit bugfixes from TODO (PR #466)
 
-1. **`MAJOR` (`X.0.0`, e.g., `1.0.0` $\rightarrow$ `2.0.0`)**:
-   - Incremented for major storage epoch upgrades (such as the transition from legacy JSON saves to `.capy` v2 Gzip binary archives in [`CapyCodec.ts`](./web/src/services/CapyCodec.ts)), fundamental architecture migrations, or new top-level platform launches.
-2. **`MINOR` (`2.Y.0`, e.g., `2.4.0` $\rightarrow$ `2.5.0`)**:
-   - Incremented whenever backward-compatible gameplay features, replay modes, UI controls, cloud/multiplayer drivers, or new `UserSettings` keys ([`web/src/types/index.ts`](./web/src/types/index.ts)) are added.
-3. **`PATCH` (`2.5.Z`, e.g., `2.5.0` $\rightarrow$ `2.5.1`)**:
-   - Incremented for backward-compatible bug fixes, gesture edge-case corrections, performance optimizations, test suite consolidation, or dependency security updates.
+## [2.5.2] - 2026-11-11 (PR #465, Android `versionCode`: `20502`)
 
----
-
-## Release History
-
-## [2.5.3] - 2026-11-10 (PR #466, Android `versionCode`: `20503`)
-
-### Fixed
-- **Free Colour Undo Co-op Sync & First-Fill Chronological Order Preservation (`BF-1`, [`App.tsx#L1325-L1354`](https://github.com/capyboop/paint/blob/4ad48b55634b6e3fdd48c9d9bac71ffa92dca936/web/src/App.tsx#L1325-L1354), [`App.tsx#L1413-L1425`](https://github.com/capyboop/paint/blob/4ad48b55634b6e3fdd48c9d9bac71ffa92dca936/web/src/App.tsx#L1413-L1425), [`App.tsx#L1475-L1486`](https://github.com/capyboop/paint/blob/4ad48b55634b6e3fdd48c9d9bac71ffa92dca936/web/src/App.tsx#L1475-L1486), [`App.tsx#L1615-L1640`](https://github.com/capyboop/paint/blob/4ad48b55634b6e3fdd48c9d9bac71ffa92dca936/web/src/App.tsx#L1615-L1640), [`App.tsx#L1818-L1840`](https://github.com/capyboop/paint/blob/4ad48b55634b6e3fdd48c9d9bac71ffa92dca936/web/src/App.tsx#L1818-L1840), [`test.mjs#L868-L930`](https://github.com/capyboop/paint/blob/4ad48b55634b6e3fdd48c9d9bac71ffa92dca936/web/scripts/test.mjs#L868-L930), PR #466 diff)**:
-  - Preserved original first-fill chronological ordering in `filledRegionIds` when repainting an already-filled region in Free Colour mode ([`attemptFillRegion` (`App.tsx#L1615-L1640`)](https://github.com/capyboop/paint/blob/4ad48b55634b6e3fdd48c9d9bac71ffa92dca936/web/src/App.tsx#L1615-L1640), [`attemptBatchFillRegions` (`App.tsx#L1818-L1840`)](https://github.com/capyboop/paint/blob/4ad48b55634b6e3fdd48c9d9bac71ffa92dca936/web/src/App.tsx#L1818-L1840), and [`handleOpenTimelineReplay` (`App.tsx#L1475-L1486`)](https://github.com/capyboop/paint/blob/4ad48b55634b6e3fdd48c9d9bac71ffa92dca936/web/src/App.tsx#L1475-L1486)) instead of deleting and re-appending the region ID to the tail of the set.
-  - Recorded `effectivePrevColor = paintedRegionColors.get(regionId) ?? (wasAlreadyFilled ? region.colorId : undefined)` on `UndoHistoryEntry.previousPaintedColorId` and broadcast restored/re-applied `paintedColors` via `emitCoopPaint` (`ProviderRegistry.realtimeRoom.broadcastPaintEvent`) during both [`handleUndo` (`App.tsx#L1325-L1354`)](https://github.com/capyboop/paint/blob/4ad48b55634b6e3fdd48c9d9bac71ffa92dca936/web/src/App.tsx#L1325-L1354) and [`handleRedo` (`App.tsx#L1413-L1425`)](https://github.com/capyboop/paint/blob/4ad48b55634b6e3fdd48c9d9bac71ffa92dca936/web/src/App.tsx#L1413-L1425) so connected Co-op collaborators stay strictly synchronized when Free Colour repaints are undone or redone.
-- **Google Drive `appDataFolder` Per-File Concurrent Write Mutex & File-ID Caching (`BF-3`, [`CloudProviderDrivers.ts#L28-L55`](https://github.com/capyboop/paint/blob/4ad48b55634b6e3fdd48c9d9bac71ffa92dca936/web/src/services/providers/CloudProviderDrivers.ts#L28-L55), [`CloudProviderDrivers.ts#L152-L215`](https://github.com/capyboop/paint/blob/4ad48b55634b6e3fdd48c9d9bac71ffa92dca936/web/src/services/providers/CloudProviderDrivers.ts#L152-L215), [`test.mjs#L276-L372`](https://github.com/capyboop/paint/blob/4ad48b55634b6e3fdd48c9d9bac71ffa92dca936/web/scripts/test.mjs#L276-L372), PR #466 diff)**:
-  - Added in-memory file-ID caches (`cachedSlotFileIds`, `cachedBlobFileIds`) alongside `cachedManifestFileId` and a per-filename async promise-queue mutex ([`writeLocks` / `enqueueWrite` (`CloudProviderDrivers.ts#L28-L55`)](https://github.com/capyboop/paint/blob/4ad48b55634b6e3fdd48c9d9bac71ffa92dca936/web/src/services/providers/CloudProviderDrivers.ts#L28-L55)) in `GoogleCloudDriver` across [`writeManifest`, `readSlotEnvelope`, `writeSlotEnvelope`, and `writeBinaryBlob` (`CloudProviderDrivers.ts#L152-L215`)](https://github.com/capyboop/paint/blob/4ad48b55634b6e3fdd48c9d9bac71ffa92dca936/web/src/services/providers/CloudProviderDrivers.ts#L152-L215), eliminating duplicate file accumulation in Google Drive `appDataFolder` during concurrent or rapid back-to-back cloud syncs.
-- **B&W Coloring Book Source Accent Fill Preservation During Graph Coloring (`BF-4`, [`PuzzleGenerator.ts#L329-L418`](https://github.com/capyboop/paint/blob/4ad48b55634b6e3fdd48c9d9bac71ffa92dca936/web/src/engine/PuzzleGenerator.ts#L329-L418), [`test.mjs#L223-L274`](https://github.com/capyboop/paint/blob/4ad48b55634b6e3fdd48c9d9bac71ffa92dca936/web/scripts/test.mjs#L223-L274), PR #466 diff)**:
-  - Updated [`LineArtPuzzleGenerator.generateFromRgba` (`PuzzleGenerator.ts#L329-L418`)](https://github.com/capyboop/paint/blob/4ad48b55634b6e3fdd48c9d9bac71ffa92dca936/web/src/engine/PuzzleGenerator.ts#L329-L418) when `isBwColoring` is active to run a two-pass coloring algorithm: Pass 1 inspects each segmented region's non-line source pixels (`lineMask[pIdx] === 0`) and locks regions with `> 25%` chromatic interior pixels (`maxC - minC > 35 && maxC > 50`) to their closest perceptual palette color (`lockedSourceColor`); Pass 2 runs balanced greedy graph coloring exclusively on the remaining blank paper regions while respecting locked neighbor colors.
-- **Android `ACTION_SEND` Background Image Decoding & Bounded Downsampling (`BF-5`, [`CapyAndroidBridge.kt#L368-L406`](https://github.com/capyboop/paint/blob/65a1ee6d606e9943140e945b1991834dff6b4f91/app/src/main/java/com/capypaint/capy/CapyAndroidBridge.kt#L368-L406), [`MainActivity.kt#L46`](https://github.com/capyboop/paint/blob/9d0ae4c587d259ad2de5ca34320bb3d58d3fd479/app/src/main/java/com/capypaint/capy/MainActivity.kt#L46), [`MainActivity.kt#L319-L424`](https://github.com/capyboop/paint/blob/9d0ae4c587d259ad2de5ca34320bb3d58d3fd479/app/src/main/java/com/capypaint/capy/MainActivity.kt#L319-L424), [`MainActivity.kt#L633`](https://github.com/capyboop/paint/blob/9d0ae4c587d259ad2de5ca34320bb3d58d3fd479/app/src/main/java/com/capypaint/capy/MainActivity.kt#L633), [`CapyAndroidBridgeTest.kt#L185-L200`](https://github.com/capyboop/paint/blob/65a1ee6d606e9943140e945b1991834dff6b4f91/app/src/test/java/com/capypaint/capy/CapyAndroidBridgeTest.kt#L185-L200), PR #466 diff)**:
-  - Offloaded `Intent.ACTION_SEND` (`image/*`) stream decoding from the main UI thread onto a dedicated background executor ([`shareDecodeExecutor` (`MainActivity.kt#L46`)](https://github.com/capyboop/paint/blob/9d0ae4c587d259ad2de5ca34320bb3d58d3fd479/app/src/main/java/com/capypaint/capy/MainActivity.kt#L46)) in [`MainActivity.kt#L319-L424`](https://github.com/capyboop/paint/blob/9d0ae4c587d259ad2de5ca34320bb3d58d3fd479/app/src/main/java/com/capypaint/capy/MainActivity.kt#L319-L424), probing dimensions with `inJustDecodeBounds = true`, subsampling via [`CapyAndroidBridge.calculateInSampleSize` (`CapyAndroidBridge.kt#L375-L388`)](https://github.com/capyboop/paint/blob/65a1ee6d606e9943140e945b1991834dff6b4f91/app/src/main/java/com/capypaint/capy/CapyAndroidBridge.kt#L375-L388) (`MAX_SHARED_IMAGE_DIMENSION = 2048`), scaling oversized camera photos via [`CapyAndroidBridge.calculateTargetDimensions` (`CapyAndroidBridge.kt#L390-L406`)](https://github.com/capyboop/paint/blob/65a1ee6d606e9943140e945b1991834dff6b4f91/app/src/main/java/com/capypaint/capy/CapyAndroidBridge.kt#L390-L406) (with a `MAX_RAW_SHARED_IMAGE_BYTES = 4 MB` fallback cap), and posting the Base64 data URL back to the UI thread to prevent `OutOfMemoryError` and ANRs.
-
-### Changed
-- **Meaningful PR Titles & Mandatory Top-of-PR Plain-English Overview Paragraph ([`project docs#L21`](https://github.com/capyboop/paint/blob/0b9bd34ec02a9a15bd1a5bfcf58a88f2d104847a/project docs#L21), [`project docs#L103-L115`](https://github.com/capyboop/paint/blob/0b9bd34ec02a9a15bd1a5bfcf58a88f2d104847a/project docs#L103-L115), [`project docs#L157-L162`](https://github.com/capyboop/paint/blob/0b9bd34ec02a9a15bd1a5bfcf58a88f2d104847a/project docs#L157-L162), PR #466)**:
-  - Updated `project docs` so pull requests use cohesive high-level titles rather than comma-separated subsystem lists and always include a candid plain-English overview paragraph at the top of the PR description (immediately below the live preview callout and above the 5-Pillar Readiness Score) summarizing everything included in the PR and why.
-
----
-
-## [2.5.2] - 2026-11-10 (PR #465, Android `versionCode`: `20502`)
-
-### Fixed
-- **Canvas Container Resize & Orientation Change Clamping (`BF-2`, [`PuzzleCanvas.tsx#L393-L409`](https://github.com/capyboop/paint/blob/a7d23e7cf239f83875435cf8a578ea1756d0bb3a/web/src/components/PuzzleCanvas.tsx#L393-L409), [`PuzzleCanvas.tsx#L1417-L1461`](https://github.com/capyboop/paint/blob/a7d23e7cf239f83875435cf8a578ea1756d0bb3a/web/src/components/PuzzleCanvas.tsx#L1417-L1461), [`test.mjs#L842-L866`](https://github.com/capyboop/paint/blob/a7d23e7cf239f83875435cf8a578ea1756d0bb3a/web/scripts/test.mjs#L842-L866), PR #465 diff)**:
-  - Attached a `ResizeObserver` (with a `window` `resize` listener fallback) to `containerRef` in [`PuzzleCanvas.tsx#L1417-L1461`](https://github.com/capyboop/paint/blob/a7d23e7cf239f83875435cf8a578ea1756d0bb3a/web/src/components/PuzzleCanvas.tsx#L1417-L1461) so viewport resizes, mobile portrait/landscape rotations, split-screen adjustments, and DevTools dock changes immediately clamp `offsetRef.current` via `clampCanvasOffset`, resize and repaint the high-DPI onscreen `<canvas>` via `drawCompositeFrame(pulseAlphaRef.current)`, notify `onViewExtentChangedRef`, and recompute visible on-screen regions/colors (`containerSize` at [`PuzzleCanvas.tsx#L393-L409`](https://github.com/capyboop/paint/blob/a7d23e7cf239f83875435cf8a578ea1756d0bb3a/web/src/components/PuzzleCanvas.tsx#L393-L409) and [`PuzzleCanvas.tsx#L1167`](https://github.com/capyboop/paint/blob/a7d23e7cf239f83875435cf8a578ea1756d0bb3a/web/src/components/PuzzleCanvas.tsx#L1167)).
-- **IndexedDB Cache Eviction Custom Palette Restoration (`BF-6`, [`App.tsx#L62-L87`](https://github.com/capyboop/paint/blob/a7d23e7cf239f83875435cf8a578ea1756d0bb3a/web/src/App.tsx#L62-L87), [`App.tsx#L625-L835`](https://github.com/capyboop/paint/blob/a7d23e7cf239f83875435cf8a578ea1756d0bb3a/web/src/App.tsx#L625-L835), [`App.tsx#L1047-L1089`](https://github.com/capyboop/paint/blob/a7d23e7cf239f83875435cf8a578ea1756d0bb3a/web/src/App.tsx#L1047-L1089), [`App.tsx#L2289-L2380`](https://github.com/capyboop/paint/blob/a7d23e7cf239f83875435cf8a578ea1756d0bb3a/web/src/App.tsx#L2289-L2380), [`test.mjs#L868-L934`](https://github.com/capyboop/paint/blob/a7d23e7cf239f83875435cf8a578ea1756d0bb3a/web/scripts/test.mjs#L868-L934), PR #465 diff)**:
-  - Added [`mergeCustomPalette` (`App.tsx#L62-L87`)](https://github.com/capyboop/paint/blob/a7d23e7cf239f83875435cf8a578ea1756d0bb3a/web/src/App.tsx#L62-L87) and extended [`loadArtworkFromImage` (`App.tsx#L625-L835`)](https://github.com/capyboop/paint/blob/a7d23e7cf239f83875435cf8a578ea1756d0bb3a/web/src/App.tsx#L625-L835), [`handleLoadSnapshot` (`App.tsx#L2289-L2380`)](https://github.com/capyboop/paint/blob/a7d23e7cf239f83875435cf8a578ea1756d0bb3a/web/src/App.tsx#L2289-L2380), and cold-start [`restoreSession` (`App.tsx#L1047-L1089`)](https://github.com/capyboop/paint/blob/a7d23e7cf239f83875435cf8a578ea1756d0bb3a/web/src/App.tsx#L1047-L1089) so when `StorageService.loadPuzzleData(snapshot.id)` returns `null` after browser IndexedDB cache eviction and falls back to re-segmenting the source image, both user-edited swatches and user-added custom swatches (`snapshot.customPalette`) as well as `snapshot.isFreeColor` are preserved instead of resetting to newly quantized colors.
-- **Android Pixel / API 33+ Tactile Haptic Feedback Silent Suppression (`BF-7`, [`CapyAndroidBridge.kt#L372-L511`](https://github.com/capyboop/paint/blob/a7d23e7cf239f83875435cf8a578ea1756d0bb3a/app/src/main/java/com/capypaint/capy/CapyAndroidBridge.kt#L372-L511), [`MainActivity.kt#L126`](https://github.com/capyboop/paint/blob/a7d23e7cf239f83875435cf8a578ea1756d0bb3a/app/src/main/java/com/capypaint/capy/MainActivity.kt#L126), [`CapyAndroidBridgeTest.kt#L149-L183`](https://github.com/capyboop/paint/blob/a7d23e7cf239f83875435cf8a578ea1756d0bb3a/app/src/test/java/com/capypaint/capy/CapyAndroidBridgeTest.kt#L149-L183), PR #465 diff)**:
-  - Enabled `isHapticFeedbackEnabled = true` on the host `WebView` in [`MainActivity.kt#L126`](https://github.com/capyboop/paint/blob/a7d23e7cf239f83875435cf8a578ea1756d0bb3a/app/src/main/java/com/capypaint/capy/MainActivity.kt#L126) and passed `HapticFeedbackConstants.FLAG_IGNORE_VIEW_SETTING` to `view.performHapticFeedback(...)` in [`CapyAndroidBridge.kt#L438-L446`](https://github.com/capyboop/paint/blob/a7d23e7cf239f83875435cf8a578ea1756d0bb3a/app/src/main/java/com/capypaint/capy/CapyAndroidBridge.kt#L438-L446).
-  - Updated [`performHaptic` (`CapyAndroidBridge.kt#L420-L511`)](https://github.com/capyboop/paint/blob/a7d23e7cf239f83875435cf8a578ea1756d0bb3a/app/src/main/java/com/capypaint/capy/CapyAndroidBridge.kt#L420-L511) ([`resolveHapticSpec` (`CapyAndroidBridge.kt#L380-L418`)](https://github.com/capyboop/paint/blob/a7d23e7cf239f83875435cf8a578ea1756d0bb3a/app/src/main/java/com/capypaint/capy/CapyAndroidBridge.kt#L380-L418), [`vibrateEffectWithTouchAttributes` (`CapyAndroidBridge.kt#L466-L478`)](https://github.com/capyboop/paint/blob/a7d23e7cf239f83875435cf8a578ea1756d0bb3a/app/src/main/java/com/capypaint/capy/CapyAndroidBridge.kt#L466-L478), [`vibratePredefined` (`CapyAndroidBridge.kt#L480-L487`)](https://github.com/capyboop/paint/blob/a7d23e7cf239f83875435cf8a578ea1756d0bb3a/app/src/main/java/com/capypaint/capy/CapyAndroidBridge.kt#L480-L487)) to attach `VibrationAttributes.createForUsage(VibrationAttributes.USAGE_TOUCH)` on API 33+ (Android 13–15) and `AudioAttributes.USAGE_ASSISTANCE_SONIFICATION` on API 26–32, while using crisp hardware-tuned `VibrationEffect.createPredefined` effects (`EFFECT_TICK`, `EFFECT_CLICK`, `EFFECT_HEAVY_CLICK`) on API 29+ so Pixel linear resonant actuators (LRAs) never silently drop region-fill and UI haptics under default notification vibration rules.
-
----
+- Fix resize clamping, IndexedDB palette recovery, and Pixel API 33+ haptics (PR #465)
 
 ## [2.5.1] - 2026-11-10 (PR #464, Android `versionCode`: `20501`)
 
-### Added
-- **YouTube-Style Playback Control Bar & Zero-Latency Timeline Scrubber ([`ReplayControls.tsx#L136-L214`](https://github.com/capyboop/paint/blob/8b120f89b61a2d03778b4165e00610c723a67fe7/web/src/components/ReplayControls.tsx#L136-L214), [`PuzzleCanvas.tsx#L814-L876`](https://github.com/capyboop/paint/blob/98d769017aa468460062b79bfa2ee8dd0cd6668c/web/src/components/PuzzleCanvas.tsx#L814-L876), [`App.tsx#L2319-L2327`](https://github.com/capyboop/paint/blob/98d769017aa468460062b79bfa2ee8dd0cd6668c/web/src/App.tsx#L2319-L2327), PR #464)**:
-  - Redesigned [`ReplayControls.tsx#L136-L586`](https://github.com/capyboop/paint/blob/8b120f89b61a2d03778b4165e00610c723a67fe7/web/src/components/ReplayControls.tsx#L136-L586) (`0ed0217`, `8b120f8`) as a YouTube-style video control bar (`w-full max-w-2xl`) where the interactive progress slider ([`renderYouTubeScrubber` (`ReplayControls.tsx#L136-L214`)](https://github.com/capyboop/paint/blob/8b120f89b61a2d03778b4165e00610c723a67fe7/web/src/components/ReplayControls.tsx#L136-L214), `data-testid="replay-scrubber-track"` / `data-testid="replay-scrubber"`) occupies the majority of the horizontal space (`flex-1`) and can be clicked or dragged at any time in both the default compact bar ([`ReplayControls.tsx#L216-L366`](https://github.com/capyboop/paint/blob/8b120f89b61a2d03778b4165e00610c723a67fe7/web/src/components/ReplayControls.tsx#L216-L366), `data-minimized="true"`) and the expanded deck ([`ReplayControls.tsx#L368-L586`](https://github.com/capyboop/paint/blob/8b120f89b61a2d03778b4165e00610c723a67fe7/web/src/components/ReplayControls.tsx#L368-L586), `data-minimized="false"`), with step/percentage info displayed via the floating hover/scrub tooltip ([`ReplayControls.tsx#L152-L162`](https://github.com/capyboop/paint/blob/8b120f89b61a2d03778b4165e00610c723a67fe7/web/src/components/ReplayControls.tsx#L152-L162)).
-  - Implemented zero-latency pointer-capture scrubbing ([`computeStepFromPointer` / `handleTrackPointerDown` / `handleTrackPointerMove` (`ReplayControls.tsx#L91-L134`)](https://github.com/capyboop/paint/blob/8b120f89b61a2d03778b4165e00610c723a67fe7/web/src/components/ReplayControls.tsx#L91-L134) with `setPointerCapture`), a `transition-none` progress fill bar ([`ReplayControls.tsx#L172-L176`](https://github.com/capyboop/paint/blob/8b120f89b61a2d03778b4165e00610c723a67fe7/web/src/components/ReplayControls.tsx#L172-L176)), an interactive thumb indicator ([`ReplayControls.tsx#L180-L185`](https://github.com/capyboop/paint/blob/8b120f89b61a2d03778b4165e00610c723a67fe7/web/src/components/ReplayControls.tsx#L180-L185)), and a `20x` ultra-fast playback speed option ([`REPLAY_SPEED_OPTIONS` (`ReplayControls.tsx#L18`)](https://github.com/capyboop/paint/blob/8b120f89b61a2d03778b4165e00610c723a67fe7/web/src/components/ReplayControls.tsx#L18) `= [0.5, 1, 2, 5, 10, 20]`).
-  - Eliminated intermediate `Array.prototype.slice` and per-frame `new Set` / `new Map` cloning in [`App.tsx#L2319-L2327`](https://github.com/capyboop/paint/blob/98d769017aa468460062b79bfa2ee8dd0cd6668c/web/src/App.tsx#L2319-L2327) (`displayedFilledRegionIds`) and [`PuzzleCanvas.tsx#L814-L876`](https://github.com/capyboop/paint/blob/98d769017aa468460062b79bfa2ee8dd0cd6668c/web/src/components/PuzzleCanvas.tsx#L814-L876) (`paintedCacheRef` / `prevColorsRef` in-place mutation) for instant timeline scrubbing across hundreds of regions.
-- **Predictive Lookahead Safe-Frame Camera Controller ([`stepFollow` (`PuzzleCanvas.tsx#L401-L591`)](https://github.com/capyboop/paint/blob/98d769017aa468460062b79bfa2ee8dd0cd6668c/web/src/components/PuzzleCanvas.tsx#L401-L591), [`App.tsx#L385-L436`](https://github.com/capyboop/paint/blob/98d769017aa468460062b79bfa2ee8dd0cd6668c/web/src/App.tsx#L385-L436), commit `98d7690`, PR #464 diff)**:
-  - Added an inner safe-frame dead-zone (`[18% w, 82% w]` x `[max(68px, 18% h), h - max(92px, 22% h)]`) in [`stepFollow` (`PuzzleCanvas.tsx#L461-L479`)](https://github.com/capyboop/paint/blob/98d769017aa468460062b79bfa2ee8dd0cd6668c/web/src/components/PuzzleCanvas.tsx#L461-L479) so the camera remains completely stationary while upcoming regions stay comfortably onscreen and only updates its anchor ([`followAnchorOffsetRef` (`PuzzleCanvas.tsx#L408-L410`)](https://github.com/capyboop/paint/blob/98d769017aa468460062b79bfa2ee8dd0cd6668c/web/src/components/PuzzleCanvas.tsx#L408-L410)) when current or anticipated upcoming regions approach the screen edge ([`PuzzleCanvas.tsx#L480-L551`](https://github.com/capyboop/paint/blob/98d769017aa468460062b79bfa2ee8dd0cd6668c/web/src/components/PuzzleCanvas.tsx#L480-L551)).
-  - Added predictive lookahead over the next 10 future region completions ([`replayFollowSequence` / `replayFollowStep` (`PuzzleCanvas.tsx#L60-L63`)](https://github.com/capyboop/paint/blob/98d769017aa468460062b79bfa2ee8dd0cd6668c/web/src/components/PuzzleCanvas.tsx#L60-L63) passed from [`App.tsx#L3361-L3373`](https://github.com/capyboop/paint/blob/98d769017aa468460062b79bfa2ee8dd0cd6668c/web/src/App.tsx#L3361-L3373)) to compute a horizon-weighted cluster centroid ([`PuzzleCanvas.tsx#L502-L547`](https://github.com/capyboop/paint/blob/98d769017aa468460062b79bfa2ee8dd0cd6668c/web/src/components/PuzzleCanvas.tsx#L502-L547)) and glide smoothly via a critically-damped 2D velocity spring-damper ([`SmoothDamp` / `followVelRef` (`PuzzleCanvas.tsx#L553-L584`)](https://github.com/capyboop/paint/blob/98d769017aa468460062b79bfa2ee8dd0cd6668c/web/src/components/PuzzleCanvas.tsx#L553-L584)) with smooth ease-in and ease-out.
-
-### Fixed
-- **Strict Viewport Invariance on Puzzle Completion & Replay Playback ([`App.tsx#L439-L468`](https://github.com/capyboop/paint/blob/98d769017aa468460062b79bfa2ee8dd0cd6668c/web/src/App.tsx#L439-L468), [`PuzzleCanvas.tsx#L401-L450`](https://github.com/capyboop/paint/blob/98d769017aa468460062b79bfa2ee8dd0cd6668c/web/src/components/PuzzleCanvas.tsx#L401-L450), [`FloatingActions.tsx#L125-L141`](https://github.com/capyboop/paint/blob/948bda28523bf8764610ee6295b3523c4d73d4bc/web/src/components/FloatingActions.tsx#L125-L141), [`test.mjs#L781-L837`](https://github.com/capyboop/paint/blob/98d769017aa468460062b79bfa2ee8dd0cd6668c/web/scripts/test.mjs#L781-L837), commit `948bda2`)**:
-  - Removed automatic fit-to-screen zoom-out (`resetViewTrigger`) when completing the final region of a puzzle ([`attemptFillRegion` (`App.tsx#L1659-L1661`)](https://github.com/capyboop/paint/blob/98d769017aa468460062b79bfa2ee8dd0cd6668c/web/src/App.tsx#L1659-L1661), [`attemptBatchFillRegions` (`App.tsx#L1786-L1869`)](https://github.com/capyboop/paint/blob/98d769017aa468460062b79bfa2ee8dd0cd6668c/web/src/App.tsx#L1786-L1869)) or when pressing the **Watch Puzzle Replay** button (`data-testid="replay-btn"` in [`FloatingActions.tsx#L125-L141`](https://github.com/capyboop/paint/blob/948bda28523bf8764610ee6295b3523c4d73d4bc/web/src/components/FloatingActions.tsx#L125-L141), invoking [`startReplay` (`App.tsx#L439-L455`)](https://github.com/capyboop/paint/blob/98d769017aa468460062b79bfa2ee8dd0cd6668c/web/src/App.tsx#L439-L455)) so replays always play directly from the player's current zoom and pan position.
-  - Updated [`handleLoadSnapshot` (`App.tsx#L2165-L2189`)](https://github.com/capyboop/paint/blob/98d769017aa468460062b79bfa2ee8dd0cd6668c/web/src/App.tsx#L2165-L2189) and [`finishAutoResume` (`App.tsx#L459-L468`)](https://github.com/capyboop/paint/blob/98d769017aa468460062b79bfa2ee8dd0cd6668c/web/src/App.tsx#L459-L468) so triggering a replay on the currently active puzzle from Saves or finishing an auto-replay never resets or teleports the viewport.
-  - Removed automatic zoom scale mutation (`followAutoZoomingRef`) from [`stepFollow` (`PuzzleCanvas.tsx#L401-L450`)](https://github.com/capyboop/paint/blob/98d769017aa468460062b79bfa2ee8dd0cd6668c/web/src/components/PuzzleCanvas.tsx#L401-L450) so `replayFollow` never alters the player's zoom level and only pans when the player is already zoomed in (`scale > 1.05`).
-
----
+- Add YouTube-style playback scrubber and preserve viewport on replay (PR #464)
 
 ## [2.5.0] - 2026-11-10 (PR #463, Android `versionCode`: `20500`)
 
-### Added
-- **Save-Load Zoom Extent Restoration Before Replay ([`web/src/App.tsx`](./web/src/App.tsx), [`web/src/components/PuzzleCanvas.tsx`](./web/src/components/PuzzleCanvas.tsx), PR #463)**:
-  - Restores the saved puzzle's previous `zoomScale`, `panOffsetX`, and `panOffsetY` on the canvas (`restoreViewTrigger` + immediate `clampCanvasOffset` clamping in [`PuzzleCanvas.tsx`](./web/src/components/PuzzleCanvas.tsx)) before initiating chronological replay on app launch or save switching.
-- **Automatic Offscreen Replay Step Fast-Forward ([`web/src/App.tsx`](./web/src/App.tsx), PR #463)**:
-  - Added a zero-allocation O(1) bounding-box frustum check (`isRegionVisibleInViewport` in [`App.tsx`](./web/src/App.tsx)) inside the 60 FPS replay `requestAnimationFrame` loop that immediately skips consecutive offscreen regions when `replayFollow` is disabled.
-- **Follow Painting Camera Tracking (`replayFollow`, [`web/src/components/PuzzleCanvas.tsx`](./web/src/components/PuzzleCanvas.tsx), [`web/src/components/ReplayControls.tsx`](./web/src/components/ReplayControls.tsx), [`web/src/components/SettingsModal.tsx`](./web/src/components/SettingsModal.tsx), PR #463)**:
-  - Added `replayFollow: boolean` (default `false`) to `UserSettings` (`capy_user_settings_v8` in [`web/src/types/index.ts`](./web/src/types/index.ts) and [`web/src/services/StorageService.ts`](./web/src/services/StorageService.ts)) with toggle buttons in both the minimised and expanded [`ReplayControls.tsx`](./web/src/components/ReplayControls.tsx) HUD (`data-testid="replay-follow-btn"`) and [`SettingsModal.tsx`](./web/src/components/SettingsModal.tsx) (`data-testid="toggle-replay-follow-btn"`).
-  - Smoothly auto-zooms to `~2.5x` when enabled from fit-to-screen zoom (`< 1.8x`), pans the camera (`stepFollow` at 60 FPS with pre-allocated scratch vectors in [`PuzzleCanvas.tsx`](./web/src/components/PuzzleCanvas.tsx)) toward the next region being painted (`replaySequence[replayStep]`), bypasses offscreen step skipping, waits for the viewport to catch up (`isViewportCaughtUpToRegion` in [`App.tsx`](./web/src/App.tsx)) so every region is onscreen before painting, automatically disengages (`onManualPanStart`) if the player manually pans the canvas during replay, and restores the save's pre-replay viewport (`preReplayViewportRef`) when a save-load auto-replay finishes.
-- **Auto-Loop Replay (`replayLoop`, [`web/src/App.tsx`](./web/src/App.tsx), [`web/src/components/ReplayControls.tsx`](./web/src/components/ReplayControls.tsx), [`web/src/components/SettingsModal.tsx`](./web/src/components/SettingsModal.tsx), PR #463)**:
-  - Added `replayLoop: boolean` (default `false`) to `UserSettings` (`capy_user_settings_v8` in [`web/src/types/index.ts`](./web/src/types/index.ts) and [`web/src/services/StorageService.ts`](./web/src/services/StorageService.ts)) with toggle buttons in [`ReplayControls.tsx`](./web/src/components/ReplayControls.tsx) (`data-testid="replay-loop-btn"`) and [`SettingsModal.tsx`](./web/src/components/SettingsModal.tsx) (`data-testid="toggle-replay-loop-btn"`).
-  - Automatically holds at `100%` for 350ms (`loopPauseUntil`) and restarts replay from step `0` when enabled.
-- **Live Panning & Zooming During Replay Playback ([`web/src/App.tsx`](./web/src/App.tsx), PR #463)**:
-  - Enabled live viewport pan and zoom persistence during active replay playback and added `flushPendingViewportSave` on replay exit, save switching, and `beforeunload`/`pagehide`.
-- **Unified Versioning Scheme & Runtime Version Badge ([`web/src/version.ts`](./web/src/version.ts), [`app/build.gradle.kts`](./app/build.gradle.kts), [`CHANGELOG.md`](./CHANGELOG.md), PR #463)**:
-  - Established [`web/package.json`](./web/package.json) as the single source of truth for Semantic Versioning (`2.5.0`), wired [`app/build.gradle.kts`](./app/build.gradle.kts) to compute `versionCode = (MAJOR * 10000) + (MINOR * 100) + PATCH` (`20500`), and added `data-testid="app-version-badge"` in [`SettingsModal.tsx`](./web/src/components/SettingsModal.tsx).
-
-### Changed
-- **Default-Minimised Replay Controls HUD ([`web/src/components/ReplayControls.tsx`](./web/src/components/ReplayControls.tsx), PR #463)**:
-  - [`ReplayControls.tsx`](./web/src/components/ReplayControls.tsx) now opens minimised by default (`data-minimized="true"`) as a compact floating pill and expands to the full timeline scrubber card via `data-testid="replay-toggle-minimize-btn"`.
-- **Unified Single-Script Test Suite ([`web/scripts/test.mjs`](./web/scripts/test.mjs), [`web/package.json`](./web/package.json), PR #463)**:
-  - Consolidated all 7 standalone test scripts into a single unified test runner (`npm test` $\rightarrow$ [`web/scripts/test.mjs`](./web/scripts/test.mjs)) verifying engine/codec unit checks, version/changelog invariants, and 6 comprehensive Playwright E2E browser stages.
-- **Prioritized AAA Roadmap & Effort Ledger ([`TODO.md`](./TODO.md), PR #463)**:
-  - Reorganized [`TODO.md`](./TODO.md) into `Bugfixes -- Audit Findings` and `P0`–`P5` tiers with token budgets, contributor/human time estimates, and standardized `priority`, `type`, `domain`, `complexity`, and `difficulty` labels.
-
-### Fixed
-- **Inactive Save Card Replay Trigger ([`web/src/App.tsx`](./web/src/App.tsx), PR #463)**:
-  - Fixed `handleLoadSnapshot` in [`App.tsx`](./web/src/App.tsx) so clicking Replay (`forceReplay = true`) on an inactive save card starts the replay after loading even when `settings.autoReplayOnLoad` is `false`.
-- **Free Colour Override Persistence ([`web/src/App.tsx`](./web/src/App.tsx), PR #463)**:
-  - Preserved `paintedRegionColors` when calling `StorageService.saveActiveState` ([`StorageService.ts`](./web/src/services/StorageService.ts)) in `attemptFillRegion`, `attemptBatchFillRegions`, and worker regeneration fallbacks.
-- **Hardware Back & Escape Modal Stack Registration ([`web/src/App.tsx`](./web/src/App.tsx), PR #463)**:
-  - Registered `isReplaying` ([`ReplayControls.tsx`](./web/src/components/ReplayControls.tsx)) and `showPaletteOptions` ([`ColorPickerPopover.tsx`](./web/src/components/ColorPickerPopover.tsx)) with `NativeBridge.pushBackHandler` ([`NativeBridge.ts`](./web/src/services/NativeBridge.ts)).
-
----
+- Consolidate test suite, enhance save-load replay, and add AAA TODO roadmap (PR #463)
 
 ## [2.4.0] - 2026-11-10 (PR #461, Android `versionCode`: `20400`)
 
-### Added
-- **Modular Cloud Provider Driver Architecture ([`web/src/services/providers/CloudProviderDrivers.ts`](./web/src/services/providers/CloudProviderDrivers.ts), PR #461)**:
-  - Implemented pluggable `CloudProviderDriver` backends (`LocalVaultCloudDriver`, `GoogleDriveCloudDriver`, `SteamCloudDriver`, `AppleCloudDriver`, `MicrosoftCloudDriver`) managed by `MultiProviderCloudSaveAdapter` in [`CloudProviderDrivers.ts`](./web/src/services/providers/CloudProviderDrivers.ts).
-- **Google OAuth 2.0 GIS & Drive `appDataFolder` Cross-Device Sync ([`web/src/services/providers/CloudProviderDrivers.ts`](./web/src/services/providers/CloudProviderDrivers.ts), PR #461)**:
-  - Added browser-native Google Identity Services OAuth 2.0 token acquisition (`drive.appdata` + `userinfo.profile`) and hidden Google Drive `appDataFolder` synchronization for CRDT `CloudSaveEnvelope` slots and `.capy` v2 custom puzzle archives.
+- Add modular cloud provider drivers and Google Drive cross-device sync (PR #461)
 
----
+## [2.3.0] - 2026-11-10 (PR #462, Android `versionCode`: `20300`)
 
-## [2.3.0] - 2026-11-09 (PR #462, Android `versionCode`: `20300`)
+- Fix runtime sample resolution, canvas undo repaint, bundle splitting, and prioritize TODO.md (PR #462)
 
-### Fixed
-- **Runtime Share Link & Co-op Pre-Baked Sample Resolution ([`web/src/App.tsx`](./web/src/App.tsx), PR #462)**:
-  - Added `loadSampleFromPrebakedOrGenerate` in [`App.tsx`](./web/src/App.tsx) so incoming `#s=<token>` share links, Co-op `WELCOME_STATE` puzzle switches, and Create tab sample loads resolve directly against pre-baked `IndexedDB` records ([`StorageService.ts`](./web/src/services/StorageService.ts)) with 100% matching region IDs and zero duplicate snapshots.
-- **Canvas Undo/Unfill Incremental Dirty-Rect Repaint ([`web/src/components/PuzzleCanvas.tsx`](./web/src/components/PuzzleCanvas.tsx), PR #462)**:
-  - Fixed incremental base canvas updates in [`PuzzleCanvas.tsx`](./web/src/components/PuzzleCanvas.tsx) so unfilling regions via single-step Undo, Replay scrubbing, or `Resume Here` repaints dirty bounding boxes without requiring a full canvas rebuild.
-- **Lazy Modal Code-Splitting & Passive Viewport Updates ([`web/vite.config.ts`](./web/vite.config.ts), [`web/src/services/StorageService.ts`](./web/src/services/StorageService.ts), PR #462)**:
-  - Code-split [`SettingsModal.tsx`](./web/src/components/SettingsModal.tsx), [`ColorPickerPopover.tsx`](./web/src/components/ColorPickerPopover.tsx), and vendor chunks under 225 KB and added `StorageService.updateSnapshotViewport` in [`StorageService.ts`](./web/src/services/StorageService.ts) so passive pan/zoom updates do not reorder `LAST_ACTIVE` save sorting.
+## [2.2.0] - 2026-11-10 (PR #460, Android `versionCode`: `20200`)
 
----
+- Add shareable progress links, simultaneous Co-op, CRDT Cloud Sync, and Play Store compliance (PR #460)
 
-## [2.2.0] - 2026-11-09 (PR #460, Android `versionCode`: `20200`)
+## [2.1.0] - 2026-11-10 (PR #459, Android `versionCode`: `20100`)
 
-### Added
-- **Shareable `< 2 KB` Progress Links & Simultaneous Co-op Rooms ([`web/src/services/ShareLinkService.ts`](./web/src/services/ShareLinkService.ts), [`web/src/services/providers/ProviderRegistry.ts`](./web/src/services/providers/ProviderRegistry.ts), PR #460)**:
-  - Added `#s=<token>` URL progress sharing ([`ShareLinkService.ts`](./web/src/services/ShareLinkService.ts)), 6-character simultaneous Co-op rooms (`HybridCoopRoomAdapter` in [`ProviderRegistry.ts`](./web/src/services/providers/ProviderRegistry.ts) with `BroadcastChannel` + WebSocket transport), and zero-allocation collaborator paint ripples ([`CoopRippleBuffer.ts`](./web/src/engine/CoopRippleBuffer.ts)).
-- **Google Play Games Services v2 Sign-In & Storefront Compliance ([`app/src/main/java/com/capypaint/capy/MainActivity.kt`](./app/src/main/java/com/capypaint/capy/MainActivity.kt), [`web/public/privacy-policy.html`](./web/public/privacy-policy.html), PR #460)**:
-  - Integrated Play Games Services v2 silent sign-in (`PlayGamesSignInClient` in [`MainActivity.kt`](./app/src/main/java/com/capypaint/capy/MainActivity.kt)), release keystore signing configuration ([`app/build.gradle.kts`](./app/build.gradle.kts)), ProGuard rules ([`app/proguard-rules.pro`](./app/proguard-rules.pro)), and family-friendly moderated Community Puzzle Ideas.
+- Preload sample save archive for instant first-launch gameplay (PR #459)
 
----
+## [2.0.0] - 2026-11-10 (PR #458, Android `versionCode`: `20000`)
 
-## [2.1.0] - 2026-11-08 (PR #459, Android `versionCode`: `20100`)
+- Add Compact Binary Storage v2 (.capy v2) and fix engine edge cases (PR #458)
 
-### Added
-- **Instant First-Launch Sample Bootstrap ([`web/public/assets/sample_saves.capy`](./web/public/assets/sample_saves.capy), [`web/scripts/generate-sample-saves.mjs`](./web/scripts/generate-sample-saves.mjs), PR #459)**:
-  - Pre-baked all 4 built-in `SAMPLE_GALLERY` artworks (`Capybara`, `Mushroom Forest`, `Capy Forest`, `Snail Guitar` in [`web/src/types/index.ts`](./web/src/types/index.ts)) into a 225 KB `.capy` v2 Gzip binary archive ([`web/public/assets/sample_saves.capy`](./web/public/assets/sample_saves.capy)) with deterministic K-Means++ initialization (`0xca91ba7a` in [`ColorQuantizer.ts`](./web/src/engine/ColorQuantizer.ts)) so first-time players enter gameplay immediately without waiting for Web Worker segmentation.
+## [1.4.0] - 2026-11-09 (PR #457, PR #456, PR #455, PR #454, Android `versionCode`: `10400`)
 
----
+- Add min/max label size options, guarantee region fit, and redo circle-free hint color (PR #457)
+- Set Fast Mode puzzle generation progress as default (PR #456)
+- Show real generation metrics and live palette swatches during segmentation (PR #455)
+- Add loading progress detail toggle and fast mode (PR #454)
 
-## [2.0.0] - 2026-11-08 (PR #458, Android `versionCode`: `20000`)
+## [1.3.0] - 2026-11-09 (PR #449--PR #453, Android `versionCode`: `10300`)
 
-### Added
-- **Compact Binary Storage Format v2 (`.capy` v2, [`web/src/services/CapyCodec.ts`](./web/src/services/CapyCodec.ts), PR #458)**:
-  - Introduced `CAPY\x02` Gzip-compressed binary framing, `uint16` Run-Length Encoding (`regionMapRleB64`), LEB128 varint delta encoding, and CRDT `ProgressDeltaV2` tokens in [`CapyCodec.ts`](./web/src/services/CapyCodec.ts), reducing save storage footprint by ~140x (`~54 KB` per puzzle in `IndexedDB` via [`StorageService.ts`](./web/src/services/StorageService.ts) and `~22 KB` per `.capy` export).
+- Update project docs: Refine contributor and contributor operational rules (PR #453)
+- Add PWA offline support and manifest (PR #452)
+- Add working thoughts display and Web engine conventions to project docs (PR #451)
+- Add ci and deps GitHub pull request labels to project docs (PR #450)
+- Add thumbnails grid view, save pinning, and toolbar to Saves gallery (PR #449)
 
----
+## [1.2.0] - 2026-11-09 (PR #448, PR #447, PR #446, Android `versionCode`: `10200`)
 
-## [1.4.0] - 2026-11-07 (PR #457, PR #456, PR #455, PR #454, Android `versionCode`: `10400`)
+- Fix Undo/Redo state synchronization and add post-replay auto-resume (PR #448)
+- Add undo timeline scrubber and multi-step redo (PR #447)
+- Add animated puzzle replay and region undo (PR #446)
 
-### Added
-- **Inscribed-Circle Label Fitting & Circle-Free `NUMBER_ONLY` Hints ([`web/src/components/PuzzleCanvas.tsx`](./web/src/components/PuzzleCanvas.tsx), PR #457)**:
-  - Added configurable `minLabelSize` (2–14px), `maxLabelSize` (10–36px), and `labelScale` settings in [`SettingsModal.tsx`](./web/src/components/SettingsModal.tsx), mathematical inscribed-circle bounds guarantees for 1–3 digit labels, and circle-free `NUMBER_ONLY` label text color highlighting in [`PuzzleCanvas.tsx`](./web/src/components/PuzzleCanvas.tsx).
-- **Simple (Fast Mode) vs. Detailed Generation Progress & Authentic Palette Metrics ([`web/src/components/LoadingOverlay.tsx`](./web/src/components/LoadingOverlay.tsx), PR #454, PR #455, PR #456)**:
-  - Added low-overhead Simple Progress (Fast Mode default) alongside Detailed 6-stage pipeline inspection with live K-Means clustered palette swatches in [`LoadingOverlay.tsx`](./web/src/components/LoadingOverlay.tsx).
+## [1.1.0] - 2026-11-09 (PR #445, PR #444, PR #443, PR #442, Android `versionCode`: `10100`)
 
----
+- Add screenshot showcase gallery and capture script (PR #445)
+- Improve zoom pan gestures and color pickers (PR #444)
+- Add PR merge approval rule and preview lifecycle docs (PR #443)
+- Calibrate pan zoom gestures and sync preview assets (PR #442)
 
-## [1.3.0] - 2026-11-06 (PR #452, PR #449, Android `versionCode`: `10300`)
+## [1.0.0] - 2026-11-08 (PR #431--PR #441, Android `versionCode`: `10000`)
 
-### Added
-- **Installable Offline-First Progressive Web App ([`web/public/sw.js`](./web/public/sw.js), [`web/public/manifest.webmanifest`](./web/public/manifest.webmanifest), [`web/src/services/PwaService.ts`](./web/src/services/PwaService.ts), PR #452)**:
-  - Added `capy-cache-v2` offline Service Worker ([`web/public/sw.js`](./web/public/sw.js)) with automatic Vite bundle discovery, standalone PWA manifest ([`web/public/manifest.webmanifest`](./web/public/manifest.webmanifest)), and in-app install prompt integration ([`PwaService.ts`](./web/src/services/PwaService.ts)).
-- **Saves Gallery Modernization ([`web/src/components/SettingsModal.tsx`](./web/src/components/SettingsModal.tsx), PR #449)**:
-  - Added Detail vs. Thumbnails grid view switcher (`capy_saves_view_mode`), save pinning (`isPinned`), and sticky library action toolbar in [`SettingsModal.tsx`](./web/src/components/SettingsModal.tsx).
+- Add web architecture documentation (PR #441)
+- Optimize CI builds and Pages deployment pipeline (PR #440)
+- Add Free Colour mode, custom palette swatches, and Mushroom Forest sample (PR #439)
+- Parallelize Web and Android CI workflows and streamline target execution (PR #438)
+- Update Web dependencies, enable parallel Gradle sync, and add maintenance guides (PR #437)
+- Add Android WebView debugging, bundle validation, and developer tooling (PR #436)
+- Realign root architecture documentation and prune completed roadmap items (PR #435)
+- Add automated closed pull request preview pruning for GitHub Pages (PR #434)
+- Fix active color sync and auto-pan jumps and add victory celebration export (PR #433)
+- Unify Web and Android single-codebase architecture with WebViewAssetLoader (PR #432)
+- Consolidate Web, Legacy Web1, and Android apps into unified monorepo (PR #431)
 
----
+## [0.9.3] - 2026-09-24 (PR #419--PR #430)
 
-## [1.2.0] - 2026-11-05 (PR #448, PR #447, PR #446, Android `versionCode`: `10200`)
+- Fix runtime bootstrap scope, default artwork loading, and UI load tests (PR #430)
+- Rename menu and relocate advanced settings toggle (PR #429)
+- Fix save manager SVG export handler (PR #428)
+- Reorder settings tabs around Saves and Create (PR #427)
+- Add SVG snapshot export to save manager (PR #425)
+- Fix autosave refresh and smoke coverage (PR #424)
+- Rework settings header layout (PR #423)
+- Simplify controls layout in settings menu (PR #421)
+- Move hint intensity controls to basics tab (PR #420)
+- Drop raster save artifacts and rebuild maps from vector scenes (PR #419)
 
-### Added
-- **Animated Chronological Replay, Long-Press Undo Scrubber & Multi-Step Redo ([`web/src/components/ReplayControls.tsx`](./web/src/components/ReplayControls.tsx), [`web/src/components/FloatingActions.tsx`](./web/src/components/FloatingActions.tsx), PR #446, PR #447, PR #448)**:
-  - Added 60 FPS chronological puzzle completion replays ([`ReplayControls.tsx`](./web/src/components/ReplayControls.tsx)), single-step Undo/Redo (`Ctrl+Z` / `Ctrl+Y` via [`FloatingActions.tsx`](./web/src/components/FloatingActions.tsx)), long-press Undo (`>= 450ms`) timeline scrubbing with "Resume Here", and automatic post-replay gameplay resumption on save load.
+## [0.9.2] - 2025-12-05 (PR #409--PR #418)
 
----
+- Wrap mobile settings tabs and update settings-menu.json schema (PR #418)
+- Reduce settings sheet minimum dimensions and safe-area gaps on mobile (PR #417)
+- Add configurable region cleanup controls (PR #416)
+- Lower generator defaults for simpler puzzles (PR #415)
+- Enforce upload resizing to stay within source image limit (PR #414)
+- Clarify branch baseline guidance (PR #413)
+- Render labels with SVG (PR #412)
+- Remove binary artifact and document policy (PR #411)
+- Polish vector sample rendering and docs (PR #410)
+- Add vector scene loader and refresh sample puzzle (PR #409)
 
-## [1.1.0] - 2026-11-04 (PR #445, PR #444, PR #442, Android `versionCode`: `10100`)
+## [0.9.1] - 2025-12-04 (PR #399--PR #408)
 
-### Added
-- **Google Maps-Style One-Finger Double-Tap Zoom, Inertial Pan Momentum & Custom Pipette Pickers ([`web/src/components/PuzzleCanvas.tsx`](./web/src/components/PuzzleCanvas.tsx), PR #442, PR #444, PR #445)**:
-  - Added one-finger double-tap-and-drag focal zoom, friction-decayed pan momentum gliding, dynamic corner pan margins in [`PuzzleCanvas.tsx`](./web/src/components/PuzzleCanvas.tsx), custom `<Pipette>` hex color pickers for canvas background and hints in [`SettingsModal.tsx`](./web/src/components/SettingsModal.tsx), and automated Playwright gallery screenshot capture (`npm run gallery:capture` via [`web/scripts/capture-gallery.mjs`](./web/scripts/capture-gallery.mjs)).
+- Handle save quota failures by trimming previews (PR #408)
+- Fix deploy workflow concurrency scope and env URL (PR #407)
+- Prefer human-readable region maps (PR #406)
+- Enhance smoke test logging report (PR #405)
+- Add render preview support to svg renderer (PR #404)
+- Handle renderer resize safely (PR #403)
+- Auto-generate settings sheet from JSON definition (PR #402)
+- Prune unused runtime modules (PR #401)
+- Consolidate runtime into capy.js (PR #400)
+- Summarize processed branches in cleanup workflow (PR #399)
 
----
+## [0.9.0] - 2025-11-28 (PR #389--PR #398)
 
-## [1.0.0] - 2026-11-01 (PR #441, Android `versionCode`: `10000`)
+- Expose runtime APIs as module exports (PR #398)
+- Rewrite Pages deployment workflow (PR #397)
+- Temporarily disable service worker and offline cache (PR #396)
+- Simplify runtime to SVG renderer (PR #395)
+- Expose runtime API via global object (PR #394)
+- Preserve gh-pages preview directories during main deploy (PR #393)
+- Export renderer controller inline (PR #392)
+- Harden renderer controller fallback (PR #391)
+- Avoid duplicate createRendererController export (PR #390)
+- Refresh start hint onboarding UI (PR #389)
 
-### Added
-- **Initial Capy Monorepo Release ([`web/`](./web) & [`app/`](./app), PR #441)**:
-  - Launched the React 19 + TypeScript + Vite 6 Web Application ([`web/`](./web)) with 3-tier offscreen canvas caching ([`PuzzleCanvas.tsx`](./web/src/components/PuzzleCanvas.tsx)), 5-strategy Web Worker segmentation pipeline ([`puzzle.worker.ts`](./web/src/engine/puzzle.worker.ts)), Free Colour mode ([`ColorPickerPopover.tsx`](./web/src/components/ColorPickerPopover.tsx)), and the unified Kotlin Android `WebViewAssetLoader` wrapper ([`app/`](./app), [`MainActivity.kt`](./app/src/main/java/com/capypaint/capy/MainActivity.kt), [`CapyAndroidBridge.kt`](./app/src/main/java/com/capypaint/capy/CapyAndroidBridge.kt)).
+## [0.8.3] - 2025-11-28 (PR #379--PR #388)
 
-[2.5.1]: https://github.com/capyboop/paint/pull/464
-[2.5.0]: https://github.com/capyboop/paint/pull/463
-[2.4.0]: https://github.com/capyboop/paint/pull/461
-[2.3.0]: https://github.com/capyboop/paint/pull/462
-[2.2.0]: https://github.com/capyboop/paint/pull/460
-[2.1.0]: https://github.com/capyboop/paint/pull/459
-[2.0.0]: https://github.com/capyboop/paint/pull/458
-[1.4.0]: https://github.com/capyboop/paint/pull/457
-[1.3.0]: https://github.com/capyboop/paint/pull/452
-[1.2.0]: https://github.com/capyboop/paint/pull/448
-[1.1.0]: https://github.com/capyboop/paint/pull/445
-[1.0.0]: https://github.com/capyboop/paint/pull/441
+- Restore renderer pipeline and fixtures (PR #388)
+- Improve renderer wiring and tests (PR #387)
+- Delete merged branches without cutoff (PR #386)
+- Refine Playwright skip handling (PR #385)
+- Enhance branch cleanup diagnostics (PR #384)
+- Add debug listing to deploy workflow (PR #383)
+- Refine responsive settings navigation and input control styles (PR #382)
+- Handle gh-pages root cleanup (PR #381)
+- Fix deployment artifact path for branch previews (PR #380)
+- Remove outdated menu screenshot artifact (PR #379)
+
+## [0.8.2] - 2025-11-27 (PR #369--PR #378)
+
+- Add responsive tab stacking and themed input controls to settings sheet (PR #378)
+- Register renderer mode change handler (PR #377)
+- Add iterative development feedback loop guide (PR #376)
+- Clarify renderer controller exports (PR #375)
+- Simplify branch preview comment output (PR #374)
+- Simplify runtime exports (PR #373)
+- Fix service worker cache script loading on GitHub Pages (PR #372)
+- Add console error check to UI smoke test (PR #371)
+- Ensure deploy previews checkout into PR-specific pull directories (PR #370)
+- Consolidate runtime exports (PR #369)
+
+## [0.8.1] - 2025-11-26 (PR #359--PR #368)
+
+- Fix duplicate renderer controller export (PR #368)
+- Fix Pages artifact path for main deployments (PR #367)
+- Fix runtime controller export (PR #366)
+- Remove Pico CSS (PR #365)
+- Restore custom styles and remove Pico import (PR #364)
+- Add gh-pages artifact diagnostics to deploy workflows (PR #363)
+- Add preboot metric fallbacks for blocked storage (PR #362)
+- Fix branch deployment setup and linkify preview comments (PR #361)
+- Improve deploy preview logging (PR #360)
+- Gate Pages deploys to open PRs and refresh docs (PR #359)
+
+## [0.8.0] - 2025-11-26 (PR #349--PR #358)
+
+- Add renderer follow-up tasks (PR #358)
+- Exclude project files from Pages deploy (PR #357)
+- Improve SVG renderer sizing and tests (PR #356)
+- Rename changelog file and update guidance (PR #355)
+- Use PR-numbered preview URLs and cleanup on close (PR #354)
+- Simplify branch preview URLs (PR #353)
+- Refine settings tabs and layout (PR #352)
+- Fix deploy workflow concurrency group expression (PR #351)
+- Fix branch preview deployment path (PR #350)
+- Adjust deploy target directory for main Pages deployment (PR #349)
+
+## [0.7.3] - 2025-11-24 (PR #338--PR #348)
+
+- Improve responsive settings layout (PR #348)
+- Fix duplicate createRendererController export (PR #347)
+- Remove legacy renderer module files (PR #346)
+- Simplify bootstrap to SVG renderer (PR #345)
+- Improve deployment log visibility (PR #344)
+- Remove unsupported screenshot artifact (PR #343)
+- Add session kick-off workflow reminder (PR #342)
+- Move contributor guide to root, mirror Pages HTML, and relocate planning docs (PR #340)
+- Trim and document remaining CSS (PR #339)
+- Add service worker status and debug logging (PR #338)
+
+## [0.7.2] - 2025-11-23 (PR #327--PR #337)
+
+- Move contributor guide to root and mirror Pages HTML (PR #337)
+- Remove deployment gating for branch deploys (PR #336)
+- Add gh-pages preview cleanup to branch maintenance workflow (PR #335)
+- Handle workflow dispatch triggers in post-deploy tests (PR #334)
+- Improve settings sheet mobile layout (PR #333)
+- Retarget branch cleanup to feature prefix (PR #332)
+- Fix deploy workflow eligibility for PR branches (PR #331)
+- Remove README link from help panel (PR #329)
+- Add rerun Pages deploy button to PR comments (PR #328)
+- Improve branch cleanup logging and cutoff (PR #327)
+
+## [0.7.1] - 2025-11-21 (PR #316--PR #326)
+
+- Add manual dispatch for branch deploys and rerun button (PR #326)
+- Fix settings tab layout wrappers (PR #325)
+- Refactor render.js to lean SVG renderer (PR #324)
+- Add merge conflict handling checklist (PR #323)
+- Synchronize modular renderer refactor with updated deployment workflows (PR #322)
+- Clarify git remote and rebase expectations (PR #321)
+- Handle preview screenshot failures gracefully (PR #320)
+- Fix deploy workflow environment expression (PR #318)
+- Enhance post-deploy Playwright coverage (PR #317)
+- Adjust deploy workflow environment per branch (PR #316)
+
+## [0.7.0] - 2025-11-21 (PR #305--PR #315)
+
+- Stabilize settings toggle and mute test network noise (PR #315)
+- Simplify settings bootstrap with JSON export (PR #314)
+- Update deployment documentation (PR #313)
+- Add feedback form with analytics reporting (PR #312)
+- Improve deploy reporting and always deploy (PR #311)
+- Add global error toast for runtime failures (PR #310)
+- Allow deploy workflow on all branches (PR #309)
+- Adopt templating helper for save manager UI (PR #308)
+- Simplify post-deploy preview comment (PR #307)
+- Auto prune stale Pages previews (PR #305)
+
+## [0.6.3] - 2025-11-18 (PR #290--PR #303)
+
+- Remove legacy autosave migration (PR #303)
+- Add settings sheet toggle test (PR #302)
+- Add drag deadzone for settings launcher (PR #301)
+- Move cleanup script into project scripts (PR #298)
+- Document deploy workflow env guardrails (PR #296)
+- Adopt rich save preview cards and flattened sticky settings layout (PR #295)
+- Remove job-level environment context reference from deploy sync step (PR #294)
+- Update README with offline and local dev notes (PR #292)
+- Compute deploy workflow concurrency group directly without env context (PR #291)
+- Add terminal output guidance to onboarding (PR #290)
+
+## [0.6.2] - 2025-11-16 (PR #277--PR #288)
+
+- Refactor UI wiring into components (PR #288)
+- Make branch cleanup asynchronous (PR #287)
+- Optimize GitHub Pages deployment speed (PR #286)
+- Refine developer onboarding guidance (PR #284)
+- Add organic superpixel generator (PR #283)
+- Add project roadmap and TODO tracking (PR #282)
+- Add offline caching and local file access (PR #280)
+- Add simplicity guidance to workflow instructions (PR #279)
+- Consolidate runtime bootstrap into single module (PR #278)
+- Extract runtime styles into stylesheet (PR #277)
+
+## [0.6.1] - 2025-11-16 (PR #261--PR #276)
+
+- Fix branch cleanup ref encoding (PR #276)
+- Combine renderer performance updates and testing stack (PR #275)
+- Handle WebGL label cache updates for UI scale changes (PR #274)
+- Update TECH.md for modular runtime documentation (PR #273)
+- Update Playwright setup script workflow (PR #272)
+- Organize runtime assets under dedicated directory (PR #270)
+- Add unit tests for render controller fallbacks (PR #269)
+- Add documentation for helper scripts (PR #264)
+- Run branch cleanup after deployments (PR #262)
+- Refresh TECH.md test harness and branch deployment documentation (PR #261)
+
+## [0.6.0] - 2025-11-15 (PR #250--PR #260)
+
+- Restructure repository around project workspace (PR #260)
+- Reuse counters for tiny region merging (PR #259)
+- Center active palette colour (PR #258)
+- Unify settings, generator, saves, and help into one menu (PR #257)
+- Add nearby difficulty that auto-selects adjacent colours (PR #256)
+- Refactor neighbor iteration in segmentation routines (PR #255)
+- Optimize smoothing histogram reuse (PR #254)
+- Allow dots in post-deploy slug derivation (PR #252)
+- Fix post-deploy artifact naming sanitization (PR #251)
+- Ensure Playwright browsers install with docs (PR #250)
+
+## [0.5.3] - 2025-11-15 (PR #238--PR #249)
+
+- Simplify branch overview page (PR #249)
+- Restore stable renderer pipeline with performance logging (PR #248)
+- Persist palette sort preference (PR #245)
+- Improve zoom smoothness with compositor-driven scaling (PR #244)
+- Flush autosave on page lifecycle events (PR #243)
+- Fix WebGL label rendering (PR #242)
+- Add branch slug preparation job to post-deploy tests workflow (PR #241)
+- Adjust zoom defaults and expose configurable max zoom (PR #240)
+- Preserve palette numbering when colours complete (PR #239)
+- Fix UI scale flash during boot (PR #238)
+
+## [0.5.2] - 2025-10-26 (PR #228--PR #237)
+
+- Rename palette sort label and renumber swatches (PR #237)
+- Switch CI workflow to Ubuntu runners (PR #236)
+- Limit Playwright smoke test to Chromium page load (PR #235)
+- Simplify Pages deployment workflow (PR #234)
+- Enhance palette sorting with spectrum and warmth modes (PR #233)
+- Prefer autosave when restoring sessions (PR #232)
+- Sanitize post-deploy concurrency group branch names (PR #231)
+- Improve region label placement and sizing (PR #230)
+- Improve region label placement with polylabel (PR #229)
+- Fix settings persistence when no puzzle is loaded (PR #228)
+
+## [0.5.1] - 2025-10-25 (PR #217--PR #227)
+
+- Render region numbers continuously across all zoom levels (PR #227)
+- Remove user settings from exported save files (PR #226)
+- Fix post-deploy workflow concurrency expression (PR #225)
+- Configure Playwright UI review artifacts (PR #224)
+- Streamline Playwright smoke test for quick load check (PR #223)
+- Improve remote image URL workflow (PR #222)
+- Add support for loading puzzles from external image URLs (PR #221)
+- Adjust region label layout to respect zoom ratio (PR #220)
+- Support zoom-aware region label layout (PR #219)
+- Persist user settings in browser storage (PR #217)
+
+## [0.5.0] - 2025-10-24 (PR #206--PR #216)
+
+- Fix right-click select colour when pan drag is configured (PR #216)
+- Default to medium detail with larger regions (PR #215)
+- Revamp Manage Saves autosave slot layout (PR #214)
+- Render puzzles over stored base image (PR #212)
+- Add compact puzzle export option (PR #211)
+- Add tabbed settings layout and refine UI scale defaults (PR #210)
+- Fix WebGL fill updates and refine zoom controls (PR #209)
+- Add renderer selector UI and SVG backend (PR #208)
+- Ensure branch deployments include JSON assets (PR #207)
+- Include all root JS assets in branch deploys (PR #206)
+
+## [0.4.3] - 2025-10-21 (PR #196--PR #205)
+
+- Expand interface scale limits (PR #205)
+- Include JS assets in branch deployments (PR #204)
+- Add textured passes to WebGL renderer (PR #203)
+- Ensure allow_without_pr input is evaluated correctly (PR #202)
+- Fix deploy workflow expressions for manual inputs (PR #201)
+- Fix branch deploy workflow env quoting (PR #200)
+- Ensure post-deploy tests install Playwright browsers (PR #199)
+- Restore Playwright UI smoke coverage (PR #198)
+- Add WebGL renderer implementation (PR #197)
+- Stabilize UI smoke tests with automation helpers (PR #196)
+
+## [0.4.2] - 2025-10-20 (PR #184--PR #195)
+
+- Document renderer controller and active Playwright smoke run (PR #195)
+- Add hint type toggles to settings sheet (PR #194)
+- Add Playwright tests for painting and save completion (PR #193)
+- Allow manual deploys to target any branch (PR #192)
+- Synchronize work branch with updated deployment workflows and scripts (PR #191)
+- Add post-deploy branch smoke tests workflow (PR #188)
+- Use fetch to build deployment metadata (PR #187)
+- Add multiple puzzle generation algorithms and documentation updates (PR #186)
+- Point deployment environment URL to branch preview (PR #185)
+- Allow pan and zoom gestures from viewport margins (PR #184)
+
+## [0.4.1] - 2025-10-18 (PR #173--PR #183)
+
+- Use GitHub Markdown API for README builds (PR #183)
+- Modularize puzzle renderer via controller abstraction (PR #181)
+- Rewrite README for player-focused guidance (PR #180)
+- Hide puzzle outlines for filled regions (PR #179)
+- Harden branch deployment workflow data handling (PR #178)
+- Fix deploy workflow by moving inline scripts to dedicated files (PR #177)
+- Fix deploy workflow heredoc terminators (PR #176)
+- Use actions/deploy-pages v4 (PR #175)
+- Fix deploy workflow README conversion block indentation (PR #174)
+- Fix deploy workflow manifest JSON generation (PR #173)
+
+## [0.4.0] - 2025-10-17 (PR #162--PR #172)
+
+- Prune inactive branch deployments during Pages sync (PR #172)
+- Update GitHub Actions deploy-pages workflow action from v4 to v5 (PR #171)
+- Revamp branch deployment index layout with compact timeline rows (PR #170)
+- Fix README core asset reference (PR #169)
+- Generate README HTML during branch deployments (PR #168)
+- Limit branch previews to runtime assets (PR #167)
+- Embed hosted README inside help panel (PR #166)
+- Include weekday in branch deployment timestamps (PR #164)
+- Add npm scaffolding and placeholder test runner (PR #163)
+- Add prompt image prompt helper to generator tab (PR #162)
+
+## [0.3.3] - 2025-10-17 (PR #152--PR #161)
+
+- Improve save management autosave experience (PR #161)
+- Auto-start generation and relocate saves export (PR #160)
+- Improve mobile gesture responsiveness (PR #159)
+- Add reset progress button to save manager (PR #158)
+- Simplify branch deploy index cards (PR #157)
+- Streamline branch deploy index metadata (PR #156)
+- Align main and preview commit metadata in branch deployment listings (PR #155)
+- Localize branch deployment commit timestamps to 12-hour browser time (PR #154)
+- Remove onboarding start hint and add quick start actions to Saves sheet (PR #153)
+- Improve branch deployment summary layout (PR #152)
+
+## [0.3.2] - 2025-10-16 (PR #137--PR #151)
+
+- Document branch update workflow (PR #151)
+- Fix deploy workflow heredoc indentation (PR #150)
+- Render branch deployment dashboard metadata via jq pipeline (PR #149)
+- Replace jq branch page generation with Node (PR #148)
+- Restore branch index metadata generation and open-PR deploy gating (PR #147)
+- Prevent branch deployments without open PRs (PR #144)
+- Include PR links in branch deployment dashboard (PR #142)
+- Require import confirmation and show progress inside generator sheet (PR #140)
+- Remove idle Ready to paint status line (PR #139)
+- Simplify branch deployments (PR #137)
+
+## [0.3.1] - 2025-10-15 (PR #121--PR #136)
+
+- Restrict status bar to generation progress (PR #136)
+- Enable concurrency cancellation for GitHub Pages deployments to prevent 400 errors (PR #135)
+- Fix GitHub Pages deployment workflow failure caused by rsync removing .git directory (PR #130)
+- Fix gh-pages deployment failure by auto-recovering from invalid git repository state (PR #129)
+- Prevent branch deployment cleanup job failures on missing directories (PR #128)
+- Update git remote guidance (PR #127)
+- Streamline command rail buttons (PR #126)
+- Improve tooltip contrast for light palette colors (PR #123)
+- Enhance hint highlights and add easy difficulty (PR #122)
+- Review and update branch-deployments.md documentation for accuracy (PR #121)
+
+## [0.3.0] - 2025-10-14 (PR #110--PR #119)
+
+- Add clickable commit and PR links to branch deployment history (PR #119)
+- Enhance branch deployment with commit and PR links in Recent History (PR #118)
+- Implement shared save metadata templates (PR #117)
+- Fix gh-pages cache validation to prevent "fatal: not in a git directory" errors (PR #116)
+- Enhance GitHub Pages branch deployment workflow with commit history and timezone conversion (PR #115)
+- Restore project links at the top of README.md (PR #114)
+- Unify start screen and save manager (PR #113)
+- Ensure preview render matches puzzle scale (PR #112)
+- Add configurable hint fade, intensity, and right-click color selection (PR #111)
+- Restore capy.json and add fallback puzzle metadata (PR #110)
+
+## [0.2.3] - 2025-10-13 (PR #97--PR #109)
+
+- Simplify preview mode to color canvas in place (PR #109)
+- Ensure palette swatches respond to right-click (PR #105)
+- Add region label support and palette-colored hint flashes (PR #104)
+- Add configurable region flash durations and hover hint previews (PR #103)
+- Allow right-click palette selection (PR #102)
+- Improve tap hit-testing performance by caching canvas bounds (PR #101)
+- Add toggle to control status bar visibility (PR #100)
+- Speed up wrong-color hint flashes and highlight matching regions on tap (PR #99)
+- Reconcile touch tap responsiveness handlers in index.html (PR #98)
+- Optimize deployment workflow for 40-60% faster builds (PR #97)
+
+## [0.2.2] - 2025-10-13 (PR #86--PR #96)
+
+- Trigger region fills on touch pointer events to remove tap delay (PR #96)
+- Centralize canvas fill validation for touch and click events (PR #95)
+- Render puzzle geometry at zoom scale (PR #94)
+- Add async generation progress feedback and modularize generator (PR #93)
+- Fix touch pan and pinch gesture behavior (PR #91)
+- Optimize outline rendering and allow unlimited zoom (PR #90)
+- Fix palette dock overflow on small viewports (PR #89)
+- Fix command rail layout wrapping (PR #88)
+- Handle command rail wrapping metrics (PR #87)
+- Constrain floating command rail within right safe-area inset (PR #86)
+
+## [0.2.1] - 2025-10-11 (PR #75--PR #85)
+
+- Fix command rail overflow on narrow viewports (PR #85)
+- Simplify play surface layout (PR #84)
+- Fix branch index to save to branch.html instead of index.html (PR #82)
+- Prioritize main branch deployment and list PR metadata on branch index (PR #81)
+- Hide completed colours and shrink UI scale (PR #80)
+- Optimize deploy-branch workflow execution performance (PR #79)
+- Enable double-click sampling of puzzle colours (PR #78)
+- Summarize local save storage in help and drop cloud sync (PR #77)
+- Add region number visibility toggle (PR #76)
+- Add contributor repository instructions (PR #75)
+
+## [0.2.0] - 2025-10-09 (PR #60--PR #72)
+
+- Apply edge-to-edge flat palette swatch layout to index.html (PR #72)
+- Show original artwork behind regions and streamline colour selection (PR #71)
+- Adopt edge-to-edge palette swatch styling and safe-area padding (PR #69)
+- Refine luminance-based swatch label contrast presets (PR #68)
+- Fix deploy-branch workflow to push newly initialized gh-pages branch (PR #67)
+- Fix git authentication in deploy-branch.yml workflow (PR #66)
+- Configure git credentials in deploy-branch workflow (PR #65)
+- Update deploy-branch workflow to use index.html instead of branchindex.html (PR #63)
+- Flatten palette dock into edge-to-edge swatches with adaptive contrast (PR #62)
+- Streamline palette dock to swatches only (PR #60)
+
+## [0.1.3] - 2025-10-08 (PR #49--PR #59)
+
+- Fix authentication for deploy-branch job using GITHUB_TOKEN (PR #59)
+- Collapse command rail into responsive icon buttons and harden zoom guard (PR #58)
+- Document resolved zoom guard handler structure in merge conflict report (PR #56)
+- Simplify Playwright smoke tests for faster runs (PR #55)
+- Fix deploy-branch workflow to handle missing gh-pages branch (PR #54)
+- Enhance palette focus and responsive command rail (PR #53)
+- Add horizontal wheel scrolling and status copy to palette dock (PR #52)
+- Strip stray UTF-8 BOM from package.json and add ripgrep ignore rules (PR #51)
+- Improve viewport sizing and zoom handling (PR #50)
+- Refresh contributor onboarding guidance (PR #49)
+
+## [0.1.2] - 2025-10-07 (PR #30--PR #48)
+
+- Add custom cursor tooltip for puzzle regions (PR #48)
+- Add automatic GitHub Pages deployment for all branches (PR #44)
+- Trim unused assets and refresh documentation (PR #42)
+- Improve region label readability and palette hints (PR #41)
+- Add sample detail presets, UI scale controls, and mobile zoom guard (PR #39)
+- Reconcile autosave and cloud-sync gameplay session documentation (PR #38)
+- Improve DOM rendering for save list entries (PR #37)
+- Document upstream git remote (PR #34)
+- Derive export titles from source metadata (PR #33)
+- Add sample detail presets and region legend (PR #30)
+
+## [0.1.1] - 2025-10-06 (PR #16--PR #29)
+
+- Add autosave restore flow and cloud backup sync (PR #29)
+- Guard pan move updates without a loaded puzzle (PR #28)
+- Allow touch pans without blocking taps (PR #27)
+- Enhance capybara sample illustration (PR #26)
+- Add generator test hooks and end-to-end Playwright review suite (PR #23)
+- Rebuild fullscreen drop interface for puzzle generator (PR #20)
+- Flash palette hint when tapping wrong colors (PR #19)
+- Add terraced market starter art (PR #18)
+- Remove redundant header buttons and stabilize drag panning (PR #17)
+- Document starter scene regression checks in PR review notes (PR #16)
+
+## [0.1.0] - 2025-10-04 (PR #1--PR #15)
+
+- Update smoke test alias to target UI review harness (PR #15)
+- Restore Babel runtime and unblock starter art loading (PR #14)
+- Preserve stored starter titles when merging updates (PR #11)
+- Bundle Lagoon starter scenes and add local art library (PR #10)
+- Streamline canvas toolbar interactions (PR #9)
+- Refine lagoon segmentation and unblock progress (PR #8)
+- Enable SVG artwork imports and refresh help content (PR #6)
+- Refine capybara art layout (PR #5)
+- Surface README overview through an in-app options panel (PR #3)
+- Build simple color-by-number web app (PR #1)
