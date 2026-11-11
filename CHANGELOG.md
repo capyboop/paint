@@ -1,5 +1,6 @@
 ### 2.5 - 2026-11-11
 
+- Add zoom sensitivity, magnetic zoom stops, and procedural Web Audio tap effects #472
 - Fix cache-eviction E2E test, replay speed grid, and atomic Android backups #471
 - Standardize TODO.md under Lean Agile epics, stories, and collapsible task specs #470
 - Add DEV.md, streamline project docs, and overhaul repository documentation and privacy policy #467
