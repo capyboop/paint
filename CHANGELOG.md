@@ -1,5 +1,6 @@
 ### 2.5 - 2026-11-11
 
+- Add sub-tile parent breadcrumbs, printable SVG sheets, and Co-op undo sync #475
 - Split strategic ROADMAP.md from Sprint 1 TODO.md and add CIsprint playbooks #473
 - Add daily featured puzzle, reduced motion, keyboard shortcuts, and lifetime stats #474
 - Add zoom sensitivity, magnetic zoom stops, and procedural Web Audio tap effects #472
