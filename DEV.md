@@ -1,6 +1,6 @@
-# Development & Maintenance Guide -- Capy Monorepo (`web/`, `app/`)
+# Development & Maintenance Guide -- Capy Monorepo (`web/`, `app/`, `worker/`)
 
-This guide defines the end-to-end human and AI co-development workflow, shared architectural guardrails, model selection strategy, session hygiene, CI/CD architecture, and ongoing maintenance playbooks for **Capy** ([`https://github.com/capyboop/paint`](https://github.com/capyboop/paint), live at [`https://capyboop.github.io/capy/`](https://capyboop.github.io/capy/)).
+This guide defines the end-to-end human and AI co-development workflow, shared architectural guardrails, model selection strategy, session hygiene, CI/CD architecture, and ongoing maintenance playbooks for **Capy** ([`https://github.com/capyboop/paint`](https://github.com/capyboop/paint), live at [`https://capypaint.com/`](https://capypaint.com/) and PR previews at [`https://capyboop.github.io/capy/`](https://capyboop.github.io/capy/)).
 
 **Related Guides**: [`README.md`](./README.md) | [`ROADMAP.md`](./ROADMAP.md) | [`TODO.md`](./TODO.md) | [`WEB.md`](./WEB.md) | [`PUZZLE.md`](./PUZZLE.md) | [`APP.md`](./APP.md) | [`CLOUD.md`](./CLOUD.md) | [`TESTING.md`](./TESTING.md) | [`CHANGELOG.md`](./CHANGELOG.md)
 
@@ -69,10 +69,10 @@ flowchart TD
 - **[`WEB.md`](./WEB.md)** (*Humans & contributors*): React 19 UI hierarchy, `PuzzleCanvas.tsx` 3-tier offscreen caching, 6-mode touch gesture engine, Worker IPC, `NativeBridge`, storage keys, and `UserSettings` dictionary.
 - **[`PUZZLE.md`](./PUZZLE.md)** (*Humans & contributors*): `puzzle.worker.ts` 5-strategy computer-vision pipeline, Red-Mean K-Means++ clustering, adaptive Otsu/Sobel contours, watershed absorption, and 6-stage telemetry.
 - **[`APP.md`](./APP.md)** (*Humans & contributors*): Unified Android `:app` launcher (`MainActivity.kt`, `CapyAndroidBridge.kt`), `WebViewAssetLoader`, Pixel API 33+ LRA touch haptics, `SnapshotsClient` sync, and disk backups.
-- **[`CLOUD.md`](./CLOUD.md)** (*Humans & contributors*): Modular `CloudProviderDriver` backends, Google OAuth 2.0 `appDataFolder` & Play Games Services v2 sign-in, CRDT `mergeProgressDeltas`, `#s=<token>` share links, and Co-op rooms.
+- **[`CLOUD.md`](./CLOUD.md)** (*Humans & contributors*): Modular `CloudProviderDriver` backends, Google OAuth 2.0 `appDataFolder` & Play Games Services v2 sign-in, CRDT `mergeProgressDeltas`, `#s=<token>` share links, Co-op rooms, and Cloudflare Workers edge hosting (`capypaint.com`).
 - **[`TESTING.md`](./TESTING.md)** (*Humans & contributors*): Unified `web/scripts/test.mjs` runner (Vite SSR unit/codec checks + Playwright multi-touch E2E suite) and Android JUnit4 verification.
 - **[`CHANGELOG.md`](./CHANGELOG.md)** (*Humans & contributors*): Chronological `MAJOR.MINOR.PATCH` release history and `(Alpha)`/`(Beta)`/`(Production)` channel markers synchronized with `web/package.json` and Android `versionCode`.
-- **[`web/public/privacy-policy.html`](./web/public/privacy-policy.html)** (*Players & Storefronts*): Published Privacy Policy and Google Play Data Safety disclosures (`https://capyboop.github.io/capy/privacy-policy.html`).
+- **[`web/public/privacy-policy.html`](./web/public/privacy-policy.html)** (*Players & Storefronts*): Published Privacy Policy and Google Play Data Safety disclosures (`https://capypaint.com/privacy-policy.html`).
 
 ### Documentation Formatting Standards (Mobile-First & Zero-Clutter)
 
@@ -170,15 +170,15 @@ Capy separates strategic roadmap planning from sprint execution across [`ROADMAP
 
 - **Never Auto-Close an Incomplete Epic (`Tracked in #<epic>` vs. `Closes #<epic>`)**:
   - GitHub keywords `Closes #<num>`, `Fixes #<num>`, and `Resolves #<num>` automatically close the referenced issue when merged into `main`. **Never** use closing keywords on incremental `TASK-*` or Story PRs—always write `**Agile Scope**: Tracked in #<epic-issue> (EPIC-X / US-X.Y: TASK-X.Ya)` so GitHub renders the PR inside the Epic's tasklist/timeline while keeping the Epic `OPEN`.
-  - **Sprint P0 `BUG-*` Attribution**: Standalone reliability/CI/lifecycle bugs (`BUG-1`..`BUG-3` in [`TODO.md`](./TODO.md)) attach the active Sprint Milestone (`--milestone "Sprint 1: ..."`) plus `fix` and subsystem labels (`web`, `android`, `ci`, `testing`) without attaching an unrelated `epic:N` label.
+  - **Sprint P0 `BUG-*` Attribution**: Standalone reliability/CI/lifecycle bugs (`BUG-1` & `BUG-3` in [`TODO.md`](./TODO.md)) attach the active Sprint Milestone (`--milestone "Sprint 1: ..."`) plus `fix` and subsystem labels (`web`, `android`, `ci`, `testing`) without attaching an unrelated `epic:N` label.
 - **Standard `gh` CLI Commands for contributor & Maintainers** *(always announce GitHub write commands before running them)*:
   ```bash
   # 1. Inspect open Epic Tracking Issues (#477--#480) and Sprint Milestones (#2--#4)
   gh issue list -R capyboop/paint --label epic --state open --json number,title,milestone,labels
   gh api repos/capyboop/paint/milestones?state=open --jq '.[] | {number, title, open_issues, closed_issues}'
 
-  # 2. Open a Sprint PR targeting beta with Epic label + Sprint Milestone
-  gh pr create -R capyboop/paint --base beta --head feature/<short-topic> \
+  # 2. Open a Draft Sprint PR targeting beta with Epic label + Sprint Milestone
+  gh pr create -R capyboop/paint --draft --base beta --head feature/<short-topic> \
     --title "<Clean Prefix-Free Action Title>" \
     --label "feature,epic:2,web" \
     --milestone "Sprint 1: P0 Reliability & EPIC-2 Touch/Audio Polish" \
@@ -208,7 +208,7 @@ Selecting the right CI / 3.8 capability tier and slash workflow maximizes code q
 
 - **Deep-Verification Frontier (`Carbon` -- ~15% of Capy PRs)**:
   - *dev environment Selection / contributor Tier*: **CI** (`CI-4-carbon`, default `medium` thinking; `high` only for hardest math/security specs) or **automation (Thinking)** (`pro` contributor tier).
-  - *Ideal Capy Use Cases*: `workflow` + `workflow` architecture interviews, zero-allocation 2D affine & circular-clip rendering math in `PuzzleCanvas.tsx` (`US-2.1`, `US-2.4`), `puzzle.worker.ts` segmentation invariants, CRDT/concurrency race audits, and `EPIC-5` OAuth/WebCrypto security specs.
+  - *Ideal Capy Use Cases*: `workflow` + `workflow` architecture interviews, zero-allocation 2D affine & circular-clip rendering math in `PuzzleCanvas.tsx` (`US-2.1`), `puzzle.worker.ts` segmentation invariants, CRDT/concurrency race audits, and `EPIC-5` OAuth/WebCrypto security specs.
   - *Token & Latency Profile*: Shares Argon's `1M` unified context window and per-token API rate, but spends `~2x--4x` more thinking tokens per turn to explore hypotheses and run extended verification loops (`0%` reward-hacking on Terminal-Bench 4.0). Reserve for high-complexity reasoning rather than routine UI edits.
 - **Efficient Frontier Daily Driver (`Argon` -- ~65--70% of Capy PRs)**:
   - *dev environment Selection / contributor Tier*: **CI** (`CI-4-argon`, `pro` / `inherit` contributor tier).
@@ -216,7 +216,7 @@ Selecting the right CI / 3.8 capability tier and slash workflow maximizes code q
   - *Token & Latency Profile*: Delivers CIfrontier coding and `1M`-context cross-repo synthesis with significantly faster responses and lower thinking-token spend per turn than Carbon.
 - **Fast Frontier Workhorse (`Flash` -- ~15--20% of Capy PRs)**:
   - *dev environment Selection / contributor Tier*: **CI** (`CI-3.8-flash`, `flash` contributor tier) or **automation / Haiku**.
-  - *Ideal Capy Use Cases*: Executing `[quick-win]` tasks in [`TODO.md`](./TODO.md), React 19 modal/settings controls (`SettingsModal.tsx`), CI workflow variable wiring (`BUG-2`), parallel `research` contributor codebase sweeps, and `.md` / `ROADMAP.md` / `CHANGELOG.md` synchronization.
+  - *Ideal Capy Use Cases*: Executing `[quick-win]` tasks in [`TODO.md`](./TODO.md), React 19 modal/settings controls (`SettingsModal.tsx`), CI workflow wiring, parallel `research` contributor codebase sweeps, and `.md` / `ROADMAP.md` / `CHANGELOG.md` synchronization.
   - *Token & Latency Profile*: Low latency and minimal quota burn once architectural ambiguity is already resolved.
 - **Ultra-Light (`Flash-Lite`)**:
   - *dev environment contributor Tier*: `flash_lite` (**CI**).
@@ -233,9 +233,9 @@ Selecting the right CI / 3.8 capability tier and slash workflow maximizes code q
 - **Ambiguous New Feature, UX Redesign, or Sprint Charter**: Use **CI** (or **Argon**) with `workflow` + `workflow` to resolve design trade-offs one question at a time and approve `implementation_plan.md` before coding.
 - **Canvas Gestures, Zero-Alloc Ring Buffers, or Security/Crypto**: Use **CI** (`medium` thinking) with `workflow` to protect coordinate invariants and zero-allocation `requestAnimationFrame` paths.
 - **Cohesive Story or P0 Bug Batch (`2--4` Sprint Tasks)**: Use **CI** with `workflow` (sequential self-healing loop) or `workflow` (parallel file-scoped workers + verifier running `npm test`) onto one `feature/sprint-*` or `feature/*` PR branch.
-- **Large Multi-Subsystem Campaign (`web/` + `app/` + `relay/`)**: Use **CI** or **Argon** with `workflow` for milestone-gated proposer + adversarial verifier execution.
+- **Large Multi-Subsystem Campaign (`web/` + `app/` + `worker/`)**: Use **CI** or **Argon** with `workflow` for milestone-gated proposer + adversarial verifier execution.
 - **Single Ready `TASK-*` or `BUG-*` from `TODO.md`**: Use **CI** (or **CI** for `[quick-win]` items) in a fresh `#NNN` chat.
-- **Documentation Sync, Sprint Replenishment, or Link Audit**: Use **CI** (or `Flash-Lite`) via the zero-minute `.md` `paths-ignore` fast-path.
+- **Documentation Sync, Sprint Replenishment, or Link Audit**: Use **CI** (or `Flash-Lite`) via `npm run test:sanity` and the `< 2s` docs-only CI fast-path.
 
 ### C. contributor Delegation Rules
 
@@ -283,7 +283,7 @@ All human and contributors modifying Web (`web/`) or Android (`app/`) code must 
    - Preserve focal-point invariance under multi-touch pinch-to-zoom and Google Maps-style one-finger double-tap-and-drag zoom.
    - **Never** move, reset, or zoom the viewport automatically on puzzle completion or replay start/end (`startReplay`, `finishAutoResume`, `handleLoadSnapshot` on the already-active save). Move the camera only on explicit user gestures/buttons, switching to a different saved puzzle, or opt-in Follow Painting.
 2. **Zero-Allocation Hot Paths**:
-   - Never instantiate objects or arrays inside `requestAnimationFrame` loops, pan momentum gliding, canvas repaints, or high-frequency touch gesture handlers. Reuse typed arrays (`Uint8Array`, `Uint32Array`), pre-allocated bounding box structs, and scratch vectors to avoid GC micro-stutter.
+   - Never instantiate objects or arrays inside `requestAnimationFrame` loops, pan momentum gliding, canvas repaints, or high-frequency touch gesture handlers. Reuse typed arrays (`Uint8Array`, `Uint32Array`), typed-array ring buffers (`CoopRippleBuffer`), pre-allocated bounding box structs, and scratch vectors to avoid GC micro-stutter, and auto-sleep `requestAnimationFrame` at `0%` CPU when active animations finish.
 3. **Direct Canvas Refs vs. React State**:
    - Mutate canvas/gesture refs directly and schedule repaints via `requestAnimationFrame` for 60--120fps dragging, gliding, and pinch zooming without triggering React virtual DOM reconciliation.
    - Reserve React state strictly for discrete UI transitions (active swatch selection, region completion counts, modal visibility, victory overlays).
@@ -293,10 +293,10 @@ All human and contributors modifying Web (`web/`) or Android (`app/`) code must 
 5. **Relative Asset Path Invariance**:
    - Never use root-relative `/assets/...` URLs in code or CSS. Always use `./assets/...` and keep `base: './'` in [`web/vite.config.ts`](./web/vite.config.ts) so assets resolve identically across GitHub Pages (`/`), PR previews (`/pull/<number>/`), and Android WebView (`https://appassets.androidplatform.net/assets/www/`).
 6. **Defensive `NativeBridge` Fallbacks ([`NativeBridge.ts`](./web/src/services/NativeBridge.ts))**:
-   - Feature-detect host capabilities on every call (`haptic`, `saveBackup`, `loadBackup`, `setBackModalOpen`, `onSharedImage`, `shareImage`) and fall back safely to Web APIs (`navigator.vibrate`, IndexedDB, Web Share API) without uncaught exceptions.
-7. **Storage Durability & IndexedDB Quota Safety ([`StorageService.ts`](./web/src/services/StorageService.ts))**:
+   - Feature-detect host capabilities on every call (`haptic`, `saveBackup`, `loadBackup`, `saveCloudBinaryChunk`, `loadCloudBinaryChunk`, `setBackModalOpen`, `onSharedImage`, `shareImage`) and fall back safely to Web APIs (`navigator.vibrate`, IndexedDB, Web Share API) without uncaught exceptions.
+7. **Storage Durability, Epoch-Scoped CRDT & IndexedDB Quota Safety ([`StorageService.ts`](./web/src/services/StorageService.ts), [`CapyCodec.ts`](./web/src/services/CapyCodec.ts))**:
    - Never store raw binary image Blobs or large base64 strings in synchronous `localStorage` (5 MB cap, blocks main thread).
-   - Store bitmaps and puzzle maps in IndexedDB (`capy_game_storage_v8`: `puzzles` and `images` stores) paired with `filesDir/capy_saves` backups on Android, persist typed `UserSettings` under `capy_user_settings_v8`, and keep `.capy` v2 schema migrations backward-compatible.
+   - Store bitmaps and puzzle maps in IndexedDB (`capy_game_storage_v8`: `puzzles` and `images` stores) paired with `filesDir/capy_saves` backups on Android, preserve monotonic `resetEpoch` across `ProgressDeltaV2`, `SavedSnapshot`, and `capy_active_session_v8` so stale pre-reset saves never resurrect cleared regions, persist typed `UserSettings` under `capy_user_settings_v8`, and keep `.capy` v2 schema migrations backward-compatible.
 8. **Touch Gesture Transitions & Hardware Back Navigation**:
    - Maintain `touch-action: none` ([`web/src/index.css`](./web/src/index.css)) on the interactive canvas container and dynamically re-anchor pan coordinates when releasing one finger out of a pinch-to-zoom gesture so the canvas never jumps.
    - Register open modals via `NativeBridge.pushBackHandler(onClose)` / `setBackModalOpen` (`window.__capyCloseModal()` from `MainActivity.kt`) alongside desktop `Escape` listeners.
@@ -307,6 +307,7 @@ All human and contributors modifying Web (`web/`) or Android (`app/`) code must 
 2. **Android KTX Extensions**: Prefer `androidx.core.graphics.createBitmap(...)`, `bitmap.scale(width, height)`, and `sharedPreferences.edit { ... }`.
 3. **Array-Holding Data Classes**: Explicitly override `equals()` and `hashCode()` using `contentEquals()` and `contentHashCode()` on any Kotlin `data class` holding `IntArray` or `BooleanArray`.
 4. **Zero-Allocation Loops**: Use primitive array buffers rather than boxed allocations inside native image downsampling or rendering paths.
+5. **Activity Lifecycle Forwarding (`MainActivity.kt`)**: Always forward `onPause()` -> `webView?.onPause()` and `onResume()` -> `webView?.onResume()` alongside `onDestroy()` cleanup so WebView rendering and Web Audio suspend cleanly at the OS layer when backgrounded.
 
 ---
 
@@ -419,26 +420,26 @@ Before asking the human to merge a PR:
 
 ## 7. CI/CD Pipeline & Automated Cleanup Architecture
 
-Capy runs four coordinated GitHub Actions workflows in [`.github/workflows/`](./.github/workflows):
+Capy runs five coordinated GitHub Actions workflows in [`.github/workflows/`](./.github/workflows):
 
 ### 1. Unified 3-Tier Build, E2E Release Gate & Pages Deployment ([`deploy-branch.yml`](./.github/workflows/deploy-branch.yml))
-- **Fast Daily CI + Full E2E Production Gate**: Daily `feature/* -> beta` PRs run fast compilation and JUnit4 checks without heavy Playwright Chromium downloads so Alpha `/pull/<number>/` previews deploy rapidly (while the contributor runs `npm test` locally in the dev environment VM). Opening a **Release Promotion PR (`beta -> main`)** automatically activates the **`Playwright E2E Release Gate`** job in GitHub Actions so live production `/` cannot be updated unless the full SSR + Chromium E2E suite passes in CI.
-- **Zero-Minute Documentation Fast-Path (`paths-ignore`)**: Commits that exclusively touch `**.md`, `docs/**`, `notes/**`, `.gitignore`, or `LICENSE` automatically skip CI builds and Pages deploys, consuming zero runner minutes.
+- **Fast Daily CI + Full E2E Production Gate**: Daily `feature/* -> beta` PRs run `< 2s` sanity checks, TypeScript lint, Web compilation, and Android JUnit4 checks without heavy Playwright Chromium downloads so Alpha `/pull/<number>/` previews deploy rapidly (while the contributor runs `npm test` locally in the dev environment VM). Marking a **Release Promotion PR (`beta -> main`)** ready for review (`draft == false`) automatically activates the **`Playwright E2E Release Gate`** job in GitHub Actions so live production `/` cannot be updated unless the full SSR + Chromium E2E suite passes in CI.
+- **Sub-2s Documentation Fast-Path (`isDocsOnlyPr`)**: Pull requests that exclusively touch `**.md`, `docs/**`, `notes/**`, `.gitignore`, or `LICENSE` pass the `Build & Test` check run in `< 2s` (satisfying required branch ruleset checks) while skipping Web/Android compilation and Pages deployment.
 - **Job 1 -- `build` (`Build & Test`, `contents: read`)**:
   - Runs concurrently across open PRs (`main` and `beta` bases) with `cancel-in-progress: true` per PR/ref.
-  - Compiles `web/` (`npm ci && npm run build`), runs Android JUnit4 tests (`./gradlew app:testDebugUnitTest`), and assembles the debug APK (`./gradlew app:assembleDebug`).
+  - Injects `vars.VITE_GOOGLE_CLIENT_ID`, `vars.CAPY_PLAY_GAMES_APP_ID`, and `vars.CAPY_ANDROID_SHA256_CERT_FINGERPRINTS`, executes `npm ci && npm run test:sanity && npm run lint && npm run build` in `web/`, runs Android JUnit4 tests (`./gradlew app:testDebugUnitTest`), and assembles the debug APK (`./gradlew app:assembleDebug`).
 - **Job 2 -- `e2e_release_gate` (`Playwright E2E Release Gate`, `contents: read`)**:
-  - Runs automatically when `github.event_name == 'pull_request' && github.base_ref == 'main'`, executing `npx playwright install --with-deps chromium && npm test` and gating `deploy`.
+  - Runs automatically when `github.event_name == 'pull_request' && github.base_ref == 'main' && github.event.pull_request.draft == false`, executing `npx playwright install --with-deps chromium && npm test` and gating `deploy`.
 - **Job 3 -- `deploy` (`Deploy to GitHub Pages`, `contents: write`, `pages: write`, `id-token: write`, `pull-requests: write`)**:
-  - Serializes under the `deploy-pages` concurrency lock (`cancel-in-progress: false`).
-  - Publishes open Alpha PR builds to `/pull/<number>/` and `/pull/<number>/capy.apk`, then posts or updates the PR preview comment.
+  - Guarded by `github.event.repository.has_pages == true` and serialized under the `deploy-pages` concurrency lock (`cancel-in-progress: false`).
+  - Publishes open Alpha PR builds to `/pull/<number>/` and `/pull/<number>/capy.apk`, then posts or updates the zero-emoji PR preview comment.
   - Publishes `beta` branch pushes to `/beta/` (`https://capyboop.github.io/capy/beta/`) and `/beta/capy.apk` without modifying production `/`.
   - Publishes `main` branch pushes to `/` (`https://capyboop.github.io/capy/`) and `/capy.apk` (excluding `/pull/` and `/beta/` during `rsync`).
   - Squashes `gh-pages` into a single **orphan commit** on every push so binary `.apk` artifacts never bloat Git history.
 
 ### 2. Automated GitHub Release & Play Store Bundle Publisher ([`release.yml`](./.github/workflows/release.yml))
 - Triggered automatically on `push: tags: ['v*.*.*']` (supporting both stable `v2.6.0` tags on `main` and `--prerelease` `v2.6.0-beta.1` tags on `beta`) or manually via `workflow_dispatch`.
-- Compiles `web/`, runs `./gradlew app:testDebugUnitTest`, builds `capy-<tag>.apk` plus the Google Play Store `capy-<tag>.aab` Android App Bundle (`bundleRelease`, signed automatically when `CAPY_KEYSTORE_*` secrets are configured), packages `capy-web-<tag>.tgz`, extracts the matching `### X.Y` notes from [`CHANGELOG.md`](./CHANGELOG.md), and publishes the GitHub Release.
+- Injects `vars.VITE_GOOGLE_CLIENT_ID`, `vars.CAPY_PLAY_GAMES_APP_ID`, and `vars.CAPY_ANDROID_SHA256_CERT_FINGERPRINTS`, runs `npm run test:sanity && npm run lint && npm run build`, runs `./gradlew app:testDebugUnitTest`, builds `capy-<tag>.apk` (plus unversioned `capy.apk` on stable non-prerelease tags so `https://capypaint.com/capy.apk` always resolves) and the Google Play Store `capy-<tag>.aab` Android App Bundle (`bundleRelease`), packages `capy-web-<tag>.tgz`, extracts the matching `### X.Y` notes from [`CHANGELOG.md`](./CHANGELOG.md), and publishes the GitHub Release.
 
 ### 3. Closed PR Preview & Branch Cleanup ([`cleanup-closed-pr.yml`](./.github/workflows/cleanup-closed-pr.yml))
 - Triggered automatically on `pull_request: types: [closed]` (both merged and closed-unmerged PRs).
@@ -447,6 +448,10 @@ Capy runs four coordinated GitHub Actions workflows in [`.github/workflows/`](./
 ### 4. Scheduled Stale Branch & Orphan Sweep ([`cleanup-branches.yml`](./.github/workflows/cleanup-branches.yml))
 - Runs daily at `06:00 UTC` (`cron: '0 6 * * *'`) or manually via `workflow_dispatch`.
 - Invokes `.github/scripts/cleanup-branches.mjs` to prune merged/stale branches (`>= 1` day old) matching `feature/`, `feature/`, `fix/`, `chore/`, `ci/`, `deps/`, `docs/`, or `feature/` (never touching `main` or `beta`), followed by `cleanup-gh-pages-previews.mjs` to remove any orphaned `/pull/` directories while preserving `/beta/`.
+
+### 5. Production Cloudflare Workers Deployment ([`deploy-cloudflare.yml`](./.github/workflows/deploy-cloudflare.yml))
+- Triggered on `push` to `main` (touching `web/**`, `worker/**`, `wrangler.jsonc`, or the workflow file) and `workflow_dispatch`.
+- When `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` secrets are configured (or via Cloudflare Workers Builds native Git integration), runs `npm run test:sanity && npm run lint && npm run build`, deploys [`wrangler.jsonc`](./wrangler.jsonc) + [`worker/index.ts`](./worker/index.ts) (`CoopRoomDurableObject`) to `https://capypaint.com/` via `cloudflare/wrangler-action@v4` (`wranglerVersion: '4.160.1'`), and verifies `https://capypaint.com/api/health`. Repositories without Cloudflare secrets skip cleanly in `< 2s`.
 
 ---
 
@@ -462,13 +467,13 @@ Capy runs four coordinated GitHub Actions workflows in [`.github/workflows/`](./
    - **`MAJOR` (`X.0.0`)**: Breaking storage/codec epochs or major platform launches (`0.x` covers pre-monorepo Legacy Web1 milestones `#1`--`#430`; `1.0.0` begins at Unified Monorepo launch `#431`).
    - **`MINOR` (`2.Y.0`)**: Backward-compatible gameplay features, replay modes, UI controls, cloud/multiplayer drivers, or new `UserSettings` keys.
    - **`PATCH` (`2.5.Z`)**: Backward-compatible bug fixes, gesture edge-case corrections, performance optimizations, test consolidation, documentation/changelog audits, or dependency updates.
-   - **Compact Mobile-First `CHANGELOG.md` Contract & Active Channel Suffixes** (enforced automatically by `npm test` in [`web/scripts/test.mjs`](./web/scripts/test.mjs)):
+   - **Compact Mobile-First `CHANGELOG.md` Contract & Active Channel Suffixes** (enforced automatically by `npm run test:sanity` in [`web/scripts/sanity.mjs`](./web/scripts/sanity.mjs) and `npm test` in [`web/scripts/test.mjs`](./web/scripts/test.mjs)):
      - **Zero Preamble**: Start [`CHANGELOG.md`](./CHANGELOG.md) directly on line 1 with the newest `###` version heading—no `#` title, introductory prose, or `---` dividers.
      - **Compact Headings With Active `(Alpha)` / `(Beta)` / `(Production)` Markers**: Format headings as `### MAJOR.MINOR - YYYY-MM-DD` (or `### MAJOR.MINOR.PATCH - YYYY-MM-DD` for standalone patches and `0.x.y` milestones), appending the live channel suffix on active release heads only:
        - `### 2.6 - YYYY-MM-DD (Beta)` when `beta` is ahead of `main` (`https://capyboop.github.io/capy/beta/`), with `### 2.5 - 2026-11-11 (Production)` marking live `main` (`https://capyboop.github.io/capy/`).
        - `### 2.5 - 2026-11-11 (Production, Beta)` immediately after a `beta -> main` Release Promotion when both `main` and `beta` serve the exact same version.
        - `### 2.7 - YYYY-MM-DD (Alpha)` on standalone experimental Alpha branches ahead of `beta`.
-       - Superseded historical releases (`2.4` and older) carry **no suffix**; `npm test` asserts `exactly 1` `Production` heading, `<= 1` `Beta` heading, and `<= 1` `Alpha` heading across the entire file.
+       - Superseded historical releases (`2.4` and older) carry **no suffix**; `npm run test:sanity` and `npm test` assert `exactly 1` `Production` heading, `<= 1` `Beta` heading, and `<= 1` `Alpha` heading across the entire file.
      - **Same-Day Patch Rollup**: Combine consecutive `+0.0.1` (`PATCH`) releases on the same day under their `### MAJOR.MINOR - YYYY-MM-DD (...)` heading while still incrementing `"version"` in [`web/package.json`](./web/package.json) on each PR for monotonic Android `versionCode` builds.
      - **Single Brief Bullet Ending in Bare `#<number>` PR Link**: Every item must be a single, flat, brief bullet ending with its merged PR link formatted as bare `#<number>` (no parentheses or `"PR"` prefix, zero `Added`/`Changed`/`Fixed` category sub-headings, zero nested sub-bullets, and zero inline file/line links).
 
@@ -479,7 +484,7 @@ Capy runs four coordinated GitHub Actions workflows in [`.github/workflows/`](./
 cd web
 npm outdated          # Inspect available SemVer and major updates
 npm update            # Upgrade within SemVer ranges and refresh package-lock.json
-npm run lint && npm run build && npm test
+npm run test:sanity && npm run lint && npm run build && npm test
 ```
 
 #### Android Version Catalog (`gradle/libs.versions.toml`)
@@ -497,16 +502,16 @@ npm run lint && npm run build && npm test
 
 - **`tsc: not found` or missing `node_modules`**:
   - *Cause*: Fresh container or worktree without installed npm packages.
-  - *Fix*: Run `npm ci` inside `web/` before running `lint`, `build`, or `test`.
+  - *Fix*: Run `npm ci` inside `web/` before running `test:sanity`, `lint`, `build`, or `test`.
 - **`ERR_CONNECTION_REFUSED http://localhost:3000/` on standalone Playwright scripts**:
-  - *Cause*: Standalone browser scripts expect a live server on port `3000` (whereas `npm test` auto-starts Vite SSR/preview).
+  - *Cause*: Standalone gallery/sample browser scripts expect a live server on port `3000` (whereas `npm test` automatically binds an ephemeral preview port when `CAPY_TEST_URL` is unset).
   - *Fix*: Start `npm run preview` as a background daemon (`IsDaemon: true`), run the check, and stop the daemon when finished—or run `npm test` directly.
 - **`Executable doesn't exist at .../chromium`**:
   - *Cause*: Playwright Chromium binary not yet cached in container.
   - *Fix*: Run `npx playwright install chromium` inside `web/`.
-- **GitHub Actions checks do not trigger on a PR**:
-  - *Cause*: PR exclusively modifies `.md`, `docs/**`, `.gitignore`, or `LICENSE` (`paths-ignore` in `deploy-branch.yml`).
-  - *Fix*: Expected behavior (consumes zero runner minutes). Verify markdown links, zero emojis, zero ASCII art, and mobile-safe bullet formatting locally.
+- **Web/Android build steps skip on a documentation-only PR**:
+  - *Cause*: PR exclusively modifies `.md`, `docs/**`, `notes/**`, `.gitignore`, or `LICENSE` (`isDocsOnlyPr` fast-path in `deploy-branch.yml`).
+  - *Fix*: Expected behavior (`Build & Test` passes in `< 2s` while consuming zero Web/Android build minutes). Run `npm run test:sanity` locally to verify markdown links, zero emojis, zero ASCII art, and mobile-safe formatting.
 - **Local Gradle fails with `SSLException: trustAnchors parameter must be non-empty`**:
   - *Cause*: Container JDK lacks a populated `/etc/ssl/certs/java/cacerts` truststore.
-  - *Fix*: **Never** disable TLS verification or tamper with host trust roots. Verify `npm run lint` and `npm run build` locally, push the branch, and rely on GitHub Actions `Build & Test` (provisioned with Temurin JDK 17) to run `./gradlew app:testDebugUnitTest` and `./gradlew app:assembleDebug`.
+  - *Fix*: **Never** disable TLS verification or tamper with host trust roots. Verify `npm run test:sanity && npm run lint && npm run build` locally, push the branch, and rely on GitHub Actions `Build & Test` (provisioned with Temurin JDK 17) to run `./gradlew app:testDebugUnitTest` and `./gradlew app:assembleDebug`.
