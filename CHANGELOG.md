@@ -1,4 +1,8 @@
-### 2.6 - 2026-11-12 (Alpha)
+### 2.7 - 2026-11-12 (Alpha)
+
+- Fix Co-op save and rewind sync, Android large cloud saves, CRDT reset epochs, and mobile replay controls #484
+
+### 2.6 - 2026-11-12
 
 - Add capypaint.com Cloudflare Worker, Co-op relay security hardening, public export, and dual-approval CI gate #482
 
