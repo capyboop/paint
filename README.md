@@ -1,14 +1,15 @@
 # Capy: Color-by-Number Suite
 
-[![Web App](https://img.shields.io/badge/Web_App-Play_Online-blue?style=for-the-badge&logo=googlechrome&logoColor=white)](https://capyboop.github.io/capy/)
-[![Android APK](https://img.shields.io/badge/Android-Download_APK-green?style=for-the-badge&logo=android&logoColor=white)](https://capyboop.github.io/capy/capy.apk)
+[![Web App](https://img.shields.io/badge/Web_App-Play_Online-blue?style=for-the-badge&logo=googlechrome&logoColor=white)](https://capypaint.com/)
+[![Android APK](https://img.shields.io/badge/Android-Download_APK-green?style=for-the-badge&logo=android&logoColor=white)](https://capypaint.com/capy.apk)
 [![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/License-CC_BY--NC--SA_4.0-orange?style=for-the-badge)](./LICENSE.md)
 
 **Capy** is a serene, delightful color-by-number game you can play directly in your web browser or on Android. Transform any photo or artwork into a crisp, playable color puzzle with smart number guides, or relax with Free Colour coloring pages.
 
-- **[Play Capy in Your Browser](https://capyboop.github.io/capy/)**
-- **[Download the Android APK](https://capyboop.github.io/capy/capy.apk)**
-- **[Read the Privacy Policy](https://capyboop.github.io/capy/privacy-policy.html)**
+- **[Play Capy in Your Browser (`capypaint.com`)](https://capypaint.com/)**
+- **[Download the Android APK (Stable)](https://capypaint.com/capy.apk)**
+- **[Try Upcoming Features on the Beta Channel](https://capyboop.github.io/capy/beta/)** ([Beta Android APK](https://capyboop.github.io/capy/beta/capy.apk) | [Official GitHub Releases](https://github.com/capyboop/paint/releases))
+- **[Read the Privacy Policy](https://capypaint.com/privacy-policy.html)**
 
 ---
 
@@ -84,9 +85,9 @@ npm run dev
 ```
 Open `http://localhost:3000` in your browser.
 
-Verify strict TypeScript types, production bundling, and the unified automated test suite (binary codec, engine, gestures, settings, and Playwright E2E gameplay):
+Verify repository hygiene, strict TypeScript types, production bundling, and the unified automated test suite (binary codec, engine, gestures, settings, and Playwright E2E gameplay):
 ```bash
-npm run lint && npm run build && npm test
+npm run test:sanity && npm run lint && npm run build && npm test
 ```
 
 ---
@@ -97,12 +98,12 @@ All detailed architectural guides, computer vision algorithms, and native bridge
 
 - **Web Architecture and UI Reference**: [`WEB.md`](./WEB.md) -- React 19, Vite 6, 3-tier offscreen canvas rendering, 6-mode gesture engine, Worker IPC, storage keys, and `UserSettings` dictionary.
 - **Android Native Launcher**: [`APP.md`](./APP.md) -- Kotlin launcher, AndroidX `WebViewAssetLoader`, Google Play Games Services v2 `SnapshotsClient` sync, Pixel API 33+ haptics, and disk backups.
-- **Cloud Sync, Google Account / Play Games and Multiplayer Sharing**: [`CLOUD.md`](./CLOUD.md) -- Google Identity Services OAuth 2.0 (`drive.appdata`), Play Games v2 login, CRDT Cloud Sync, `< 2 KB` shareable URL links, and simultaneous Co-op rooms.
+- **Cloud Sync, Google Account / Play Games and Multiplayer Sharing**: [`CLOUD.md`](./CLOUD.md) -- Google Identity Services OAuth 2.0 (`drive.appdata`), Play Games v2 login, CRDT Cloud Sync, `< 2 KB` shareable URL links, simultaneous Co-op rooms, and Cloudflare Workers edge hosting (`capypaint.com`).
 - **Puzzle Generation Engine**: [`PUZZLE.md`](./PUZZLE.md) -- Web Worker 5-strategy segmentation, adaptive Otsu/Sobel line extraction, Red-Mean K-Means++ clustering, and watershed border alignment.
 - **Testing Architecture**: [`TESTING.md`](./TESTING.md) -- Unified Vite SSR + Playwright E2E verification suite, multi-touch gesture patterns, and CI pipelines.
 - **Versioning Scheme and Changelog**: [`CHANGELOG.md`](./CHANGELOG.md) -- Semantic Versioning (`MAJOR.MINOR.PATCH`), Android `versionCode` mapping, and chronological release history.
-- **Product Roadmap (Epics and Stories)**: [`ROADMAP.md`](./ROADMAP.md) -- Strategic epics, user stories, external readiness gates, platform icebox, and collapsed shipped milestones.
-- **Active Sprint Backlog**: [`TODO.md`](./TODO.md) -- Ready-for-dev Sprint 1 bugfixes, `1-PR` engineering slices, and `[quick-win]` queue.
-- **Development and Maintenance Guide**: [`DEV.md`](./DEV.md) -- Human + AI co-development workflows, Hybrid Agile sprints, CImodel routing, shared technical guardrails, CI/CD pipelines, and maintenance playbooks.
+- **Product Roadmap and Epic Issues**: [`ROADMAP.md`](./ROADMAP.md) -- Strategic Epics (`#476`--`#480` GitHub Epic Tracking Issues), User Stories, external readiness gates, Platform Icebox, and collapsed shipped milestones.
+- **Active Sprint Backlog**: [`TODO.md`](./TODO.md) -- Ready-for-dev Sprint 1 bugfixes, `1-PR` engineering slices, `[quick-win]` queue, and GitHub Sprint Milestone links.
+- **Development and Maintenance Guide**: [`DEV.md`](./DEV.md) -- Human + AI co-development workflows, Hybrid Agile sprints, GitHub Epic Issue CLI playbooks, `Alpha -> Beta -> Production` release promotion, CImodel routing, and technical guardrails.
 - **contributor Operational Playbook**: `project docs` -- Auto-loaded AI guardrails, mobile-first formatting rules, and PR checklist contract for redacted.
 - **Privacy Policy and Data Safety**: [`web/public/privacy-policy.html`](./web/public/privacy-policy.html) -- Local-first photo processing and optional Google Drive `appDataFolder` / Play Games Cloud Sync disclosures.
