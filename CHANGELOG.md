@@ -1,5 +1,6 @@
-### 2.5 - 2026-11-11
+### 2.5 - 2026-11-11 (Production, Beta)
 
+- Add 3-tier Alpha/Beta/Production release pipeline, channel switcher, and GitHub Agile tracking #481
 - Add sub-tile parent breadcrumbs, printable SVG sheets, and Co-op undo sync #475
 - Split strategic ROADMAP.md from Sprint 1 TODO.md and add CIsprint playbooks #473
 - Add daily featured puzzle, reduced motion, keyboard shortcuts, and lifetime stats #474
