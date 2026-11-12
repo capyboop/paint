@@ -30,11 +30,12 @@ flowchart TD
         contributor["project docs (AI Invariants, Context Discipline & PR Rubric)"]
     end
 
-    subgraph ProcessAndRoadmap["Process, Roadmap & Active Sprint"]
+    subgraph ProcessAndRoadmap["Process, Roadmap, GitHub Agile & Active Sprint"]
         DEV["DEV.md (Human + AI Workflow, Guardrails, CI/CD & Maintenance)"]
         ROADMAP["ROADMAP.md (Epics, User Stories, Icebox & Shipped Archive)"]
+        GH_AGILE["GitHub Epic Issues (#476--#480) & Sprint Milestones (#1--#4)"]
         TODO["TODO.md (Focused 1-Sprint Ready-for-Dev Queue)"]
-        CHANGELOG["CHANGELOG.md (SemVer Rules & Release History)"]
+        CHANGELOG["CHANGELOG.md (SemVer Rules, Channel Markers & History)"]
     end
 
     subgraph SubsystemSpecs["Subsystem Technical Specifications (Load On Demand)"]
@@ -46,7 +47,9 @@ flowchart TD
     end
 
     contributor --> DEV
+    ROADMAP <--> GH_AGILE
     ROADMAP --> TODO
+    GH_AGILE <--> TODO
     contributor --> TODO
     contributor --> CHANGELOG
     contributor --> WEB
@@ -58,24 +61,24 @@ flowchart TD
 
 ### Repository Documentation Index
 
-- **[`README.md`](./README.md)** (*Players & Contributors*): Product showcase, controls cheat sheet, developer quick start, privacy policy link, and documentation index.
-- **[`ROADMAP.md`](./ROADMAP.md)** (*Humans & contributors*): Strategic product Epics (`EPIC-*`), User Stories (`US-*`), external dependency readiness gates, Platform Icebox (`ICE-*`), and collapsed Shipped Epics & Stories.
-- **[`TODO.md`](./TODO.md)** (*Humans & contributors*): Focused **1-Sprint Execution Queue** containing only unblocked, codebase-verified `BUG-*` and `TASK-*` `1-PR` slices ready for immediate dev work.
-- **[`DEV.md`](./DEV.md)** (*Humans & contributors*): Co-development philosophy, Hybrid Automated Sprints, CImodel selection, `#NNN` session hygiene, shared technical guardrails, CI/CD, and maintenance playbooks.
+- **[`README.md`](./README.md)** (*Players & Contributors*): Product showcase, controls cheat sheet, Stable/Beta play links, developer quick start, privacy policy link, and documentation index.
+- **[`ROADMAP.md`](./ROADMAP.md)** (*Humans & contributors*): Strategic product Epics (`EPIC-*` paired `1:1` with GitHub Epic Tracking Issues `#476`--`#480`), User Stories (`US-*`), external dependency readiness gates, Platform Icebox (`ICE-*`), and collapsed Shipped Epics & Stories.
+- **[`TODO.md`](./TODO.md)** (*Humans & contributors*): Focused **1-Sprint Execution Queue** containing only unblocked, codebase-verified `BUG-*` and `TASK-*` `1-PR` slices ready for immediate dev work under the active GitHub Sprint Milestone.
+- **[`DEV.md`](./DEV.md)** (*Humans & contributors*): Co-development philosophy, Hybrid Automated Sprints, GitHub Epic Issue CLI playbooks, CImodel selection, `#NNN` session hygiene, shared technical guardrails, 3-tier CI/CD, and maintenance playbooks.
 - **`project docs`** (*contributors — Auto-Loaded*): AI-specific guardrails, mobile-first formatting rule, context discipline, task routing, and PR checklist contract.
 - **[`WEB.md`](./WEB.md)** (*Humans & contributors*): React 19 UI hierarchy, `PuzzleCanvas.tsx` 3-tier offscreen caching, 6-mode touch gesture engine, Worker IPC, `NativeBridge`, storage keys, and `UserSettings` dictionary.
 - **[`PUZZLE.md`](./PUZZLE.md)** (*Humans & contributors*): `puzzle.worker.ts` 5-strategy computer-vision pipeline, Red-Mean K-Means++ clustering, adaptive Otsu/Sobel contours, watershed absorption, and 6-stage telemetry.
 - **[`APP.md`](./APP.md)** (*Humans & contributors*): Unified Android `:app` launcher (`MainActivity.kt`, `CapyAndroidBridge.kt`), `WebViewAssetLoader`, Pixel API 33+ LRA touch haptics, `SnapshotsClient` sync, and disk backups.
 - **[`CLOUD.md`](./CLOUD.md)** (*Humans & contributors*): Modular `CloudProviderDriver` backends, Google OAuth 2.0 `appDataFolder` & Play Games Services v2 sign-in, CRDT `mergeProgressDeltas`, `#s=<token>` share links, and Co-op rooms.
 - **[`TESTING.md`](./TESTING.md)** (*Humans & contributors*): Unified `web/scripts/test.mjs` runner (Vite SSR unit/codec checks + Playwright multi-touch E2E suite) and Android JUnit4 verification.
-- **[`CHANGELOG.md`](./CHANGELOG.md)** (*Humans & contributors*): Chronological `MAJOR.MINOR.PATCH` release history synchronized with `web/package.json` and Android `versionCode`.
+- **[`CHANGELOG.md`](./CHANGELOG.md)** (*Humans & contributors*): Chronological `MAJOR.MINOR.PATCH` release history and `(Alpha)`/`(Beta)`/`(Production)` channel markers synchronized with `web/package.json` and Android `versionCode`.
 - **[`web/public/privacy-policy.html`](./web/public/privacy-policy.html)** (*Players & Storefronts*): Published Privacy Policy and Google Play Data Safety disclosures (`https://capyboop.github.io/capy/privacy-policy.html`).
 
 ### Documentation Formatting Standards (Mobile-First & Zero-Clutter)
 
 1. **Mobile-First Readability (No Wide Prose Tables)**: Contributors review documentation, pull requests, and dev environment chats on mobile devices. Never author wide multi-column Markdown tables or put multi-sentence prose inside table cells (which overflow horizontally and stretch narrow columns into tall blocks of empty whitespace). Use structured bullet lists instead; reserve Markdown tables strictly for 2 short-value columns that fit narrow mobile screens without scrolling.
 2. **Zero Emojis & Zero ASCII Box-Drawing Art**: Never use unicode emojis or box-drawing characters (`U+2500`--`U+257F`, `+---+`) in `.md` files. Use GFM alerts (`> [!NOTE]`, `> [!TIP]`, `> [!IMPORTANT]`, `> [!WARNING]`), Mermaid diagrams, and structured bullet lists.
-3. **Portable Relative Intra-Repo Links**: Always link repository files using relative paths (`./web/src/...`)—never machine-local `file:///...` URIs—and pin line-specific references in PR bodies and comments to immutable commit SHAs (`https://github.com/capyboop/paint/blob/<sha>/<path>#L<start>-L<end>`).
+3. **Portable Relative Intra-Repo Links**: Always link repository files using relative paths (`./web/src/...`)—never machine-local `file:///...` URIs—avoid brittle unpinned `#L...` line numbers inside `.md` guides, and pin line-specific references in PR bodies and comments to immutable commit SHAs (`https://github.com/capyboop/paint/blob/<sha>/<path>#L<start>-L<end>`).
 
 ---
 
@@ -85,10 +88,10 @@ Capy pairs real-time 60--120fps HTML5 Canvas interaction, off-thread computer vi
 
 ### Optimal Goals for the Human Developer
 
-1. **Product Vision & Sprint Pull Governance**: Curate Epics and Stories in [`ROADMAP.md`](./ROADMAP.md) and promote only unblocked, high-impact tasks into [`TODO.md`](./TODO.md) for the active sprint.
-2. **Subjective Aesthetic & Tactile Judgment**: Evaluate qualities automated headless assertions cannot judge alone—inertial pan glide feel, pinch-to-zoom responsiveness, palette contrast, procedural audio warmth, confetti pacing, and physical Android LRA haptic crispness on `/pull/<number>/` and `/pull/<number>/capy.apk`.
+1. **Product Vision & Sprint Pull Governance**: Curate Epics and Stories in [`ROADMAP.md`](./ROADMAP.md) (`#476`--`#480`) and promote only unblocked, high-impact tasks into [`TODO.md`](./TODO.md) for the active sprint.
+2. **Subjective Aesthetic & Tactile Judgment**: Evaluate qualities automated headless assertions cannot judge alone—inertial pan glide feel, pinch-to-zoom responsiveness, palette contrast, procedural audio warmth, confetti pacing, and physical Android LRA haptic crispness on `/pull/<number>/` and `/capy/beta/`.
 3. **Upfront Ambiguity Resolution (`workflow` & `workflow`)**: Answer focused design trade-off questions and approve `implementation_plan.md` artifacts *before* code generation begins. Five minutes spent aligning on a plan saves tens of thousands of tokens of rework.
-4. **Session & Context Hygiene**: Keep each interactive chat scoped to one PR (or one cohesive Story/Sprint slice under `workflow` or `/swarm`), prefix new chat prompts with `#NNN` for clean auto-titling, and pin/unpin threads to match open PR state.
+4. **Session & Context Hygiene**: Keep each interactive chat scoped to one PR (or one cohesive Story/Sprint slice under `workflow` or `workflow`), prefix new chat prompts with `#NNN` for clean auto-titling, and pin/unpin threads to match open PR state.
 5. **Final Merge Gatekeeping**: Verify the live preview link and the **5-Pillar PR checklist & Perfection Confidence Score (`>= 95%`)** before approving any merge to `main`.
 
 ### Optimal Goals for the contributor
@@ -117,10 +120,13 @@ Capy separates strategic roadmap planning from sprint execution across [`ROADMAP
 - **Git Tag (`v2.6.0`) & GitHub Release**: An immutable version bookmark on a `main` commit (`v2.6.0`, or `v2.6.0-beta.1` pre-release on `beta`) that triggers [`release.yml`](./.github/workflows/release.yml) to publish a GitHub Release with `CHANGELOG.md` notes, `capy-vX.Y.Z.apk`, and a Google Play Store `capy-vX.Y.Z.aab` Android App Bundle.
 
 #### Core Backlog Governance Rules
-1. **Two-Stage Pull Hierarchy (`ROADMAP.md` -> `TODO.md` + GitHub Epic Issues `#476`--`#480`)**:
+1. **3-Artefact Agile Triad (`ROADMAP.md` <-> GitHub Epic Issues `#476`--`#480` & Milestones <-> `TODO.md`)**:
    - **[`ROADMAP.md`](./ROADMAP.md) (*Strategic Epics, Stories, Icebox & Shipped Archive*)**:
      - Owns all outcome-driven **Epics (`EPIC-2`..`EPIC-5`)**, **User Stories (`US-N.M`)**, readiness badges (`Active in Sprint N`, `Ready for Next Sprint`, or `Blocked -- External Credentials / Infra`), **Platform Icebox (`ICE-*`)**, and a single collapsed `<details>` **Shipped Epics & Stories** archive at the bottom.
      - Stories blocked on external credentials, OAuth/Play Console provisioning, WebSocket relays, or paid AI endpoints (`EPIC-5` #480, `ICE-*`) stay in `ROADMAP.md` with an explicit **Unblock Prerequisite** until unblocked.
+   - **GitHub Parent Epic Tracking Issues (`1 Issue = 1 Epic`, `#476`--`#480`) & Sprint Milestones (`#1`--`#4`)**:
+     - Strictly **one GitHub Tracking Issue per chartered Epic**: #476 (`EPIC-1`, `CLOSED`), #477 (`EPIC-2`, Sprint 1), #478 (`EPIC-3`, Sprint 2), #479 (`EPIC-4`, Sprint 3), and #480 (`EPIC-5`, Blocked / No Milestone).
+     - **Zero Sub-Issue Sprawl**: Never open separate GitHub Issues for individual `TASK-*` slices, Sprint Priority 0 `BUG-*` items (tracked in `TODO.md` + the active Sprint Milestone), or unscheduled `ICE-1`--`ICE-3` wrappers unless explicitly requested by the user. Charter a new `EPIC-N` issue **only** when promoting an `ICE-*` item or new product theme into active roadmap scheduling.
    - **[`TODO.md`](./TODO.md) (*Focused 1-Sprint Ready Queue*)**:
      - Holds **only** the current sprint's unblocked, codebase-verified `BUG-*` and `TASK-*` `1-PR` slices (`~8--10` tasks at a time).
      - Tag `<= 15 min` (`1--3` file, zero-backend, `CI` or `Argon`-ready) slices with `[quick-win]` and index them in Section 1 (`Quick-Win Ready Queue`).
@@ -128,13 +134,13 @@ Capy separates strategic roadmap planning from sprint execution across [`ROADMAP
    - A task enters [`TODO.md`](./TODO.md) **only** when: (a) it delivers concrete **Player Value** or **Reliability Value** with a clear **Why Now**, (b) all external prerequisites are met, and (c) every referenced file path, component, and type name has been verified against `beta`/`main`.
    - Reject zero-impact housekeeping chores (e.g., pruning unreferenced catalog keys that add `0 B` to builds, committing dummy config placeholders before credentials exist, or ad-SDK bloat).
 3. **Definition of Done (`TODO.md` Deletion, Epic Issue Sync & `ROADMAP.md` Collapsed Archive)**:
-   - **Delete from `TODO.md` Immediately**: Never leave `[x]` checkboxes in [`TODO.md`](./TODO.md). Delete completed `BUG-*` / `TASK-*` items (and their Quick-Win Ready Queue pointers) in the same PR that ships them, and check off the corresponding `- [x]` line on the parent GitHub Epic Tracking Issue (`#476`--`#480`).
-   - **Archive Completed Stories in `ROADMAP.md`**: When a Story or Epic's final task ships, move that Story or Epic out of the active sections of [`ROADMAP.md`](./ROADMAP.md) into the single collapsed `<details>` **Shipped Epics & Stories** summary at the bottom of `ROADMAP.md` with clickable `#<PR>` links.
-   - **Sprint Replenishment**: When `TODO.md` drains (or `<= 2` tasks remain), open a lightweight `docs/*` sprint-planning PR pulling the next ready Epic/Stories from `ROADMAP.md` into `TODO.md`.
-4. **Hybrid Automated Sprint Execution (`#NNN` Chats, `workflow` & `/swarm` -> `beta`)**:
+   - **Delete from `TODO.md` Immediately**: Never leave `[x]` checkboxes in [`TODO.md`](./TODO.md). Delete completed `BUG-*` / `TASK-*` items (and their Quick-Win Ready Queue pointers) in the same PR that ships them, and check off `- [x] ... — #<pr>` on the parent GitHub Epic Tracking Issue (`#476`--`#480`).
+   - **Archive Completed Stories in `ROADMAP.md`**: When a Story or Epic's final task ships, move that Story or Epic out of the active sections of [`ROADMAP.md`](./ROADMAP.md) into the single collapsed `<details>` **Shipped Epics & Stories** summary at the bottom of `ROADMAP.md` with clickable `#<PR>` links (closing the Parent Epic Tracking Issue once `100%` of its Stories reach Production `main`).
+   - **Sprint Replenishment**: When `TODO.md` drains (or `<= 2` tasks remain), open a lightweight `docs/*` sprint-planning PR pulling the next ready Epic/Stories from `ROADMAP.md` into `TODO.md` and ensuring the next GitHub Sprint Milestone is open.
+4. **Hybrid Automated Sprint Execution (`#NNN` Chats, `workflow` & `workflow` -> `beta`)**:
    - **Mode 1 -- Atomic Single-Task PRs (`1-Task = 1-PR` -> `beta`, Default)**: Open a fresh `#NNN` chat for a single `BUG-*` or `TASK-*` on `feature/*` or `fix/*` branched from `origin/beta`, verify locally, open the PR with `--base beta`, and wait for human merge approval.
-   - **Mode 2 -- Story or Sprint-Slice PRs (`workflow` or `/swarm` -> `beta`)**: When launching an autonomous multi-task run (`workflow` or `/swarm`), execute a cohesive Story (`TASK-X.Ya` + `TASK-X.Yb`) or P0 bug batch (`BUG-1`..`BUG-3`) onto one `feature/sprint-*` or `feature/*` branch off `origin/beta` using clean atomic commits per task:
-     - Under `/swarm`, assign non-overlapping file ownership to named worker contributor and designate a verifier worker to run the full `npm run lint && npm run build && npm test` gate inside the VM before opening **one PR** targeting `beta` with **one live preview URL** and pausing at the human merge gate.
+   - **Mode 2 -- Story or Sprint-Slice PRs (`workflow` or `workflow` -> `beta`)**: When launching an autonomous multi-task run (`workflow` or `workflow`), execute a cohesive Story (`TASK-X.Ya` + `TASK-X.Yb`) or P0 bug batch (`BUG-1`..`BUG-3`) onto one `feature/sprint-*` or `feature/*` branch off `origin/beta` using clean atomic commits per task:
+     - With parallel contributor or `workflow`, assign non-overlapping file ownership to named worker roles and run the full `npm run lint && npm run build && npm test` gate inside the VM before opening **one PR** targeting `beta` with **one live preview URL** and pausing at the human merge gate.
 5. **Canonical Mobile-First Card & `<details>` Template**:
    - Keep **Description**, **Value**, **Why Now**, and **1-line `TASK-*` titles** visible on the card surface; wrap verbose **Tags, Priority, Model Tier, Token/Time Estimates, Target Files, and Acceptance Criteria** inside `<details><summary>...</summary></details>` (always keep a blank line after `</summary>` and before `</details>` so GitHub Flavored Markdown renders inner bullet lists):
    ````markdown
@@ -160,6 +166,38 @@ Capy separates strategic roadmap planning from sprint execution across [`ROADMAP
    </details>
    ````
 
+#### GitHub Epic Tracking Issues, Sprint Milestones & CLI Playbook (`1 Issue = 1 Epic`)
+
+- **Never Auto-Close an Incomplete Epic (`Tracked in #<epic>` vs. `Closes #<epic>`)**:
+  - GitHub keywords `Closes #<num>`, `Fixes #<num>`, and `Resolves #<num>` automatically close the referenced issue when merged into `main`. **Never** use closing keywords on incremental `TASK-*` or Story PRs—always write `**Agile Scope**: Tracked in #<epic-issue> (EPIC-X / US-X.Y: TASK-X.Ya)` so GitHub renders the PR inside the Epic's tasklist/timeline while keeping the Epic `OPEN`.
+  - **Sprint P0 `BUG-*` Attribution**: Standalone reliability/CI/lifecycle bugs (`BUG-1`..`BUG-3` in [`TODO.md`](./TODO.md)) attach the active Sprint Milestone (`--milestone "Sprint 1: ..."`) plus `fix` and subsystem labels (`web`, `android`, `ci`, `testing`) without attaching an unrelated `epic:N` label.
+- **Standard `gh` CLI Commands for contributor & Maintainers** *(always announce GitHub write commands before running them)*:
+  ```bash
+  # 1. Inspect open Epic Tracking Issues (#477--#480) and Sprint Milestones (#2--#4)
+  gh issue list -R capyboop/paint --label epic --state open --json number,title,milestone,labels
+  gh api repos/capyboop/paint/milestones?state=open --jq '.[] | {number, title, open_issues, closed_issues}'
+
+  # 2. Open a Sprint PR targeting beta with Epic label + Sprint Milestone
+  gh pr create -R capyboop/paint --base beta --head feature/<short-topic> \
+    --title "<Clean Prefix-Free Action Title>" \
+    --label "feature,epic:2,web" \
+    --milestone "Sprint 1: P0 Reliability & EPIC-2 Touch/Audio Polish" \
+    --body-file /tmp/pr_body.md
+
+  # 3. Check off a shipped Story/Task (- [ ] -> - [x] ... — #<pr>) on its Parent Epic Issue
+  gh issue view 477 -R capyboop/paint --json body --jq .body > /tmp/epic_477.md
+  # (Edit /tmp/epic_477.md to mark the shipped slice [x] with — #<pr-num>)
+  gh issue edit 477 -R capyboop/paint --body-file /tmp/epic_477.md
+
+  # 4. Close a 100%-shipped Epic Issue & Sprint Milestone after beta -> main Release Promotion
+  gh issue close 477 -R capyboop/paint --comment "Completed in #<promo-pr> (v2.6.0 Production release)."
+  gh api -X PATCH repos/capyboop/paint/milestones/2 -f state=closed
+
+  # 5. Charter a new Epic Issue when promoting an ICE-* item (e.g., ICE-1 -> EPIC-6)
+  gh label create "epic:6" -R capyboop/paint --color "0052cc" --description "EPIC-6: <Title>"
+  gh issue create -R capyboop/paint --title "EPIC-6: <Title>" --label "epic,epic:6,web" --body-file /tmp/epic_6.md
+  ```
+
 ---
 
 ## 3. Choosing the Right AI Model, Capability Tier & Workflow
@@ -174,7 +212,7 @@ Selecting the right CI / 3.8 capability tier and slash workflow maximizes code q
   - *Token & Latency Profile*: Shares Argon's `1M` unified context window and per-token API rate, but spends `~2x--4x` more thinking tokens per turn to explore hypotheses and run extended verification loops (`0%` reward-hacking on Terminal-Bench 4.0). Reserve for high-complexity reasoning rather than routine UI edits.
 - **Efficient Frontier Daily Driver (`Argon` -- ~65--70% of Capy PRs)**:
   - *dev environment Selection / contributor Tier*: **CI** (`CI-4-argon`, `pro` / `inherit` contributor tier).
-  - *Ideal Capy Use Cases*: Default daily driver for multi-file feature stories (`SoundService.ts` `US-2.3`, `ReplayVideoExporter.ts` `US-3.3`, Infinite Zoom `US-4.1`, `SvgPrintExporter.ts` `US-4.2`), `workflow` and `/swarm` sprint execution, Co-op/IndexedDB bugfixes (`BUG-1`), and Android Kotlin + `NativeBridge.ts` integration.
+  - *Ideal Capy Use Cases*: Default daily driver for multi-file feature stories (`SoundService.ts` `US-2.3`, `ReplayVideoExporter.ts` `US-3.3`, Infinite Zoom `US-4.1`, `SvgPrintExporter.ts` `US-4.2`), `workflow` and `workflow` sprint execution, Co-op/IndexedDB bugfixes (`BUG-1`), and Android Kotlin + `NativeBridge.ts` integration.
   - *Token & Latency Profile*: Delivers CIfrontier coding and `1M`-context cross-repo synthesis with significantly faster responses and lower thinking-token spend per turn than Carbon.
 - **Fast Frontier Workhorse (`Flash` -- ~15--20% of Capy PRs)**:
   - *dev environment Selection / contributor Tier*: **CI** (`CI-3.8-flash`, `flash` contributor tier) or **automation / Haiku**.
@@ -194,7 +232,7 @@ Selecting the right CI / 3.8 capability tier and slash workflow maximizes code q
 
 - **Ambiguous New Feature, UX Redesign, or Sprint Charter**: Use **CI** (or **Argon**) with `workflow` + `workflow` to resolve design trade-offs one question at a time and approve `implementation_plan.md` before coding.
 - **Canvas Gestures, Zero-Alloc Ring Buffers, or Security/Crypto**: Use **CI** (`medium` thinking) with `workflow` to protect coordinate invariants and zero-allocation `requestAnimationFrame` paths.
-- **Cohesive Story or P0 Bug Batch (`2--4` Sprint Tasks)**: Use **CI** with `workflow` (sequential self-healing loop) or `/swarm` (parallel file-scoped workers + verifier running `npm test`) onto one `feature/sprint-*` or `feature/*` PR branch.
+- **Cohesive Story or P0 Bug Batch (`2--4` Sprint Tasks)**: Use **CI** with `workflow` (sequential self-healing loop) or `workflow` (parallel file-scoped workers + verifier running `npm test`) onto one `feature/sprint-*` or `feature/*` PR branch.
 - **Large Multi-Subsystem Campaign (`web/` + `app/` + `relay/`)**: Use **CI** or **Argon** with `workflow` for milestone-gated proposer + adversarial verifier execution.
 - **Single Ready `TASK-*` or `BUG-*` from `TODO.md`**: Use **CI** (or **CI** for `[quick-win]` items) in a fresh `#NNN` chat.
 - **Documentation Sync, Sprint Replenishment, or Link Audit**: Use **CI** (or `Flash-Lite`) via the zero-minute `.md` `paths-ignore` fast-path.
@@ -294,10 +332,13 @@ git rebase origin/beta
 When a Sprint or Beta cycle has been play-tested on `https://capyboop.github.io/capy/beta/` and approved for Production + Play Store release, open a **Release Promotion PR (`beta -> main`)**:
 
 ```bash
-# Promote CHANGELOG.md top heading from (Beta) to (Production, Beta) and clear older (Production) suffix
-gh pr create --base main --head beta --title "Promote v2.6 Sprint 1 release from Beta to Production"
-# After human merge sign-off + green Playwright E2E Release Gate, tag main to publish APK + Play Store AAB:
-git fetch origin main && git tag -a v2.6.0 origin/main -m "v2.6.0 -- <Release Title>" && git push origin v2.6.0
+# 1. Promote CHANGELOG.md top heading from (Beta) to (Production, Beta) and clear older (Production) suffix
+gh pr create -R capyboop/paint --base main --head beta --title "Promote v2.6 Sprint 1 release from Beta to Production"
+# 2. After human merge sign-off + green Playwright E2E Release Gate, tag main and re-align origin/beta to origin/main
+#    (prevents squash-merge history divergence on the next Sprint's feature/* -> beta PRs):
+git fetch origin main
+git tag -a v2.6.0 origin/main -m "v2.6.0 -- <Release Title>" && git push origin v2.6.0
+git push --force-with-lease origin origin/main:refs/heads/beta
 ```
 
 ### Step 2: Local Development & Verification
