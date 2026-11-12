@@ -332,7 +332,7 @@ async function runCodecAndEngineTests() {
     );
     for (const bullet of changelogBullets) {
       assert.equal(
-        /\s\[#\d+\]\(https:\/\/github\.com\/(?:capyboop|capyboop)\/capy\/pull\/\d+\)$/.test(bullet),
+        /\s\[#\d+\]\(https:\/\/github\.com\/capyboop\/capy\/pull\/\d+\)$/.test(bullet),
         true,
         `Each CHANGELOG.md bullet must end with a bare [#000] PR link: ${bullet}`
       );
@@ -603,13 +603,12 @@ async function runCodecAndEngineTests() {
       'capy-friends-zen-sheet-coloring-sheet.svg'
     );
 
-    // 11. capypaint.com canonical ShareLinkService, Co-op WS auto-discovery, Cloudflare Worker protocol & release rebrand
+    // 11. capypaint.com canonical ShareLinkService, Co-op WS auto-discovery & Cloudflare Worker protocol
     const shareLinkMod = await vite.ssrLoadModule('/src/services/ShareLinkService.ts');
     const providerMod = await vite.ssrLoadModule('/src/services/providers/ProviderRegistry.ts');
     const relayProtoMod = await vite.ssrLoadModule(
       path.resolve(projectRoot, '../worker/coopRoomProtocol.ts')
     );
-    const { transformPersonaContent } = await import('./export script.mjs');
 
     assert.equal(shareLinkMod.CANONICAL_PRODUCTION_URL, 'https://capypaint.com/');
     const builtShare = await shareLinkMod.buildShareProgressUrl({
@@ -624,7 +623,6 @@ async function runCodecAndEngineTests() {
     );
     for (const hostBase of [
       'https://capypaint.com/',
-      'https://capyboop.github.io/capy/',
       'https://capyboop.github.io/capy/',
     ]) {
       const parsedLink = await shareLinkMod.parseShareLinkFromUrl(
@@ -740,14 +738,7 @@ async function runCodecAndEngineTests() {
       true
     );
 
-    const sampleDoc =
-      'Repo https://github.com/capyboop/paint (`capyboop`) preview https://capypaint.com/';
-    const transformedOnce = transformPersonaContent(sampleDoc);
-    assert.equal(
-      transformedOnce,
-      'Repo https://github.com/capyboop/paint (`capyboop`) preview https://capypaint.com/'
-    );
-    assert.equal(transformPersonaContent(transformedOnce), transformedOnce);
+    
 
     console.log('   PASS: ColorQuantizer, RegionSegmenter, CapyCodec RLE, .capy v2 Gzip, CRDT deltas, SoundService, Zoom Detents, DailyPuzzleService, PlayerStatsService, SvgPrintExporter, Cloudflare Worker Co-op Relay, and Version/Changelog sync verified.');
   } finally {

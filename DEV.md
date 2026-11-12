@@ -1,6 +1,6 @@
 # Development & Maintenance Guide -- Capy Monorepo (`web/`, `app/`, `worker/`)
 
-This guide defines the end-to-end human and AI co-development workflow, shared architectural guardrails, model selection strategy, session hygiene, CI/CD architecture, and ongoing maintenance playbooks for **Capy** ([`https://github.com/capyboop/paint`](https://github.com/capyboop/paint), production fork [`https://github.com/capyboop/paint`](https://github.com/capyboop/paint) live at [`https://capypaint.com/`](https://capypaint.com/) and PR previews at [`https://capyboop.github.io/capy/`](https://capyboop.github.io/capy/)).
+This guide defines the end-to-end human and AI co-development workflow, shared architectural guardrails, model selection strategy, session hygiene, CI/CD architecture, and ongoing maintenance playbooks for **Capy** ([`https://github.com/capyboop/paint`](https://github.com/capyboop/paint), live at [`https://capypaint.com/`](https://capypaint.com/) and PR previews at [`https://capyboop.github.io/capy/`](https://capyboop.github.io/capy/)).
 
 **Related Guides**: [`README.md`](./README.md) | [`ROADMAP.md`](./ROADMAP.md) | [`TODO.md`](./TODO.md) | [`WEB.md`](./WEB.md) | [`PUZZLE.md`](./PUZZLE.md) | [`APP.md`](./APP.md) | [`CLOUD.md`](./CLOUD.md) | [`TESTING.md`](./TESTING.md) | [`CHANGELOG.md`](./CHANGELOG.md)
 
@@ -448,10 +448,9 @@ Capy runs four coordinated GitHub Actions workflows in [`.github/workflows/`](./
 - Runs daily at `06:00 UTC` (`cron: '0 6 * * *'`) or manually via `workflow_dispatch`.
 - Invokes `.github/scripts/cleanup-branches.mjs` to prune merged/stale branches (`>= 1` day old) matching `feature/`, `feature/`, `fix/`, `chore/`, `ci/`, `deps/`, `docs/`, or `feature/` (never touching `main` or `beta`), followed by `cleanup-gh-pages-previews.mjs` to remove any orphaned `/pull/` directories while preserving `/beta/`.
 
-### 4. Production Cloudflare Workers Deployment ([`deploy-cloudflare.yml`](./.github/workflows/deploy-cloudflare.yml)) & release Sync
+### 4. Production Cloudflare Workers Deployment ([`deploy-cloudflare.yml`](./.github/workflows/deploy-cloudflare.yml))
 - Triggered on `push` to `main` (touching `web/**`, `worker/**`, `wrangler.jsonc`, or the workflow file) and `workflow_dispatch`.
-- When `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` secrets are configured (or via Cloudflare Workers Builds native Git integration on `capyboop/paint`), compiles `web/dist`, typechecks `web/` and `worker/`, and deploys [`wrangler.jsonc`](./wrangler.jsonc) + [`worker/index.ts`](./worker/index.ts) (`CoopRoomDurableObject`) to `https://capypaint.com/`. Repositories without Cloudflare secrets skip cleanly in `< 2s`.
-- Syncing upstream `capyboop/paint` into the public `capyboop/paint` production fork uses `npm --prefix web run export check` ([`web/scripts/export script.mjs`](./web/scripts/export script.mjs)) to rewrite GitHub and Pages release references idempotently.
+- When `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` secrets are configured (or via Cloudflare Workers Builds native Git integration), compiles `web/dist`, typechecks `web/` and `worker/`, and deploys [`wrangler.jsonc`](./wrangler.jsonc) + [`worker/index.ts`](./worker/index.ts) (`CoopRoomDurableObject`) to `https://capypaint.com/`. Repositories without Cloudflare secrets skip cleanly in `< 2s`.
 
 ---
 

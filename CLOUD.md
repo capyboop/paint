@@ -8,7 +8,7 @@ This document explains how modular multi-platform cloud login (`Google`, `Google
 1. [Plain-English Overview: How Everything Works](#1-plain-english-overview-how-everything-works)
 2. [End-to-End Architecture Diagrams](#2-end-to-end-architecture-diagrams)
 3. [Step-by-Step Developer Guide: Provisioning Google Cloud OAuth 2.0 & Play Games v2](#3-step-by-step-developer-guide-provisioning-google-cloud-oauth-20--play-games-v2)
-4. [Step-by-Step Developer Guide: Deploying capypaint.com on Cloudflare Workers & Syncing capyboop/paint](#4-step-by-step-developer-guide-deploying-capypaintcom-on-cloudflare-workers--syncing-capyboopcapy)
+4. [Step-by-Step Developer Guide: Deploying capypaint.com on Cloudflare Workers](#4-step-by-step-developer-guide-deploying-capypaintcom-on-cloudflare-workers)
 
 ---
 
@@ -162,10 +162,10 @@ flowchart TD
    - Add test accounts under **Audience -> Test users** while in Testing mode, or click **Publish App** for public Google sign-in.
 4. **Create the Web OAuth 2.0 Client ID**:
    - Navigate to **APIs & Services -> Credentials -> + Create Credentials -> OAuth client ID** (`Web application`).
-   - Add **Authorized JavaScript origins**: `https://capypaint.com`, `https://www.capypaint.com`, `https://capyboop.github.io`, `https://capyboop.github.io`, `http://localhost:3000`, and `http://localhost:4173`.
+   - Add **Authorized JavaScript origins**: `https://capypaint.com`, `https://www.capypaint.com`, `https://capyboop.github.io`, `http://localhost:3000`, and `http://localhost:4173`.
    - Copy the generated Client ID (`1234567890-xxxxxxxx.apps.googleusercontent.com`).
 5. **Save `VITE_GOOGLE_CLIENT_ID` in GitHub Repository Variables**:
-   - Open **Settings -> Secrets and variables -> Actions -> Variables** in your GitHub repository and create `VITE_GOOGLE_CLIENT_ID` (or set it in `web/.env.local` for local dev).
+   - Open `https://github.com/capyboop/paint/settings/variables/actions` (**Settings -> Secrets and variables -> Actions -> Variables**) and create `VITE_GOOGLE_CLIENT_ID` (or set it in `web/.env.local` for local dev).
 
 ### Part B: Android Google Play Games Services v2 (`CAPY_PLAY_GAMES_APP_ID`)
 1. **Enable Play Games Services & Saved Games in Google Play Console**:
@@ -174,37 +174,29 @@ flowchart TD
 2. **Register Android Signing Certificate SHA-1 Fingerprints**:
    - Under **Credentials -> Add credential** (`Android`, `com.capypaint.capy`), register the SHA-1 fingerprint for both your debug/upload keystore and your Play App Signing certificate.
 3. **Save `CAPY_PLAY_GAMES_APP_ID` in GitHub Repository Variables**:
-   - Add `CAPY_PLAY_GAMES_APP_ID` (`<your-12-digit-play-games-app-id>`) in **Settings -> Secrets and variables -> Actions -> Variables** (wiring `${{ vars.VITE_GOOGLE_CLIENT_ID }}` and `${{ vars.CAPY_PLAY_GAMES_APP_ID }}` into [`.github/workflows/deploy-branch.yml`](./.github/workflows/deploy-branch.yml) is queued as `BUG-2` in [`TODO.md`](./TODO.md)).
+   - Add `CAPY_PLAY_GAMES_APP_ID` (`<your-12-digit-play-games-app-id>`) in `https://github.com/capyboop/paint/settings/variables/actions` (wiring `${{ vars.VITE_GOOGLE_CLIENT_ID }}` and `${{ vars.CAPY_PLAY_GAMES_APP_ID }}` into [`.github/workflows/deploy-branch.yml`](./.github/workflows/deploy-branch.yml) is queued as `BUG-2` in [`TODO.md`](./TODO.md)).
 4. **Android App Links (`autoVerify="true"`) on `capypaint.com`**:
    - Cloudflare Workers Static Assets serves [`web/public/.well-known/assetlinks.json`](./web/public/.well-known/assetlinks.json) directly at `https://capypaint.com/.well-known/assetlinks.json`. Replace the placeholder SHA-256 fingerprint in `assetlinks.json` with your Google Play App Signing certificate SHA-256 fingerprint so Android verifies `https://capypaint.com/#s=...` App Links automatically.
 
 ---
 
-## 4. Step-by-Step Developer Guide: Deploying capypaint.com on Cloudflare Workers & Syncing capyboop/paint
+## 4. Step-by-Step Developer Guide: Deploying capypaint.com on Cloudflare Workers
 
 ### Architecture Overview ([`wrangler.jsonc`](./wrangler.jsonc) & [`worker/index.ts`](./worker/index.ts))
 - **Edge Static Assets (`0` Worker Invocations for Static Files)**: `wrangler.jsonc` serves `./web/dist` (`not_found_handling: "single-page-application"`, `run_worker_first: ["/api/*"]`) with immutable hashed bundle caching and [`web/public/_headers`](./web/public/_headers) security policies.
 - **SQLite-Backed WebSocket Hibernation (`CoopRoomDurableObject`)**: `/api/room?room=<ROOM6>` upgrades to a per-room Durable Object using `new_sqlite_classes` (supported on both **Cloudflare Workers Free and Paid plans**). Sockets hibernate between strokes (`0` idle CPU ms), persist the latest `WELCOME_STATE` `seedToken` in SQLite `room_state`, broadcast `LEAVE` on disconnect, and prune idle rooms after 24 hours via `alarm()`.
 - **Canonical Domain Redirect & Health Check**: `https://www.capypaint.com/*` 301-redirects to `https://capypaint.com/*`, and `GET /api/health` returns JSON service status.
 
-### Part A: Syncing & Rebranding the Production Fork (`capyboop/paint`)
-`capyboop/paint` (`https://github.com/capyboop/paint`) is the public production fork of `capyboop/paint`. Whenever `capyboop/paint` `main` advances:
-1. Pull `capyboop/paint` `main` into your `capyboop/paint` checkout and run the idempotent release rebrand script ([`web/scripts/export script.mjs`](./web/scripts/export script.mjs)):
-   ```bash
-   git pull https://github.com/capyboop/paint.git main
-   npm --prefix web run export check
-   ```
-2. Preview changes first if desired via `node web/scripts/export script.mjs --dry-run`, verify with `npm --prefix web test`, commit, and push to `capyboop/paint`.
-
-### Part B: Connecting `capyboop/paint` to Cloudflare Workers (`capypaint.com`)
+### Connecting to Cloudflare Workers (`capypaint.com`)
 Choose either native Cloudflare Git builds (zero GitHub secrets) or GitHub Actions deployment:
 
 - **Option 1 -- Cloudflare Workers Builds Git Integration (Recommended)**:
   1. Add `capypaint.com` as a zone in Cloudflare Dashboard and point your registrar's nameservers to Cloudflare.
-  2. Open **Compute (Workers) -> Workers & Pages -> Create application -> Import a repository**, select `capyboop/paint`, and keep Project Name `capy-paint`.
+  2. Open **Compute (Workers) -> Workers & Pages -> Create application -> Import a repository**, select `https://github.com/capyboop/paint`, and keep Project Name `capy-paint`.
   3. Set **Build command** to `npm --prefix web ci && npm --prefix web run build` and **Deploy command** to `npx wrangler deploy` (Root directory `/`).
   4. Click **Save and Deploy**. Cloudflare automatically provisions custom domains `capypaint.com` and `www.capypaint.com` (`custom_domain: true` in [`wrangler.jsonc`](./wrangler.jsonc)) with managed SSL certificates and runs the `v1` SQLite Durable Object migration.
 - **Option 2 -- GitHub Actions Workflow ([`.github/workflows/deploy-cloudflare.yml`](./.github/workflows/deploy-cloudflare.yml))**:
-  1. In `capyboop/paint` **Settings -> Secrets and variables -> Actions -> Secrets**, add `CLOUDFLARE_API_TOKEN` (*Edit Cloudflare Workers* template) and `CLOUDFLARE_ACCOUNT_ID` (optionally add `VITE_GOOGLE_CLIENT_ID` under **Variables**).
-  2. Every push to `main` (or manual `workflow_dispatch`) compiles `web/dist`, runs `tsc --noEmit` across `web/` and `worker/`, and deploys via `cloudflare/wrangler-action@v3`. Forks without Cloudflare secrets skip cleanly in `< 2s`.
+  1. In **Settings -> Secrets and variables -> Actions -> Secrets**, add `CLOUDFLARE_API_TOKEN` (*Edit Cloudflare Workers* template) and `CLOUDFLARE_ACCOUNT_ID` (optionally add `VITE_GOOGLE_CLIENT_ID` under **Variables**).
+  2. Every push to `main` (or manual `workflow_dispatch`) compiles `web/dist`, runs `tsc --noEmit` across `web/` and `worker/`, and deploys via `cloudflare/wrangler-action@v3`. Repositories without Cloudflare secrets skip cleanly in `< 2s`.
+
 
