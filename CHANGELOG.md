@@ -1,5 +1,6 @@
-### 3.0 - 2026-11-12 (Beta)
+### 3.0 - 2026-11-13 (Beta)
 
+- Add 1-click GitHub PR approval workflow via bot-opened PRs, native review workflow tests, and prebaked sample viewport reset #490
 - Add Android Play Store release to v3.0.1 scope and remove shipped Sprint 1 bugfixes from active queue #487
 - Fix mobile topbar badge overlap, cap incomplete puzzle progress at 99%, and log capypaint.com DNS cutover #486
 - Prepare v3.0.0 beta release with Cloudflare Worker, Co-op relay hardening, mobile replay controls, and CI sanity gate #485

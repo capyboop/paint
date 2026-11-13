@@ -2264,6 +2264,61 @@ async function runBrowserBasicsSuite() {
     // ------------------------------------------------------------------
     console.log('-> [E2E 10] Verifying Daily Featured Puzzle, Reduced Motion, Keyboard Shortcuts & Lifetime Stats...');
 
+    // Prebaked sample viewport reset regression check (date-independent, reproduces zoomed reload -> 1x cycle -> prebaked load)
+    await zoomBadge.click();
+    assert.equal((await zoomBadge.innerText()).trim(), '2x', 'Expected zoomBadge to step to 2x before reload');
+    await page.waitForTimeout(420);
+    await page.reload({ waitUntil: 'load' });
+    await waitForPuzzleLoaded(page);
+
+    for (let guard = 0; guard < 6; guard++) {
+      const text = (await zoomBadge.innerText()).trim();
+      if (text === '1x') break;
+      await zoomBadge.click();
+    }
+    assert.equal((await zoomBadge.innerText()).trim(), '1x', 'Expected zoomBadge to cycle back to 1x after zoomed reload');
+
+    await page.locator('button[title="Settings and Menu"]').click();
+    await page.getByRole('button', { name: 'Create', exact: true }).click();
+    const snailCard = page.getByTestId('gallery-card-snail_guitar');
+    await snailCard.waitFor({ state: 'visible', timeout: 5000 });
+    await snailCard.getByRole('button', { name: 'Play', exact: true }).click();
+    await waitForPuzzleLoaded(page);
+    await page.waitForTimeout(200);
+
+    assert.equal(
+      (await zoomBadge.innerText()).trim(),
+      '1x',
+      'Expected prebaked sample load after zoomed reload to reset zoom badge to 1x'
+    );
+    assert.equal(
+      await page.getByTestId('reset-view-btn').count(),
+      0,
+      'Expected reset-view-btn to be unmounted after prebaked sample viewport reset'
+    );
+    const prebakedSession = await page.evaluate(() => {
+      return JSON.parse(localStorage.getItem('capy_active_session_v8') || '{}');
+    });
+    assert.equal(
+      prebakedSession.zoomScale,
+      1,
+      `Expected capy_active_session_v8 zoomScale === 1 after prebaked sample load, got ${prebakedSession.zoomScale}`
+    );
+    assert.equal(
+      prebakedSession.panOffsetX,
+      0,
+      `Expected capy_active_session_v8 panOffsetX === 0 after prebaked sample load, got ${prebakedSession.panOffsetX}`
+    );
+    assert.equal(
+      prebakedSession.panOffsetY,
+      0,
+      `Expected capy_active_session_v8 panOffsetY === 0 after prebaked sample load, got ${prebakedSession.panOffsetY}`
+    );
+
+    // Step to 2x before Play Daily so 10a also verifies daily puzzle launch resets non-1x zoom
+    await zoomBadge.click();
+    assert.equal((await zoomBadge.innerText()).trim(), '2x', 'Expected zoomBadge to step to 2x before Play Daily');
+
     // 10a. Daily Featured Puzzle hero card at top of Create tab + one-tap Play Daily launch
     await page.locator('button[title="Settings and Menu"]').click();
     await page.getByRole('button', { name: 'Create', exact: true }).click();
