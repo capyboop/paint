@@ -15,11 +15,11 @@ Strategic product horizon for **Capy** ([`web/`](./web/) and [`app/`](./app/)). 
 <details>
 <summary>Roadmap Rollup (`16` Stories & Active `v3.0.1` Queue across `4` Epics)</summary>
 
-- EPIC-2 (*`v3.0.1` Stabilization & Android/Play Release -- Sprint 1 (`#2`)*): `~18k tokens` (`~10--15 min contributor` for `TASK-2.5`, plus `BUG-4` `ops` & open PR #489 `TASK-2.6` in [`TODO.md`](./TODO.md))
+- EPIC-2 (*`v3.0.1` Stabilization & Android/Play Release -- Sprint 1 (`#2`)*): `~18k tokens` (`~10--15 min contributor` for `TASK-2.5`, plus `BUG-4` `ops` in [`TODO.md`](./TODO.md))
 - EPIC-3 (*8 Stories -- Sprint 2 (`#3`), Awaiting Owner Review*): `~256k tokens` (`~119--171 min contributor`)
 - EPIC-4 (*3 Stories -- Sprint 3 (`#4`), Ready After EPIC-3*): `~68k tokens` (`~32--46 min contributor`)
 - EPIC-5 (*5 Stories -- Blocked on External Infra*): `~245k tokens` (`~113--165 min contributor`)
-- **Total Strategic Horizon**: `~587k tokens` (`~4.6--6.6 hrs contributor` | `~77--112 hrs human`; contributor totals exclude `BUG-4` `ops` & open PR #489)
+- **Total Strategic Horizon**: `~587k tokens` (`~4.6--6.6 hrs contributor` | `~77--112 hrs human`; contributor totals exclude `BUG-4` `ops`)
 
 </details>
 
@@ -29,10 +29,10 @@ Strategic product horizon for **Capy** ([`web/`](./web/) and [`app/`](./app/)). 
 
 **Epic Goal**: Stabilize `v3.0.0` / `v3.0.1` with critical reliability, viewport, and priority onboarding/replay additions, go live at `https://capypaint.com/`, and ship Android `v3.0.1` to Google Play Store. Unapproved feature stories (`US-2.1`, `US-2.3b`, `US-2.4`) stay in EPIC-3. *(Tracking: EPIC-2 | Sprint 1 (`#2`)).*
 
-- **Active Execution Queue**: See [`TODO.md`](./TODO.md) for `BUG-4` (`capypaint.com` live DNS & Cloudflare Worker cutover -- Human Ops Gate), `TASK-2.5` (Android `.aab` & Google Play Store release -- Release Ops Gate), and `TASK-2.6` (open PR #489: post-load replay controls, `Capy Forest` default, first-run tutorial & `About` tab -- awaiting `beta` rebase & verification).
+- **Active Execution Queue**: See [`TODO.md`](./TODO.md) for `BUG-4` (`capypaint.com` live DNS & Cloudflare Worker cutover -- Human Ops Gate) and `TASK-2.5` (Android `.aab` & Google Play Store release -- Release Ops Gate).
 - **Shipped & Re-Scoped History**:
   - **Shipped to `main` (`Production`)**: `BUG-1` & `BUG-3` (#484, #485), `BUG-2` (#485), and `BUG-5` mobile `GameTopBar` overlap & `99%` progress cap (#486, promoted to `main` in #488).
-  - **Shipped to `beta` (`v3.0.2`, awaiting `main` promotion)**: Prebaked sample `1x` viewport reset & one-click PR approval workflow (#490) and `TASK-2.5` Play Store `v3.0.1` backlog sync (#487).
+  - **Shipped to `beta` (`v3.0.2`--`v3.0.6`, awaiting `main` promotion)**: Prebaked sample `1x` viewport reset & one-click PR approval workflow (#490), `TASK-2.5` Play Store `v3.0.1` backlog sync (#487), CI/CD & governance hardening (#491, #492, #493, #494), and `TASK-2.6` post-load replay controls, `Capy Forest` default, interactive first-run tutorial & `About` tab (#489).
   - **Moved to EPIC-3**: Shipped pre-re-scope touch/audio slices `US-2.2` & `TASK-2.3a` (#472, archived under EPIC-3 in [Section 6](#6-shipped-epics--stories-epic-1--completed-stories)) plus unapproved feature stories `US-2.1`, `US-2.3b`, and `US-2.4` ([Section 2](#2-epic-3-touch-assist-sensory-polish-retention-accessibility--replays-awaiting-owner-review--approval)).
 
 ---
@@ -418,9 +418,11 @@ Parked native desktop/mobile store wrappers awaiting completion of EPIC-2--EPIC-
 Completed Epics and User Stories archived upon merge to `main` (full granular PR history lives in [`CHANGELOG.md`](./CHANGELOG.md)):
 
 <details>
-<summary>Expand Shipped Epics & Stories (EPIC-1 & Shipped Slices -- PRs #431--#490)</summary>
+<summary>Expand Shipped Epics & Stories (EPIC-1 & Shipped Slices -- PRs #431--#494)</summary>
 
-- **Sprint 1 `v3.0.0`--`v3.0.2` Bugfix & Automation Slices (`BUG-1`--`BUG-3`, `BUG-5`, `TASK-2.5` Sync & PR Workflows)**:
+- **Sprint 1 `v3.0.0`--`v3.0.6` Bugfix, Onboarding & Automation Slices (`BUG-1`--`BUG-3`, `BUG-5`, `TASK-2.5` Sync, `TASK-2.6` & PR Workflows)**:
+  - **`TASK-2.6`: Post-Load Replay Controls, `Capy Forest` Default, Interactive 5-Step Onboarding Tutorial & `About` Tab (`v3.0.6`, on `beta`)** -- #489
+  - **Preview Index Manifest, Lowercase `/capy/alpha/<num>/` Routing, CI/CD Hardening & `PROJECT.md` Charter (`v3.0.2`--`v3.0.5`, on `beta`)** -- #491, #492, #493, #494
   - **1-Click GitHub PR Approval Workflow via Bot-Opened PRs, Native review workflow Tests & Prebaked Sample `1x` Viewport Reset (`v3.0.2`, on `beta`)** -- #490
   - **`v3.0.1` Production Promotion (`BUG-5` Mobile `GameTopBar` Two-Lane Layout & `99%` Incomplete Progress Cap)** -- #486, #488
   - **Android Play Store Release Scope (`TASK-2.5`) & Shipped Bugfix Queue Prune (on `beta`)** -- #487
