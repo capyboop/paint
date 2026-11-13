@@ -1,12 +1,18 @@
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import zlib from 'node:zlib';
 import { chromium } from 'playwright';
 import { createServer, preview } from 'vite';
-import { runSanityChecks } from './sanity.mjs';
+import {
+  runSanityChecks,
+  validateChangelogChannelOrder,
+  validateEpicNaming,
+  validateRootGuideIndex,
+} from './sanity.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.resolve(__dirname, '..');
@@ -462,12 +468,653 @@ async function runCodecAndEngineTests() {
       true,
       `Expected >= 398 single-line PR bullets in CHANGELOG.md, got ${changelogBullets.length}`
     );
+    let changelogBulletRe = /\s(?:\[#\d+\]\(https:\/\/github\.com\/[^/\s]+\/capy\/pull\/\d+\)|#\d+)$/;
+    
     for (const bullet of changelogBullets) {
       assert.equal(
-        /\s(?:\[#\d+\]\(https:\/\/github\.com\/[^/\s]+\/capy\/pull\/\d+\)|#\d+)$/.test(bullet),
+        changelogBulletRe.test(bullet),
         true,
-        `Each CHANGELOG.md bullet must end with a bare [#000] or #000 PR reference: ${bullet}`
+        `Each CHANGELOG.md bullet must end with a valid PR reference: ${bullet}`
       );
+    }
+
+    // 5b. Chronological changelog, Epic naming, dynamic guide indexing, and CI cleanup script unit checks
+    const validBetaChangelog = [
+      '### 3.0.3 - 2026-11-13 (Beta)',
+      '',
+      '- Beta item #493',
+      '',
+      '### 3.0.2 - 2026-11-13',
+      '',
+      '- Prior beta item #490',
+      '',
+      '### 3.0.1 - 2026-11-12 (Production)',
+      '',
+      '- Prod item #488',
+      '',
+      '### 2.7 - 2026-11-12',
+      '',
+      '- Older item #484',
+      '',
+      '### 0.1.0 - 2026-10-01',
+      '',
+      '- Initial #1',
+    ].join('\n');
+    const betaOrderRes = validateChangelogChannelOrder(validBetaChangelog, '3.0.3', {
+      enforceChannelOrder: true,
+    });
+    assert.equal(betaOrderRes.alphaIdx, -1);
+    assert.equal(betaOrderRes.betaIdx, 0);
+    assert.equal(betaOrderRes.prodIdx, 2);
+
+    const validAlphaBetaProd = [
+      '### 3.1.0 - 2026-11-14 (Alpha)',
+      '- Alpha #500',
+      '### 3.0.3 - 2026-11-13 (Beta)',
+      '- Beta #493',
+      '### 3.0.1 - 2026-11-12 (Production)',
+      '- Prod #488',
+      '### 0.1.0 - 2026-10-01',
+      '- Init #1',
+    ].join('\n');
+    const abpRes = validateChangelogChannelOrder(validAlphaBetaProd, '3.1.0', {
+      enforceChannelOrder: true,
+    });
+    assert.equal(abpRes.alphaIdx, 0);
+    assert.equal(abpRes.betaIdx, 1);
+    assert.equal(abpRes.prodIdx, 2);
+
+    const validCombinedProdBeta = [
+      '### 3.0.1 - 2026-11-12 (Production, Beta)',
+      '- Combined #488',
+      '### 2.7 - 2026-11-11',
+      '- Old #484',
+    ].join('\n');
+    const combinedRes = validateChangelogChannelOrder(validCombinedProdBeta, '3.0.1', {
+      enforceChannelOrder: true,
+    });
+    assert.equal(combinedRes.betaIdx, 0);
+    assert.equal(combinedRes.prodIdx, 0);
+
+    const validProdOnly = [
+      '### 3.0.1 - 2026-11-12 (Production)',
+      '- Prod #488',
+      '### 2.7 - 2026-11-11',
+      '- Old #484',
+    ].join('\n');
+    assert.equal(
+      validateChangelogChannelOrder(validProdOnly, '3.0.1', { enforceChannelOrder: true }).prodIdx,
+      0
+    );
+
+    // Minor rollup heading (3.0) matches patch version 3.0.4
+    const validMinorRollup = [
+      '### 3.0 - 2026-11-13 (Beta)',
+      '- Rollup #493',
+      '### 2.5 - 2026-11-11 (Production)',
+      '- Prod #483',
+    ].join('\n');
+    assert.equal(
+      validateChangelogChannelOrder(validMinorRollup, '3.0.4', { enforceChannelOrder: true }).betaIdx,
+      0
+    );
+
+    const crlfChangelogRes = validateChangelogChannelOrder(
+      validBetaChangelog.replace(/\n/g, '\r\n'),
+      '3.0.3',
+      { enforceChannelOrder: true }
+    );
+    assert.equal(crlfChangelogRes.betaIdx, 0);
+    assert.equal(crlfChangelogRes.prodIdx, 2);
+
+    assert.throws(
+      () =>
+        validateChangelogChannelOrder(
+          [
+            '### 3.0 - 2026-11-13 (Beta)',
+            '### 2.7 - 2026-11-12 (Alpha)',
+            '### 2.5 - 2026-11-11 (Production)',
+          ].join('\n'),
+          '3.0.4',
+          { enforceChannelOrder: true }
+        ),
+      /Alpha heading must appear first/
+    );
+    assert.throws(
+      () =>
+        validateChangelogChannelOrder(
+          ['### 3.0 - 2026-11-13 (Production)', '### 2.7 - 2026-11-12 (Beta)'].join('\n'),
+          '3.0.0',
+          { enforceChannelOrder: true }
+        ),
+      /Beta heading must appear at or before Production/
+    );
+    assert.throws(
+      () =>
+        validateChangelogChannelOrder(
+          [
+            '### 3.0 - 2026-11-13 (Beta)',
+            '### 2.8 - 2026-11-12 (Production)',
+            '### 2.5 - 2026-11-11 (Beta)',
+          ].join('\n'),
+          '3.0.0',
+          { enforceChannelOrder: true }
+        ),
+      /Expected <= 1 Beta heading|after Production/
+    );
+    assert.throws(
+      () =>
+        validateChangelogChannelOrder(
+          [
+            '### 3.0 - 2026-11-13 (Beta)',
+            '### 2.8 - 2026-11-12 (Production)',
+            '### 2.5 - 2026-11-11 (Alpha)',
+          ].join('\n'),
+          '3.0.0',
+          { enforceChannelOrder: true }
+        ),
+      /Alpha heading must appear first|after Production/
+    );
+    assert.throws(
+      () =>
+        validateChangelogChannelOrder(
+          ['### 3.0.1 - 2026-11-13 (Beta)', '### 3.0.2 - 2026-11-12 (Production)'].join('\n'),
+          '3.0.1',
+          { enforceChannelOrder: true }
+        ),
+      /strictly descending by version/
+    );
+    assert.throws(
+      () =>
+        validateChangelogChannelOrder(
+          ['### 3.0 - 2026-11-13 (Beta)', '### 3.0.0 - 2026-11-12 (Production)'].join('\n'),
+          '3.0.0',
+          { enforceChannelOrder: true }
+        ),
+      /strictly descending by version/
+    );
+    assert.throws(
+      () =>
+        validateChangelogChannelOrder(
+          ['### 3.0.2 - 2026-11-12 (Beta)', '### 3.0.1 - 2026-11-13 (Production)'].join('\n'),
+          '3.0.2',
+          { enforceChannelOrder: true }
+        ),
+      /non-increasing by date/
+    );
+    assert.throws(
+      () =>
+        validateChangelogChannelOrder(
+          ['### 3.0.2 - 2026-11-13 (Beta)', '### 3.0.1 - 2026-11-12 (Production)'].join('\n'),
+          '3.0.4',
+          { enforceChannelOrder: true }
+        ),
+      /missing active channel heading for 3\.0\.4/
+    );
+
+    const validEpicUrl = 'https://github.com/' + 'capyboop/paint/issues/477';
+    const validPrRef = '[' + '#482](' + 'https://github.com/' + 'capyboop/paint/pull/482)';
+    validateEpicNaming(`See [EPIC-2](${validEpicUrl}), plain EPIC-2, and ${validPrRef}`, 'DEV.md');
+    for (const badNum of ['476', '477', '480']) {
+      assert.throws(
+        () => validateEpicNaming(`Legacy #'${badNum}`.replace("'", ''), 'TODO.md'),
+        /EPIC-N/
+      );
+    }
+    const badIssueLink = '[' + '#481](' + 'https://github.com/' + 'capyboop/paint/issues/481)';
+    assert.throws(() => validateEpicNaming(`Link ${badIssueLink}`, 'ROADMAP.md'), /EPIC-N/);
+    const badCombinedEpic = '[EPIC-2 (' + '#477)](' + validEpicUrl + ')';
+    assert.throws(() => validateEpicNaming(`Combined ${badCombinedEpic}`, 'project docs'), /EPIC-N/);
+    const badUnlinkedCombinedEpic = '[EPIC-6 (#' + '481)]';
+    assert.throws(() => validateEpicNaming(`Unlinked ${badUnlinkedCombinedEpic}`, 'ROADMAP.md'), /EPIC-N/);
+
+    const tmpGuideDir = fs.mkdtempSync(path.join(os.tmpdir(), 'capy-guide-index-'));
+    try {
+      const rootMdNames = [
+        'README.md',
+        'PROJECT.md',
+        'DEV.md',
+        'project docs',
+        'ROADMAP.md',
+        'TODO.md',
+        'WEB.md',
+        'PUZZLE.md',
+        'APP.md',
+        'CLOUD.md',
+        'TESTING.md',
+        'CHANGELOG.md',
+        'LICENSE.md',
+      ];
+      for (const name of rootMdNames) {
+        fs.writeFileSync(path.join(tmpGuideDir, name), `# ${name}\n`, 'utf8');
+      }
+      const allLinks = rootMdNames.map((n) => `[${n}](./${n})`).join(' ');
+      fs.writeFileSync(path.join(tmpGuideDir, 'README.md'), `# README\n${allLinks}\n`, 'utf8');
+      fs.writeFileSync(path.join(tmpGuideDir, 'DEV.md'), `# DEV\n${allLinks}\n`, 'utf8');
+      fs.writeFileSync(path.join(tmpGuideDir, 'PROJECT.md'), `# PROJECT\n${allLinks}\n`, 'utf8');
+      const guideRes = validateRootGuideIndex(tmpGuideDir, { requireProjectMd: true });
+      assert.equal(guideRes.hasProjectMd, true);
+      assert.equal(guideRes.rootMdFiles.length, 13);
+
+      fs.writeFileSync(
+        path.join(tmpGuideDir, 'README.md'),
+        `# README\n${allLinks.replace('./PROJECT.md', './OTHER.md')}\n`,
+        'utf8'
+      );
+      assert.throws(
+        () => validateRootGuideIndex(tmpGuideDir, { requireProjectMd: true }),
+        /README\.md must link \.\/PROJECT\.md/
+      );
+      fs.writeFileSync(path.join(tmpGuideDir, 'README.md'), `# README\n${allLinks}\n`, 'utf8');
+
+      fs.writeFileSync(
+        path.join(tmpGuideDir, 'PROJECT.md'),
+        `# PROJECT\n${allLinks.replace('./TESTING.md', './OTHER.md')}\n`,
+        'utf8'
+      );
+      assert.throws(
+        () => validateRootGuideIndex(tmpGuideDir, { requireProjectMd: true }),
+        /PROJECT\.md must link \.\/TESTING\.md/
+      );
+      fs.writeFileSync(path.join(tmpGuideDir, 'PROJECT.md'), `# PROJECT\n${allLinks}\n`, 'utf8');
+
+      fs.unlinkSync(path.join(tmpGuideDir, 'PROJECT.md'));
+      assert.throws(
+        () => validateRootGuideIndex(tmpGuideDir, { requireProjectMd: true }),
+        /PROJECT\.md must exist/
+      );
+    } finally {
+      fs.rmSync(tmpGuideDir, { recursive: true, force: true });
+    }
+
+    
+
+    // Unit-test .github/scripts/cleanup-gh-pages-previews.mjs and .github/scripts/cleanup-branches.mjs
+    const previewCleanupMod = await import('../../.github/scripts/cleanup-gh-pages-previews.mjs');
+    const branchCleanupMod = await import('../../.github/scripts/cleanup-branches.mjs');
+
+    const makeMockResponse = ({ ok = true, status = 200, statusText = 'OK', headers = {}, jsonData = null, textData = '' } = {}) => ({
+      ok,
+      status,
+      statusText,
+      headers: {
+        get: (key) => {
+          const found = Object.entries(headers).find(([k]) => k.toLowerCase() === String(key).toLowerCase());
+          return found ? found[1] : null;
+        },
+      },
+      json: async () => jsonData,
+      text: async () => textData,
+    });
+
+    // cleanup-gh-pages-previews: 504 transient retry -> 200
+    {
+      let calls = 0;
+      const sleeps = [];
+      const res = await previewCleanupMod.requestWithRetry('https://api.github.com/repos/a/b/pulls', {
+        baseDelayMs: 1,
+        sleepImpl: async (ms) => sleeps.push(ms),
+        fetchImpl: async () => {
+          calls += 1;
+          if (calls === 1) {
+            return makeMockResponse({ ok: false, status: 504, statusText: 'Gateway Timeout', textData: 'timeout' });
+          }
+          return makeMockResponse({ ok: true, status: 200, jsonData: [] });
+        },
+      });
+      assert.equal(calls, 2);
+      assert.equal(sleeps.length, 1);
+      assert.deepEqual(res.data, []);
+    }
+
+    // cleanup-gh-pages-previews: 429 Retry-After honored -> 200
+    {
+      let calls = 0;
+      const sleeps = [];
+      await previewCleanupMod.requestWithRetry('https://api.github.com/repos/a/b/pulls', {
+        baseDelayMs: 1,
+        sleepImpl: async (ms) => sleeps.push(ms),
+        fetchImpl: async () => {
+          calls += 1;
+          if (calls === 1) {
+            return makeMockResponse({
+              ok: false,
+              status: 429,
+              statusText: 'Too Many Requests',
+              headers: { 'Retry-After': '0.005' },
+            });
+          }
+          return makeMockResponse({ ok: true, status: 200, jsonData: [{ number: 1 }] });
+        },
+      });
+      assert.equal(calls, 2);
+      assert.equal(sleeps[0], 5);
+    }
+
+    // cleanup-gh-pages-previews: non-rate-limit 403 & 404 fail fast without retry
+    {
+      let calls404 = 0;
+      await assert.rejects(
+        () =>
+          previewCleanupMod.requestWithRetry('https://api.github.com/repos/a/b/pulls/999', {
+            baseDelayMs: 1,
+            sleepImpl: async () => {},
+            fetchImpl: async () => {
+              calls404 += 1;
+              return makeMockResponse({ ok: false, status: 404, statusText: 'Not Found' });
+            },
+          }),
+        /404/
+      );
+      assert.equal(calls404, 1);
+
+      let calls403 = 0;
+      await assert.rejects(
+        () =>
+          previewCleanupMod.requestWithRetry('https://api.github.com/repos/a/b/pulls', {
+            baseDelayMs: 1,
+            sleepImpl: async () => {},
+            fetchImpl: async () => {
+              calls403 += 1;
+              return makeMockResponse({ ok: false, status: 403, statusText: 'Forbidden' });
+            },
+          }),
+        /403/
+      );
+      assert.equal(calls403, 1);
+    }
+
+    // cleanup-gh-pages-previews: fetchPullRequests uses state=open + targeted PR lookup, ignoring 404
+    {
+      const requestedUrls = [];
+      const pulls = await previewCleanupMod.fetchPullRequests({
+        baseUrl: 'https://api.github.com/repos/a/b',
+        headers: {},
+        targetPr: 484,
+        baseDelayMs: 1,
+        sleepImpl: async () => {},
+        fetchImpl: async (url) => {
+          const href = String(url);
+          requestedUrls.push(href);
+          if (href.includes('/pulls/484')) {
+            return makeMockResponse({ ok: true, status: 200, jsonData: { number: 484, state: 'closed', head: { ref: 'feature/x' } } });
+          }
+          return makeMockResponse({ ok: true, status: 200, jsonData: [{ number: 492, state: 'open', head: { ref: 'fix/y' } }] });
+        },
+      });
+      assert.equal(requestedUrls.some((u) => u.includes('state=open')), true);
+      assert.equal(requestedUrls.some((u) => u.includes('state=all')), false);
+      assert.equal(requestedUrls.some((u) => u.endsWith('/pulls/484')), true);
+      assert.equal(pulls.length, 2);
+
+      const missingTargetPulls = await previewCleanupMod.fetchPullRequests({
+        baseUrl: 'https://api.github.com/repos/a/b',
+        headers: {},
+        targetPr: 999,
+        baseDelayMs: 1,
+        sleepImpl: async () => {},
+        fetchImpl: async (url) => {
+          if (String(url).includes('/pulls/999')) {
+            return makeMockResponse({ ok: false, status: 404, statusText: 'Not Found' });
+          }
+          return makeMockResponse({ ok: true, status: 200, jsonData: [{ number: 492, state: 'open', head: { ref: 'fix/y' } }] });
+        },
+      });
+      assert.equal(missingTargetPulls.length, 1);
+    }
+
+    // cleanup-gh-pages-previews: selectPreviewDeletions & runCleanupGhPagesPreviews temp dir
+    {
+      const selected = previewCleanupMod.selectPreviewDeletions(
+        [
+          { name: '492', kind: 'pull', prNumber: 492, pull: { state: 'open' }, prs: [], hasLiveBranch: true, isRecent: false },
+          { name: '484', kind: 'pull', prNumber: 484, pull: { state: 'closed' }, prs: [], hasLiveBranch: false, isRecent: false },
+          { name: 'legacy-old', kind: 'legacy', prNumber: null, pull: null, prs: [], hasLiveBranch: false, isRecent: false },
+          { name: 'legacy-live', kind: 'legacy', prNumber: null, pull: null, prs: [], hasLiveBranch: true, isRecent: false },
+        ],
+        { targetPr: null, ignoreRecency: false }
+      );
+      assert.deepEqual(
+        selected.map((s) => s.name),
+        ['484', 'legacy-old']
+      );
+
+      const tmpPages = fs.mkdtempSync(path.join(os.tmpdir(), 'capy-gh-pages-cleanup-'));
+      try {
+        fs.mkdirSync(path.join(tmpPages, 'stale-legacy-dir'), { recursive: true });
+        fs.mkdirSync(path.join(tmpPages, 'live-branch-dir'), { recursive: true });
+        fs.mkdirSync(path.join(tmpPages, 'beta'), { recursive: true });
+        const runRes = await previewCleanupMod.runCleanupGhPagesPreviews({
+          pagesDir: tmpPages,
+          ignoreRecency: true,
+          repository: 'a/b',
+          token: 'tok',
+          defaultBranch: 'main',
+          remoteBranches: ['main', 'beta', 'live-branch-dir'],
+          baseDelayMs: 1,
+          sleepImpl: async () => {},
+          fetchImpl: async () => makeMockResponse({ ok: true, status: 200, jsonData: [] }),
+        });
+        assert.deepEqual(runRes.deleted, ['stale-legacy-dir']);
+        assert.equal(fs.existsSync(path.join(tmpPages, 'stale-legacy-dir')), false);
+        assert.equal(fs.existsSync(path.join(tmpPages, 'live-branch-dir')), true);
+        assert.equal(fs.existsSync(path.join(tmpPages, 'beta')), true);
+      } finally {
+        fs.rmSync(tmpPages, { recursive: true, force: true });
+      }
+    }
+
+    // cleanup-branches: 503 retry, DELETE 404 on retry attempt > 0 success vs attempt 0 fail
+    {
+      let delCalls = 0;
+      await branchCleanupMod.requestWithRetry('https://api.github.com/repos/a/b/git/refs/heads/feature%2Fx', {
+        method: 'DELETE',
+        retries: 2,
+        baseDelayMs: 1,
+        sleepImpl: async () => {},
+        fetchImpl: async () => {
+          delCalls += 1;
+          if (delCalls === 1) {
+            return makeMockResponse({ ok: false, status: 502, statusText: 'Bad Gateway' });
+          }
+          return makeMockResponse({ ok: false, status: 404, statusText: 'Not Found' });
+        },
+      });
+      assert.equal(delCalls, 2);
+
+      await assert.rejects(
+        () =>
+          branchCleanupMod.requestWithRetry('https://api.github.com/repos/a/b/git/refs/heads/missing', {
+            method: 'DELETE',
+            retries: 2,
+            baseDelayMs: 1,
+            sleepImpl: async () => {},
+            fetchImpl: async () => makeMockResponse({ ok: false, status: 404, statusText: 'Not Found' }),
+          }),
+        /404/
+      );
+    }
+
+    // cleanup-branches: protected channels even with *, dependabot/ & sync/ prefixes, closed-unmerged, stale zero-PR vs recent WIP, missing timestamp fail-closed
+    {
+      const nowMs = Date.parse('2026-11-13T00:00:00Z');
+      const dayMs = 24 * 60 * 60 * 1000;
+      const commitDates = new Map([
+        ['sha-dep-closed-old', nowMs - 2 * dayMs],
+        ['sha-dep-closed-fresh', nowMs - 6 * 60 * 60 * 1000],
+        ['sha-sync-stale', nowMs - 8 * dayMs],
+        ['sha-wip-recent', nowMs - 3 * dayMs],
+      ]);
+      const evalRes = await branchCleanupMod.evaluateBranchesForCleanup({
+        branches: [
+          { name: 'main', protected: false, commit: { sha: 's1' } },
+          { name: 'beta', protected: false, commit: { sha: 's2' } },
+          { name: 'gh-pages', protected: false, commit: { sha: 's3' } },
+          { name: 'release-lock', protected: true, commit: { sha: 's4' } },
+          { name: 'feature/open-pr', protected: false, commit: { sha: 's5' } },
+          { name: 'dependabot/npm/old-closed', protected: false, commit: { sha: 'sha-dep-closed-old' } },
+          { name: 'dependabot/npm/fresh-closed', protected: false, commit: { sha: 'sha-dep-closed-fresh' } },
+          { name: 'sync/beta-from-main', protected: false, commit: { sha: 'sha-sync-stale' } },
+          { name: 'feature/wip-recent', protected: false, commit: { sha: 'sha-wip-recent' } },
+          { name: 'fix/no-commit-ts', protected: false, commit: { sha: 'sha-missing' } },
+        ],
+        defaultBranch: 'main',
+        includePrefixes: ['*'],
+        activeBranches: new Set(['feature/open-pr']),
+        mergedBranches: new Map(),
+        closedUnmergedBranches: new Map([
+          ['dependabot/npm/old-closed', nowMs - 2 * dayMs],
+          ['dependabot/npm/fresh-closed', nowMs - 6 * 60 * 60 * 1000],
+        ]),
+        getCommitTimestampMs: async (sha) => commitDates.get(sha) ?? 0,
+        minAgeDays: 1,
+        unmergedMinAgeDays: 7,
+        nowMs,
+      });
+      assert.deepEqual(
+        evalRes.deletions.map((d) => d.name),
+        ['dependabot/npm/old-closed', 'sync/beta-from-main']
+      );
+
+      // Verify explicit prefix list rejects unmatched prefix even when old
+      const prefixOnlyRes = await branchCleanupMod.evaluateBranchesForCleanup({
+        branches: [
+          { name: 'dependabot/npm/old', protected: false, commit: { sha: 'sha-sync-stale' } },
+          { name: 'other/old', protected: false, commit: { sha: 'sha-sync-stale' } },
+        ],
+        includePrefixes: ['dependabot/', 'sync/'],
+        getCommitTimestampMs: async () => nowMs - 10 * dayMs,
+        minAgeDays: 1,
+        unmergedMinAgeDays: 7,
+        nowMs,
+      });
+      assert.deepEqual(
+        prefixOnlyRes.deletions.map((d) => d.name),
+        ['dependabot/npm/old']
+      );
+
+      // Reused merged branch with fresh commit is NOT deleted; stale merged branch IS deleted; null/error commit timestamp fails closed
+      const reusedMergedRes = await branchCleanupMod.evaluateBranchesForCleanup({
+        branches: [
+          { name: 'sync/reused-fresh', protected: false, commit: { sha: 'sha-reused-fresh' } },
+          { name: 'feature/merged-stale', protected: false, commit: { sha: 'sha-merged-stale' } },
+          { name: 'fix/merged-null-ts', protected: false, commit: { sha: 'sha-null-ts' } },
+          { name: 'fix/merged-error-ts', protected: false, commit: { sha: 'sha-error-ts' } },
+        ],
+        includePrefixes: ['sync/', 'feature/', 'fix/'],
+        mergedBranches: new Map([
+          ['sync/reused-fresh', nowMs - 5 * dayMs],
+          ['feature/merged-stale', nowMs - 5 * dayMs],
+          ['fix/merged-null-ts', nowMs - 5 * dayMs],
+          ['fix/merged-error-ts', nowMs - 5 * dayMs],
+        ]),
+        getCommitTimestampMs: async (sha) => {
+          if (sha === 'sha-reused-fresh') return nowMs - 60 * 60 * 1000;
+          if (sha === 'sha-merged-stale') return nowMs - 5 * dayMs;
+          if (sha === 'sha-null-ts') return null;
+          throw new Error('simulated commit lookup failure');
+        },
+        minAgeDays: 1,
+        nowMs,
+      });
+      assert.deepEqual(reusedMergedRes.deletions, [{ name: 'feature/merged-stale', reason: 'merged' }]);
+      assert.equal(
+        reusedMergedRes.diagnostics.some(
+          (d) =>
+            d.name === 'sync/reused-fresh' &&
+            d.detail.includes('merged branch has newer commit within minAgeDays')
+        ),
+        true
+      );
+      assert.equal(
+        reusedMergedRes.diagnostics.some(
+          (d) =>
+            d.name === 'fix/merged-null-ts' &&
+            d.detail === 'skipped: unable to determine commit timestamp'
+        ),
+        true
+      );
+      assert.equal(
+        reusedMergedRes.diagnostics.some(
+          (d) =>
+            d.name === 'fix/merged-error-ts' &&
+            d.detail === 'skipped: unable to determine commit timestamp'
+        ),
+        true
+      );
+    }
+
+    // cleanup-branches: end-to-end runCleanupBranches with dryRun vs live DELETE
+    {
+      const nowMs = Date.parse('2026-11-13T00:00:00Z');
+      const oldIso = '2026-11-01T00:00:00Z';
+      const createMockFetch = (deleteCalls) => async (url, init = {}) => {
+        const href = String(url);
+        const method = init.method || 'GET';
+        if (method === 'DELETE') {
+          deleteCalls.push(href);
+          return makeMockResponse({ ok: true, status: 204 });
+        }
+        if (href.endsWith('/repos/a/b')) {
+          return makeMockResponse({ ok: true, status: 200, jsonData: { default_branch: 'main' } });
+        }
+        if (href.includes('/pulls') && href.includes('state=open')) {
+          return makeMockResponse({ ok: true, status: 200, jsonData: [] });
+        }
+        if (href.includes('/pulls') && href.includes('state=closed')) {
+          return makeMockResponse({ ok: true, status: 200, jsonData: [] });
+        }
+        if (href.includes('/branches')) {
+          return makeMockResponse({
+            ok: true,
+            status: 200,
+            jsonData: [
+              { name: 'beta', protected: false, commit: { sha: 'sha-beta' } },
+              { name: 'dependabot/npm/stale', protected: false, commit: { sha: 'sha-stale' } },
+            ],
+          });
+        }
+        if (href.includes('/commits/sha-stale')) {
+          return makeMockResponse({
+            ok: true,
+            status: 200,
+            jsonData: { commit: { committer: { date: oldIso } } },
+          });
+        }
+        return makeMockResponse({ ok: false, status: 404 });
+      };
+
+      const dryDeletes = [];
+      await branchCleanupMod.runCleanupBranches({
+        repository: 'a/b',
+        token: 'tok',
+        dryRun: true,
+        includePrefixes: ['dependabot/', 'sync/'],
+        minAgeDays: 1,
+        unmergedMinAgeDays: 7,
+        nowMs,
+        baseDelayMs: 1,
+        sleepImpl: async () => {},
+        fetchImpl: createMockFetch(dryDeletes),
+      });
+      assert.equal(dryDeletes.length, 0);
+
+      const liveDeletes = [];
+      const liveRes = await branchCleanupMod.runCleanupBranches({
+        repository: 'a/b',
+        token: 'tok',
+        dryRun: false,
+        includePrefixes: ['dependabot/', 'sync/'],
+        minAgeDays: 1,
+        unmergedMinAgeDays: 7,
+        nowMs,
+        baseDelayMs: 1,
+        sleepImpl: async () => {},
+        fetchImpl: createMockFetch(liveDeletes),
+      });
+      assert.equal(liveDeletes.length, 1);
+      assert.equal(liveDeletes[0].endsWith('/git/refs/heads/dependabot/npm/stale'), true);
+      assert.deepEqual(liveRes.deleted, ['dependabot/npm/stale']);
     }
 
     // 6. SoundService SSR safety, volume clamping, visibility/disable auto-suspend & rate-throttled woodblock tap
