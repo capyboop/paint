@@ -186,8 +186,8 @@ Capy separates strategic multi-sprint planning from day-to-day execution across 
 
 ## 6. Documentation Sync and Markdown Hygiene Matrix
 
-- **Canonical 13 Root `.md` Files** (indexed in [`README.md`](./README.md), [`DEV.md`](./DEV.md), and this guide):
-  - **Product & Governance**: [`README.md`](./README.md), [`PROJECT.md`](./PROJECT.md), [`DEV.md`](./DEV.md), `project docs`, [`ROADMAP.md`](./ROADMAP.md), [`TODO.md`](./TODO.md), [`CHANGELOG.md`](./CHANGELOG.md), [`LICENSE.md`](./LICENSE.md).
+- **Canonical 14 Root `.md` Files** (indexed in [`README.md`](./README.md), [`DEV.md`](./DEV.md), and this guide):
+  - **Product & Governance**: [`README.md`](./README.md), `project docs`, [`PROJECT.md`](./PROJECT.md), [`DEV.md`](./DEV.md), `project docs`, [`ROADMAP.md`](./ROADMAP.md), [`TODO.md`](./TODO.md), [`CHANGELOG.md`](./CHANGELOG.md), [`LICENSE.md`](./LICENSE.md).
   - **Technical Subsystem Guides**: [`WEB.md`](./WEB.md), [`PUZZLE.md`](./PUZZLE.md), [`APP.md`](./APP.md), [`CLOUD.md`](./CLOUD.md), [`TESTING.md`](./TESTING.md).
   - **Storefront Privacy Policy**: [`web/public/privacy-policy.html`](./web/public/privacy-policy.html).
 - **Automated Hygiene Rules ([`web/scripts/sanity.mjs`](./web/scripts/sanity.mjs))**:
