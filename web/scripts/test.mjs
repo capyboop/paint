@@ -1,12 +1,22 @@
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+import vm from 'node:vm';
 import zlib from 'node:zlib';
 import { chromium } from 'playwright';
 import { createServer, preview } from 'vite';
-import { runSanityChecks } from './sanity.mjs';
+import {
+  runSanityChecks,
+  validateChangelogChannelOrder,
+  validateEpicNaming,
+  validateNoLegacyPrRubric,
+  validatePR checklistChecklist,
+  validatePR checklistSpec,
+  validateRootGuideIndex,
+} from './sanity.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.resolve(__dirname, '..');
@@ -30,7 +40,10 @@ async function waitForPuzzleLoaded(page) {
       !document.body.innerText.includes('Generating puzzle'),
     { timeout: 25000 }
   );
-  await page.waitForSelector('[aria-label="Palette dock"], [data-testid="replay-btn"]', { timeout: 25000 });
+  await page.waitForSelector(
+    '[aria-label="Palette dock"], [data-testid="replay-btn"], [data-testid="replay-controls-window"]',
+    { timeout: 25000 }
+  );
   await page.waitForTimeout(250);
 }
 
@@ -381,7 +394,7 @@ async function runCodecAndEngineTests() {
     assert.equal(betaCh.showChannelSwitcher, true);
 
     const alphaCh = versionMod.resolveReleaseChannel(
-      '/capy/pull/481/',
+      '/capy/alpha/481/',
       'https://capyboop.github.io',
       ''
     );
@@ -389,6 +402,34 @@ async function runCodecAndEngineTests() {
     assert.equal(alphaCh.badgeLabel, 'ALPHA #481');
     assert.equal(alphaCh.prNumber, 481);
     assert.equal(alphaCh.showChannelSwitcher, true);
+
+    const alphaBranchCh = versionMod.resolveReleaseChannel(
+      '/capy/alpha/feature-x/',
+      'https://capyboop.github.io',
+      ''
+    );
+    assert.equal(alphaBranchCh.channel, 'alpha');
+    assert.equal(alphaBranchCh.badgeLabel, 'ALPHA');
+    assert.equal(alphaBranchCh.prNumber, null);
+    assert.equal(alphaBranchCh.showChannelSwitcher, true);
+
+    const legacyPrCh = versionMod.resolveReleaseChannel(
+      '/capy/PR/481/',
+      'https://capyboop.github.io',
+      ''
+    );
+    assert.equal(legacyPrCh.channel, 'alpha');
+    assert.equal(legacyPrCh.badgeLabel, 'ALPHA #481');
+    assert.equal(legacyPrCh.prNumber, 481);
+
+    const legacyPullCh = versionMod.resolveReleaseChannel(
+      '/capy/pull/481/',
+      'https://capyboop.github.io',
+      ''
+    );
+    assert.equal(legacyPullCh.channel, 'alpha');
+    assert.equal(legacyPullCh.badgeLabel, 'ALPHA #481');
+    assert.equal(legacyPullCh.prNumber, 481);
 
     const devCh = versionMod.resolveReleaseChannel('/', 'http://localhost:3000', '');
     assert.equal(devCh.channel, 'dev');
@@ -462,12 +503,1058 @@ async function runCodecAndEngineTests() {
       true,
       `Expected >= 398 single-line PR bullets in CHANGELOG.md, got ${changelogBullets.length}`
     );
+    let changelogBulletRe = /\s(?:\[#\d+\]\(https:\/\/github\.com\/[^/\s]+\/capy\/pull\/\d+\)|#\d+)$/;
+    
     for (const bullet of changelogBullets) {
       assert.equal(
-        /\s(?:\[#\d+\]\(https:\/\/github\.com\/[^/\s]+\/capy\/pull\/\d+\)|#\d+)$/.test(bullet),
+        changelogBulletRe.test(bullet),
         true,
-        `Each CHANGELOG.md bullet must end with a bare [#000] or #000 PR reference: ${bullet}`
+        `Each CHANGELOG.md bullet must end with a valid PR reference: ${bullet}`
       );
+    }
+
+    // 5b. Chronological changelog, Epic naming, dynamic guide indexing, and CI cleanup script unit checks
+    const validBetaChangelog = [
+      '### 3.0.3 - 2026-11-13 (Beta)',
+      '',
+      '- Beta item #493',
+      '',
+      '### 3.0.2 - 2026-11-13',
+      '',
+      '- Prior beta item #490',
+      '',
+      '### 3.0.1 - 2026-11-12 (Production)',
+      '',
+      '- Prod item #488',
+      '',
+      '### 2.7 - 2026-11-12',
+      '',
+      '- Older item #484',
+      '',
+      '### 0.1.0 - 2026-10-01',
+      '',
+      '- Initial #1',
+    ].join('\n');
+    const betaOrderRes = validateChangelogChannelOrder(validBetaChangelog, '3.0.3', {
+      enforceChannelOrder: true,
+    });
+    assert.equal(betaOrderRes.alphaIdx, -1);
+    assert.equal(betaOrderRes.betaIdx, 0);
+    assert.equal(betaOrderRes.prodIdx, 2);
+
+    const validAlphaBetaProd = [
+      '### 3.1.0 - 2026-11-14 (Alpha)',
+      '- Alpha #500',
+      '### 3.0.3 - 2026-11-13 (Beta)',
+      '- Beta #493',
+      '### 3.0.1 - 2026-11-12 (Production)',
+      '- Prod #488',
+      '### 0.1.0 - 2026-10-01',
+      '- Init #1',
+    ].join('\n');
+    const abpRes = validateChangelogChannelOrder(validAlphaBetaProd, '3.1.0', {
+      enforceChannelOrder: true,
+    });
+    assert.equal(abpRes.alphaIdx, 0);
+    assert.equal(abpRes.betaIdx, 1);
+    assert.equal(abpRes.prodIdx, 2);
+
+    const validCombinedProdBeta = [
+      '### 3.0.1 - 2026-11-12 (Production, Beta)',
+      '- Combined #488',
+      '### 2.7 - 2026-11-11',
+      '- Old #484',
+    ].join('\n');
+    const combinedRes = validateChangelogChannelOrder(validCombinedProdBeta, '3.0.1', {
+      enforceChannelOrder: true,
+    });
+    assert.equal(combinedRes.betaIdx, 0);
+    assert.equal(combinedRes.prodIdx, 0);
+
+    const validProdOnly = [
+      '### 3.0.1 - 2026-11-12 (Production)',
+      '- Prod #488',
+      '### 2.7 - 2026-11-11',
+      '- Old #484',
+    ].join('\n');
+    assert.equal(
+      validateChangelogChannelOrder(validProdOnly, '3.0.1', { enforceChannelOrder: true }).prodIdx,
+      0
+    );
+
+    // Minor rollup heading (3.0) matches patch version 3.0.4
+    const validMinorRollup = [
+      '### 3.0 - 2026-11-13 (Beta)',
+      '- Rollup #493',
+      '### 2.5 - 2026-11-11 (Production)',
+      '- Prod #483',
+    ].join('\n');
+    assert.equal(
+      validateChangelogChannelOrder(validMinorRollup, '3.0.4', { enforceChannelOrder: true }).betaIdx,
+      0
+    );
+
+    const crlfChangelogRes = validateChangelogChannelOrder(
+      validBetaChangelog.replace(/\n/g, '\r\n'),
+      '3.0.3',
+      { enforceChannelOrder: true }
+    );
+    assert.equal(crlfChangelogRes.betaIdx, 0);
+    assert.equal(crlfChangelogRes.prodIdx, 2);
+
+    assert.throws(
+      () =>
+        validateChangelogChannelOrder(
+          [
+            '### 3.0 - 2026-11-13 (Beta)',
+            '### 2.7 - 2026-11-12 (Alpha)',
+            '### 2.5 - 2026-11-11 (Production)',
+          ].join('\n'),
+          '3.0.4',
+          { enforceChannelOrder: true }
+        ),
+      /Alpha heading must appear first/
+    );
+    assert.throws(
+      () =>
+        validateChangelogChannelOrder(
+          ['### 3.0 - 2026-11-13 (Production)', '### 2.7 - 2026-11-12 (Beta)'].join('\n'),
+          '3.0.0',
+          { enforceChannelOrder: true }
+        ),
+      /Beta heading must appear at or before Production/
+    );
+    assert.throws(
+      () =>
+        validateChangelogChannelOrder(
+          [
+            '### 3.0 - 2026-11-13 (Beta)',
+            '### 2.8 - 2026-11-12 (Production)',
+            '### 2.5 - 2026-11-11 (Beta)',
+          ].join('\n'),
+          '3.0.0',
+          { enforceChannelOrder: true }
+        ),
+      /Expected <= 1 Beta heading|after Production/
+    );
+    assert.throws(
+      () =>
+        validateChangelogChannelOrder(
+          [
+            '### 3.0 - 2026-11-13 (Beta)',
+            '### 2.8 - 2026-11-12 (Production)',
+            '### 2.5 - 2026-11-11 (Alpha)',
+          ].join('\n'),
+          '3.0.0',
+          { enforceChannelOrder: true }
+        ),
+      /Alpha heading must appear first|after Production/
+    );
+    assert.throws(
+      () =>
+        validateChangelogChannelOrder(
+          ['### 3.0.1 - 2026-11-13 (Beta)', '### 3.0.2 - 2026-11-12 (Production)'].join('\n'),
+          '3.0.1',
+          { enforceChannelOrder: true }
+        ),
+      /strictly descending by version/
+    );
+    assert.throws(
+      () =>
+        validateChangelogChannelOrder(
+          ['### 3.0 - 2026-11-13 (Beta)', '### 3.0.0 - 2026-11-12 (Production)'].join('\n'),
+          '3.0.0',
+          { enforceChannelOrder: true }
+        ),
+      /strictly descending by version/
+    );
+    assert.throws(
+      () =>
+        validateChangelogChannelOrder(
+          ['### 3.0.2 - 2026-11-12 (Beta)', '### 3.0.1 - 2026-11-13 (Production)'].join('\n'),
+          '3.0.2',
+          { enforceChannelOrder: true }
+        ),
+      /non-increasing by date/
+    );
+    assert.throws(
+      () =>
+        validateChangelogChannelOrder(
+          ['### 3.0.2 - 2026-11-13 (Beta)', '### 3.0.1 - 2026-11-12 (Production)'].join('\n'),
+          '3.0.4',
+          { enforceChannelOrder: true }
+        ),
+      /missing active channel heading for 3\.0\.4/
+    );
+
+    const validEpicUrl = 'https://github.com/' + 'capyboop/paint/issues/477';
+    const validPrRef = '[' + '#482](' + 'https://github.com/' + 'capyboop/paint/pull/482)';
+    validateEpicNaming(`See [EPIC-2](${validEpicUrl}), plain EPIC-2, and ${validPrRef}`, 'DEV.md');
+    for (const badNum of ['476', '477', '480']) {
+      assert.throws(
+        () => validateEpicNaming(`Legacy #'${badNum}`.replace("'", ''), 'TODO.md'),
+        /EPIC-N/
+      );
+    }
+    const badIssueLink = '[' + '#481](' + 'https://github.com/' + 'capyboop/paint/issues/481)';
+    assert.throws(() => validateEpicNaming(`Link ${badIssueLink}`, 'ROADMAP.md'), /EPIC-N/);
+    const badCombinedEpic = '[EPIC-2 (' + '#477)](' + validEpicUrl + ')';
+    assert.throws(() => validateEpicNaming(`Combined ${badCombinedEpic}`, 'project docs'), /EPIC-N/);
+    const badUnlinkedCombinedEpic = '[EPIC-6 (#' + '481)]';
+    assert.throws(() => validateEpicNaming(`Unlinked ${badUnlinkedCombinedEpic}`, 'ROADMAP.md'), /EPIC-N/);
+
+    const tmpGuideDir = fs.mkdtempSync(path.join(os.tmpdir(), 'capy-guide-index-'));
+    try {
+      const rootMdNames = [
+        'README.md',
+        'PROJECT.md',
+        'DEV.md',
+        'project docs',
+        'ROADMAP.md',
+        'TODO.md',
+        'WEB.md',
+        'PUZZLE.md',
+        'APP.md',
+        'CLOUD.md',
+        'TESTING.md',
+        'CHANGELOG.md',
+        'LICENSE.md',
+      ];
+      for (const name of rootMdNames) {
+        fs.writeFileSync(path.join(tmpGuideDir, name), `# ${name}\n`, 'utf8');
+      }
+      const allLinks = rootMdNames.map((n) => `[${n}](./${n})`).join(' ');
+      fs.writeFileSync(path.join(tmpGuideDir, 'README.md'), `# README\n${allLinks}\n`, 'utf8');
+      fs.writeFileSync(path.join(tmpGuideDir, 'DEV.md'), `# DEV\n${allLinks}\n`, 'utf8');
+      fs.writeFileSync(path.join(tmpGuideDir, 'PROJECT.md'), `# PROJECT\n${allLinks}\n`, 'utf8');
+      const guideRes = validateRootGuideIndex(tmpGuideDir, { requireProjectMd: true });
+      assert.equal(guideRes.hasProjectMd, true);
+      assert.equal(guideRes.rootMdFiles.length, 13);
+
+      fs.writeFileSync(
+        path.join(tmpGuideDir, 'README.md'),
+        `# README\n${allLinks.replace('./PROJECT.md', './OTHER.md')}\n`,
+        'utf8'
+      );
+      assert.throws(
+        () => validateRootGuideIndex(tmpGuideDir, { requireProjectMd: true }),
+        /README\.md must link \.\/PROJECT\.md/
+      );
+      fs.writeFileSync(path.join(tmpGuideDir, 'README.md'), `# README\n${allLinks}\n`, 'utf8');
+
+      fs.writeFileSync(
+        path.join(tmpGuideDir, 'PROJECT.md'),
+        `# PROJECT\n${allLinks.replace('./TESTING.md', './OTHER.md')}\n`,
+        'utf8'
+      );
+      assert.throws(
+        () => validateRootGuideIndex(tmpGuideDir, { requireProjectMd: true }),
+        /PROJECT\.md must link \.\/TESTING\.md/
+      );
+      fs.writeFileSync(path.join(tmpGuideDir, 'PROJECT.md'), `# PROJECT\n${allLinks}\n`, 'utf8');
+
+      fs.unlinkSync(path.join(tmpGuideDir, 'PROJECT.md'));
+      assert.throws(
+        () => validateRootGuideIndex(tmpGuideDir, { requireProjectMd: true }),
+        /PROJECT\.md must exist/
+      );
+    } finally {
+      fs.rmSync(tmpGuideDir, { recursive: true, force: true });
+    }
+
+    // Standalone %-first PR checklist & legacy rubric guards (runs in public export too)
+    {
+      const oneItem = validatePR checklistChecklist(
+        [
+          '### PR checklist: 100%',
+          '',
+          '<details>',
+          '<summary>PR checklist</summary>',
+          '',
+          '- **100%** **Docs Sync**: Verified.',
+          '',
+          '</details>',
+        ].join('\n'),
+        '1-item test'
+      );
+      assert.equal(oneItem.overallScore, 100);
+      assert.equal(oneItem.itemCount, 1);
+      assert.deepEqual(oneItem.itemScores, [100]);
+      assert.equal(oneItem.summary, 'PR checklist');
+
+      const threeItems = validatePR checklistChecklist(
+        [
+          '### PR checklist: 95.5%',
+          '',
+          '<details>',
+          '<summary>PR checklist</summary>',
+          '',
+          '- [x] **100%** — **Functionality**: Verified.',
+          '- **95.5%** — **Tests**: Verified.',
+          '- 91% — **Docs**: Remaining follow-up noted.',
+          '',
+          '</details>',
+        ].join('\n'),
+        '3-item test'
+      );
+      assert.equal(threeItems.overallScore, 95.5);
+      assert.equal(threeItems.itemCount, 3);
+      assert.deepEqual(threeItems.itemScores, [100, 95.5, 91]);
+
+      const sixItems = validatePR checklistChecklist(
+        [
+          '### PR checklist: 100%',
+          '',
+          '<details>',
+          '<summary>PR checklist</summary>',
+          '',
+          '- **100% Check 1**: Functionality verified.',
+          '- **100% Check 2**: Automated tests passed.',
+          '- **100% Check 3**: Zero-allocation invariants preserved.',
+          '- **100% Check 4**: Mobile viewport verified.',
+          '- **100% Check 5**: Docs synced.',
+          '- **100% Check 6**: CI green.',
+          '',
+          '</details>',
+        ].join('\n'),
+        '6-item test'
+      );
+      assert.equal(sixItems.overallScore, 100);
+      assert.equal(sixItems.itemCount, 6);
+
+      const eightItemsFullPr = validatePR checklistChecklist(
+        [
+          '## Summary',
+          '',
+          '- Improved color layout with Tailwind bg-amber-400/20 accents and clean checks.',
+          '',
+          '- **Beta**: https://capypaint.com/beta/',
+          '- **Related PRs**: #20 #100',
+          '',
+          '### PR checklist: 99% (threshold >= 95%)',
+          '',
+          '<details>',
+          '<summary>PR checklist</summary>',
+          '',
+          '- **100%** — **Functionality & Edge Cases**: Verified.',
+          '- **100%** — **Automated Tests**: Verified.',
+          '- **100%** — **Performance & Golden Invariants**: Verified.',
+          '- **100%** — **Accessibility & Mobile Layout**: Verified.',
+          '- **100%** — **Android / Bridge Parity**: Verified.',
+          '- **100%** — **Cloud Sync / Worker Safety**: Verified.',
+          '- **95%** — **Docs & Changelog Sync**: Minor wording follow-up (-1%).',
+          '- **100%** — **CI, Mergeability & Preview Verification**: Verified.',
+          '',
+          '</details>',
+          '',
+          'Ready with -1% docs polish follow-up.',
+          '- [ ] Polish final release note wording in TODO follow-up.',
+        ].join('\n'),
+        '8-item PR body'
+      );
+      assert.equal(eightItemsFullPr.overallScore, 99);
+      assert.equal(eightItemsFullPr.itemCount, 8);
+
+      const prosePercentRes = validatePR checklistChecklist(
+        [
+          '### PR checklist: 97.5%',
+          'All 100% of unit tests pass.',
+          '',
+          '<details>',
+          '<summary>PR checklist</summary>',
+          '',
+          '- **100%** — **Tests**: All unit checks pass.',
+          '',
+          '</details>',
+        ].join('\n'),
+        'prose 100% before details'
+      );
+      assert.equal(prosePercentRes.overallScore, 97.5);
+      assert.equal(prosePercentRes.itemCount, 1);
+      assert.deepEqual(prosePercentRes.itemScores, [100]);
+
+      const thresholdProseRes = validatePR checklistChecklist(
+        [
+          '### PR checklist: 97.5%',
+          'Threshold: 95% minimum; dropped 2.5% for docs follow-up.',
+          '',
+          '<details>',
+          '<summary>PR checklist</summary>',
+          '',
+          '- **97.5%** — **Docs**: Follow-up noted.',
+          '',
+          '</details>',
+        ].join('\n'),
+        'threshold prose before details'
+      );
+      assert.equal(thresholdProseRes.overallScore, 97.5);
+      assert.equal(thresholdProseRes.itemCount, 1);
+      assert.deepEqual(thresholdProseRes.itemScores, [97.5]);
+
+      const fallbackProseRes = validatePR checklistChecklist(
+        [
+          '### PR checklist',
+          'Overall: 96%',
+          '',
+          '<details>',
+          '<summary>PR checklist</summary>',
+          '',
+          '- **96%** — **Tests**: Verified.',
+          '',
+          '</details>',
+        ].join('\n'),
+        'fallback overall score below heading'
+      );
+      assert.equal(fallbackProseRes.overallScore, 96);
+      assert.equal(fallbackProseRes.itemCount, 1);
+
+      const minParenRes = validatePR checklistChecklist(
+        [
+          '### PR checklist: 97.5% (min 95%)',
+          '',
+          '<details>',
+          '<summary>PR checklist</summary>',
+          '',
+          '- **100%** — **Checks**: Passed.',
+          '',
+          '</details>',
+        ].join('\n'),
+        'min 95% parenthetical on heading'
+      );
+      assert.equal(minParenRes.overallScore, 97.5);
+
+      const unicodeGteRes = validatePR checklistChecklist(
+        [
+          '### PR checklist: 97.5% (≥ 95%)',
+          '',
+          '<details>',
+          '<summary>PR checklist</summary>',
+          '',
+          '- **100%** — **Checks**: Passed.',
+          '',
+          '</details>',
+        ].join('\n'),
+        'unicode >= 95% threshold after heading score'
+      );
+      assert.equal(unicodeGteRes.overallScore, 97.5);
+
+      const unicodeGteBeforeRes = validatePR checklistChecklist(
+        [
+          '### PR checklist (≥ 95%): 97.5%',
+          '',
+          '<details>',
+          '<summary>PR checklist</summary>',
+          '',
+          '- **100%** — **Checks**: Passed.',
+          '',
+          '</details>',
+        ].join('\n'),
+        'unicode >= 95% threshold before heading score'
+      );
+      assert.equal(unicodeGteBeforeRes.overallScore, 97.5);
+
+      const trailingBoldNoteRes = validatePR checklistChecklist(
+        [
+          '### PR checklist: 99%',
+          '',
+          '<details>',
+          '<summary>PR checklist</summary>',
+          '',
+          '- **99%** — **Verification**: Passed.',
+          '',
+          '</details>',
+          '',
+          '**PR checklist Note**: All done.',
+        ].join('\n'),
+        'trailing bold PR checklist note'
+      );
+      assert.equal(trailingBoldNoteRes.overallScore, 99);
+      assert.equal(trailingBoldNoteRes.itemCount, 1);
+      assert.deepEqual(trailingBoldNoteRes.itemScores, [99]);
+
+      const trailingHeadingRes = validatePR checklistChecklist(
+        [
+          '### PR checklist: 98%',
+          '',
+          '<details>',
+          '<summary>PR checklist</summary>',
+          '',
+          '- **98%** — **Checks**: Passed.',
+          '',
+          '</details>',
+          '',
+          '### PR checklist Follow-Up',
+          'None.',
+        ].join('\n'),
+        'trailing PR checklist heading'
+      );
+      assert.equal(trailingHeadingRes.overallScore, 98);
+      assert.equal(trailingHeadingRes.itemCount, 1);
+
+      const multilineCommentRes = validatePR checklistChecklist(
+        [
+          '### PR checklist: 100%',
+          '',
+          '<details>',
+          '<summary>PR checklist</summary>',
+          '',
+          '<!--',
+          '  note',
+          '-->',
+          '- **100%** — **Checks**: Passed.',
+          '',
+          '</details>',
+        ].join('\n'),
+        'multiline HTML comment inside details'
+      );
+      assert.equal(multilineCommentRes.overallScore, 100);
+      assert.equal(multilineCommentRes.itemCount, 1);
+      assert.deepEqual(multilineCommentRes.itemScores, [100]);
+
+      const detailsOpenRes = validatePR checklistChecklist(
+        [
+          '### PR checklist: 100%',
+          '',
+          '<details open><summary>PR checklist</summary>',
+          '',
+          '- **100%** — **Checks**: Passed.',
+          '',
+          '</details>',
+        ].join('\n'),
+        'details open attribute'
+      );
+      assert.equal(detailsOpenRes.overallScore, 100);
+      assert.equal(detailsOpenRes.itemCount, 1);
+      assert.equal(detailsOpenRes.summary, 'PR checklist');
+
+      const nestedBoldBacktickRes = validatePR checklistChecklist(
+        [
+          '### PR checklist: 100%',
+          '',
+          '<details>',
+          '<summary>PR checklist</summary>',
+          '',
+          '- **`100%`** — **Tests**: Passed.',
+          '',
+          '</details>',
+        ].join('\n'),
+        'nested bold and backtick percentage'
+      );
+      assert.equal(nestedBoldBacktickRes.overallScore, 100);
+      assert.equal(nestedBoldBacktickRes.itemCount, 1);
+      assert.deepEqual(nestedBoldBacktickRes.itemScores, [100]);
+
+      const sectionBulletRes = validatePR checklistChecklist(
+        [
+          '### PR checklist: 100%',
+          '',
+          '- 5 points to note in this release:',
+          '',
+          '<details>',
+          '<summary>PR checklist</summary>',
+          '',
+          '- **100%** — **Checks**: Passed.',
+          '',
+          '</details>',
+        ].join('\n'),
+        'unordered bullet inside PR checklist section'
+      );
+      assert.equal(sectionBulletRes.overallScore, 100);
+      assert.equal(sectionBulletRes.itemCount, 1);
+
+      const makeInvalidSection = (bodyLines) =>
+        ['### PR checklist: 98%', '', '<details>', '<summary>PR checklist</summary>', '', ...bodyLines, '', '</details>'].join('\n');
+
+      for (const badText of [
+        '### 5-Pillar PR checklist: 100%\n\n<details>\n<summary>Checklist</summary>\n\n- **100%** — **Check**: Ok.\n\n</details>',
+        '### 5 Pillar PR checklist: 100%\n\n<details>\n<summary>Checklist</summary>\n\n- **100%** — **Check**: Ok.\n\n</details>',
+        makeInvalidSection(['- **95/100** — **Check**: Legacy fraction.']),
+        makeInvalidSection(['- **95 / 100** — **Check**: Legacy spaced fraction.']),
+        makeInvalidSection(['- **20/20** — **Check**: Legacy category fraction.']),
+        makeInvalidSection(['- **20 / 20** — **Check**: Legacy spaced category fraction.']),
+        makeInvalidSection(['- **100%** — **Check (20 pts)**: Legacy pts.']),
+        makeInvalidSection(['- **100%** — **Check (5 x 20)**: Legacy math.']),
+        makeInvalidSection(['- **100%** — **Pillar 1**: Legacy pillar number.']),
+        makeInvalidSection(['- **100%** — **Readiness Rubric**: Legacy rubric word.']),
+        makeInvalidSection(['- **Functionality**: 100%']),
+        makeInvalidSection(['1. Tests: 100%']),
+        makeInvalidSection([]),
+        makeInvalidSection(['- **105%** — **Bounds**: Out of range.']),
+        '### PR checklist: 105%\n\n<details>\n<summary>Checklist</summary>\n\n- **100%** — **Check**: Ok.\n\n</details>',
+        '### PR checklist: 100%\n\n- **100%** — **Check**: Missing details block.',
+        '### 5-Pillars PR checklist: 100%\n\n<details>\n<summary>Checklist</summary>\n\n- **100%** — **Check**: Ok.\n\n</details>',
+        '### PR checklist: >= 95%\n\n<details>\n<summary>Checklist</summary>\n\n- **100%** — **Check**: Ok.\n\n</details>',
+        '### PR checklist: ≥ 95%\n\n<details>\n<summary>Checklist</summary>\n\n- **100%** — **Check**: Ok.\n\n</details>',
+        makeInvalidSection(['<!--', '  comment only', '-->']),
+        makeInvalidSection(['- **100%**']),
+        makeInvalidSection(['- 100%']),
+        makeInvalidSection(['- [x] **100%**']),
+        makeInvalidSection(['- **100%**:']),
+        makeInvalidSection(['- **95%** — **Docs**: -5 points deduction.']),
+        makeInvalidSection(['- **95%** — **Docs**: Deduction (- 5 points).']),
+        makeInvalidSection(['- **95%** — **Docs**: Explain `-N point` delta.']),
+        makeInvalidSection(['- **100%** — **Check**: 5-Pillars framework.']),
+        makeInvalidSection(['- **100%** — **Check**: 20-point scale.']),
+        makeInvalidSection(['- **100%** — **Check**: Worth **20** pts.']),
+      ]) {
+        assert.throws(() => validatePR checklistChecklist(badText, 'negative fixture'));
+      }
+
+      // False-positive guards for legitimate URLs, Tailwind classes, dates, percentages, and Markdown bullets
+      validateNoLegacyPrRubric(
+        [
+          '### Overview',
+          '- 5 points to note in this release:',
+          '  - 3 points on readability and accessibility.',
+          '* 2 points for rollout timing.',
+          'Review these 5 points before merging.',
+          'Score: 98% (-2% docs, -5% follow-up).',
+          'See https://github.com/capyboop/paint/pull/20 and https://github.com/capyboop/paint/pull/100',
+          'Classes bg-amber-400/20 width="100%" ~15--20% 0.5x--20x 1/20th date 2026/01/20 100% offline per_page: 100',
+        ].join('\n'),
+        'false-positive-guard.md'
+      );
+
+      for (const badLegacyText of [
+        'Deduction: -5 points for docs.',
+        '- -5 points deducted for docs.',
+        '* -5 points deducted for docs.',
+        'Penalty (- 5 points) applied.',
+        'Score adjusted by - 5 points after review.',
+        'Describe gaps using `-N point` delta syntax.',
+        'Use 5-Pillars scoring.',
+        'Maximum 20-point scale.',
+        'Worth **20** pts per category.',
+        'Award `20` points per check.',
+      ]) {
+        assert.throws(
+          () => validateNoLegacyPrRubric(badLegacyText, 'legacy-negative.md'),
+          /Forbidden legacy/
+        );
+      }
+
+      // Spec validation with requireProjectMd: false (main-branch mode)
+      const tmpMainSpecDir = fs.mkdtempSync(path.join(os.tmpdir(), 'capy-readiness-main-'));
+      try {
+        fs.writeFileSync(
+          path.join(tmpMainSpecDir, 'project docs'),
+          '# contributor\nReport >= 95% PR checklist in <details> with % at the start of each line and as many or as few scope-relevant items as needed.\n',
+          'utf8'
+        );
+        fs.writeFileSync(path.join(tmpMainSpecDir, 'DEV.md'), '# DEV\nVerify PR checklist >= 95%.\n', 'utf8');
+        fs.writeFileSync(path.join(tmpMainSpecDir, 'TESTING.md'), '# TESTING\nAll checks.\n', 'utf8');
+        fs.writeFileSync(path.join(tmpMainSpecDir, 'README.md'), '# README\n100% offline.\n', 'utf8');
+        const mainSpecRes = validatePR checklistSpec(tmpMainSpecDir, { requireProjectMd: false });
+        assert.equal(mainSpecRes.scannedFiles.length, 4);
+      } finally {
+        fs.rmSync(tmpMainSpecDir, { recursive: true, force: true });
+      }
+    }
+
+    
+
+    // Unit-test .github/scripts/cleanup-gh-pages-previews.mjs and .github/scripts/cleanup-branches.mjs
+    const previewCleanupMod = await import('../../.github/scripts/cleanup-gh-pages-previews.mjs');
+    const branchCleanupMod = await import('../../.github/scripts/cleanup-branches.mjs');
+
+    const makeMockResponse = ({ ok = true, status = 200, statusText = 'OK', headers = {}, jsonData = null, textData = '' } = {}) => ({
+      ok,
+      status,
+      statusText,
+      headers: {
+        get: (key) => {
+          const found = Object.entries(headers).find(([k]) => k.toLowerCase() === String(key).toLowerCase());
+          return found ? found[1] : null;
+        },
+      },
+      json: async () => jsonData,
+      text: async () => textData,
+    });
+
+    // cleanup-gh-pages-previews: 504 transient retry -> 200
+    {
+      let calls = 0;
+      const sleeps = [];
+      const res = await previewCleanupMod.requestWithRetry('https://api.github.com/repos/a/b/pulls', {
+        baseDelayMs: 1,
+        sleepImpl: async (ms) => sleeps.push(ms),
+        fetchImpl: async () => {
+          calls += 1;
+          if (calls === 1) {
+            return makeMockResponse({ ok: false, status: 504, statusText: 'Gateway Timeout', textData: 'timeout' });
+          }
+          return makeMockResponse({ ok: true, status: 200, jsonData: [] });
+        },
+      });
+      assert.equal(calls, 2);
+      assert.equal(sleeps.length, 1);
+      assert.deepEqual(res.data, []);
+    }
+
+    // cleanup-gh-pages-previews: 429 Retry-After honored -> 200
+    {
+      let calls = 0;
+      const sleeps = [];
+      await previewCleanupMod.requestWithRetry('https://api.github.com/repos/a/b/pulls', {
+        baseDelayMs: 1,
+        sleepImpl: async (ms) => sleeps.push(ms),
+        fetchImpl: async () => {
+          calls += 1;
+          if (calls === 1) {
+            return makeMockResponse({
+              ok: false,
+              status: 429,
+              statusText: 'Too Many Requests',
+              headers: { 'Retry-After': '0.005' },
+            });
+          }
+          return makeMockResponse({ ok: true, status: 200, jsonData: [{ number: 1 }] });
+        },
+      });
+      assert.equal(calls, 2);
+      assert.equal(sleeps[0], 5);
+    }
+
+    // cleanup-gh-pages-previews: non-rate-limit 403 & 404 fail fast without retry
+    {
+      let calls404 = 0;
+      await assert.rejects(
+        () =>
+          previewCleanupMod.requestWithRetry('https://api.github.com/repos/a/b/pulls/999', {
+            baseDelayMs: 1,
+            sleepImpl: async () => {},
+            fetchImpl: async () => {
+              calls404 += 1;
+              return makeMockResponse({ ok: false, status: 404, statusText: 'Not Found' });
+            },
+          }),
+        /404/
+      );
+      assert.equal(calls404, 1);
+
+      let calls403 = 0;
+      await assert.rejects(
+        () =>
+          previewCleanupMod.requestWithRetry('https://api.github.com/repos/a/b/pulls', {
+            baseDelayMs: 1,
+            sleepImpl: async () => {},
+            fetchImpl: async () => {
+              calls403 += 1;
+              return makeMockResponse({ ok: false, status: 403, statusText: 'Forbidden' });
+            },
+          }),
+        /403/
+      );
+      assert.equal(calls403, 1);
+    }
+
+    // cleanup-gh-pages-previews: fetchPullRequests uses state=open + targeted PR lookup, ignoring 404
+    {
+      const requestedUrls = [];
+      const pulls = await previewCleanupMod.fetchPullRequests({
+        baseUrl: 'https://api.github.com/repos/a/b',
+        headers: {},
+        targetPr: 484,
+        baseDelayMs: 1,
+        sleepImpl: async () => {},
+        fetchImpl: async (url) => {
+          const href = String(url);
+          requestedUrls.push(href);
+          if (href.includes('/pulls/484')) {
+            return makeMockResponse({ ok: true, status: 200, jsonData: { number: 484, state: 'closed', head: { ref: 'feature/x' } } });
+          }
+          return makeMockResponse({ ok: true, status: 200, jsonData: [{ number: 492, state: 'open', head: { ref: 'fix/y' } }] });
+        },
+      });
+      assert.equal(requestedUrls.some((u) => u.includes('state=open')), true);
+      assert.equal(requestedUrls.some((u) => u.includes('state=all')), false);
+      assert.equal(requestedUrls.some((u) => u.endsWith('/pulls/484')), true);
+      assert.equal(pulls.length, 2);
+
+      const missingTargetPulls = await previewCleanupMod.fetchPullRequests({
+        baseUrl: 'https://api.github.com/repos/a/b',
+        headers: {},
+        targetPr: 999,
+        baseDelayMs: 1,
+        sleepImpl: async () => {},
+        fetchImpl: async (url) => {
+          if (String(url).includes('/pulls/999')) {
+            return makeMockResponse({ ok: false, status: 404, statusText: 'Not Found' });
+          }
+          return makeMockResponse({ ok: true, status: 200, jsonData: [{ number: 492, state: 'open', head: { ref: 'fix/y' } }] });
+        },
+      });
+      assert.equal(missingTargetPulls.length, 1);
+    }
+
+    // cleanup-gh-pages-previews: selectPreviewDeletions & runCleanupGhPagesPreviews temp dir
+    {
+      const selected = previewCleanupMod.selectPreviewDeletions(
+        [
+          { name: '492', kind: 'pull', prNumber: 492, pull: { state: 'open' }, prs: [], hasLiveBranch: true, isRecent: false },
+          { name: '484', kind: 'pull', prNumber: 484, pull: { state: 'closed' }, prs: [], hasLiveBranch: false, isRecent: false },
+          { name: 'pull', kind: 'legacy', prNumber: null, pull: null, prs: [], hasLiveBranch: false, isRecent: true },
+          { name: 'PR', kind: 'legacy', prNumber: null, pull: null, prs: [], hasLiveBranch: false, isRecent: true },
+          { name: 'legacy-old', kind: 'legacy', prNumber: null, pull: null, prs: [], hasLiveBranch: false, isRecent: false },
+          { name: 'legacy-live', kind: 'legacy', prNumber: null, pull: null, prs: [], hasLiveBranch: true, isRecent: false },
+        ],
+        { targetPr: null, ignoreRecency: false }
+      );
+      assert.deepEqual(
+        selected.map((s) => s.name),
+        ['484', 'pull', 'PR', 'legacy-old']
+      );
+
+      const tmpPages = fs.mkdtempSync(path.join(os.tmpdir(), 'capy-gh-pages-cleanup-'));
+      try {
+        fs.mkdirSync(path.join(tmpPages, 'alpha', '492'), { recursive: true });
+        fs.mkdirSync(path.join(tmpPages, 'alpha', '484'), { recursive: true });
+        fs.mkdirSync(path.join(tmpPages, 'pull', '123'), { recursive: true });
+        fs.mkdirSync(path.join(tmpPages, 'PR', '456'), { recursive: true });
+        fs.mkdirSync(path.join(tmpPages, 'stale-legacy-dir'), { recursive: true });
+        fs.mkdirSync(path.join(tmpPages, 'live-branch-dir'), { recursive: true });
+        fs.mkdirSync(path.join(tmpPages, 'beta'), { recursive: true });
+        const runRes = await previewCleanupMod.runCleanupGhPagesPreviews({
+          pagesDir: tmpPages,
+          ignoreRecency: false,
+          nowMs: Date.now() + 2 * 24 * 60 * 60 * 1000,
+          repository: 'a/b',
+          token: 'tok',
+          defaultBranch: 'main',
+          remoteBranches: ['main', 'beta', 'live-branch-dir'],
+          baseDelayMs: 1,
+          sleepImpl: async () => {},
+          fetchImpl: async () =>
+            makeMockResponse({
+              ok: true,
+              status: 200,
+              jsonData: [{ number: 492, state: 'open', head: { ref: 'fix/pr-url-rename' } }],
+            }),
+        });
+        assert.deepEqual(runRes.deleted.sort(), ['PR', 'alpha/484', 'pull', 'stale-legacy-dir']);
+        assert.equal(fs.existsSync(path.join(tmpPages, 'alpha', '492')), true);
+        assert.equal(fs.existsSync(path.join(tmpPages, 'alpha', '484')), false);
+        assert.equal(fs.existsSync(path.join(tmpPages, 'pull')), false);
+        assert.equal(fs.existsSync(path.join(tmpPages, 'PR')), false);
+        assert.equal(fs.existsSync(path.join(tmpPages, 'stale-legacy-dir')), false);
+        assert.equal(fs.existsSync(path.join(tmpPages, 'live-branch-dir')), true);
+        assert.equal(fs.existsSync(path.join(tmpPages, 'beta')), true);
+      } finally {
+        fs.rmSync(tmpPages, { recursive: true, force: true });
+      }
+    }
+
+    // cleanup-branches: 503 retry, DELETE 404 on retry attempt > 0 success vs attempt 0 fail
+    {
+      let delCalls = 0;
+      await branchCleanupMod.requestWithRetry('https://api.github.com/repos/a/b/git/refs/heads/feature%2Fx', {
+        method: 'DELETE',
+        retries: 2,
+        baseDelayMs: 1,
+        sleepImpl: async () => {},
+        fetchImpl: async () => {
+          delCalls += 1;
+          if (delCalls === 1) {
+            return makeMockResponse({ ok: false, status: 502, statusText: 'Bad Gateway' });
+          }
+          return makeMockResponse({ ok: false, status: 404, statusText: 'Not Found' });
+        },
+      });
+      assert.equal(delCalls, 2);
+
+      await assert.rejects(
+        () =>
+          branchCleanupMod.requestWithRetry('https://api.github.com/repos/a/b/git/refs/heads/missing', {
+            method: 'DELETE',
+            retries: 2,
+            baseDelayMs: 1,
+            sleepImpl: async () => {},
+            fetchImpl: async () => makeMockResponse({ ok: false, status: 404, statusText: 'Not Found' }),
+          }),
+        /404/
+      );
+    }
+
+    // cleanup-branches: protected channels even with *, dependabot/ & sync/ prefixes, closed-unmerged, stale zero-PR vs recent WIP, missing timestamp fail-closed
+    {
+      const nowMs = Date.parse('2026-11-13T00:00:00Z');
+      const dayMs = 24 * 60 * 60 * 1000;
+      const commitDates = new Map([
+        ['sha-dep-closed-old', nowMs - 2 * dayMs],
+        ['sha-dep-closed-fresh', nowMs - 6 * 60 * 60 * 1000],
+        ['sha-sync-stale', nowMs - 8 * dayMs],
+        ['sha-wip-recent', nowMs - 3 * dayMs],
+      ]);
+      const evalRes = await branchCleanupMod.evaluateBranchesForCleanup({
+        branches: [
+          { name: 'main', protected: false, commit: { sha: 's1' } },
+          { name: 'beta', protected: false, commit: { sha: 's2' } },
+          { name: 'gh-pages', protected: false, commit: { sha: 's3' } },
+          { name: 'release-lock', protected: true, commit: { sha: 's4' } },
+          { name: 'feature/open-pr', protected: false, commit: { sha: 's5' } },
+          { name: 'dependabot/npm/old-closed', protected: false, commit: { sha: 'sha-dep-closed-old' } },
+          { name: 'dependabot/npm/fresh-closed', protected: false, commit: { sha: 'sha-dep-closed-fresh' } },
+          { name: 'sync/beta-from-main', protected: false, commit: { sha: 'sha-sync-stale' } },
+          { name: 'feature/wip-recent', protected: false, commit: { sha: 'sha-wip-recent' } },
+          { name: 'fix/no-commit-ts', protected: false, commit: { sha: 'sha-missing' } },
+        ],
+        defaultBranch: 'main',
+        includePrefixes: ['*'],
+        activeBranches: new Set(['feature/open-pr']),
+        mergedBranches: new Map(),
+        closedUnmergedBranches: new Map([
+          ['dependabot/npm/old-closed', nowMs - 2 * dayMs],
+          ['dependabot/npm/fresh-closed', nowMs - 6 * 60 * 60 * 1000],
+        ]),
+        getCommitTimestampMs: async (sha) => commitDates.get(sha) ?? 0,
+        minAgeDays: 1,
+        unmergedMinAgeDays: 7,
+        nowMs,
+      });
+      assert.deepEqual(
+        evalRes.deletions.map((d) => d.name),
+        ['dependabot/npm/old-closed', 'sync/beta-from-main']
+      );
+
+      // Verify explicit prefix list rejects unmatched prefix even when old
+      const prefixOnlyRes = await branchCleanupMod.evaluateBranchesForCleanup({
+        branches: [
+          { name: 'dependabot/npm/old', protected: false, commit: { sha: 'sha-sync-stale' } },
+          { name: 'other/old', protected: false, commit: { sha: 'sha-sync-stale' } },
+        ],
+        includePrefixes: ['dependabot/', 'sync/'],
+        getCommitTimestampMs: async () => nowMs - 10 * dayMs,
+        minAgeDays: 1,
+        unmergedMinAgeDays: 7,
+        nowMs,
+      });
+      assert.deepEqual(
+        prefixOnlyRes.deletions.map((d) => d.name),
+        ['dependabot/npm/old']
+      );
+
+      // Reused merged branch with fresh commit is NOT deleted; stale merged branch IS deleted; null/error commit timestamp fails closed
+      const reusedMergedRes = await branchCleanupMod.evaluateBranchesForCleanup({
+        branches: [
+          { name: 'sync/reused-fresh', protected: false, commit: { sha: 'sha-reused-fresh' } },
+          { name: 'feature/merged-stale', protected: false, commit: { sha: 'sha-merged-stale' } },
+          { name: 'fix/merged-null-ts', protected: false, commit: { sha: 'sha-null-ts' } },
+          { name: 'fix/merged-error-ts', protected: false, commit: { sha: 'sha-error-ts' } },
+        ],
+        includePrefixes: ['sync/', 'feature/', 'fix/'],
+        mergedBranches: new Map([
+          ['sync/reused-fresh', nowMs - 5 * dayMs],
+          ['feature/merged-stale', nowMs - 5 * dayMs],
+          ['fix/merged-null-ts', nowMs - 5 * dayMs],
+          ['fix/merged-error-ts', nowMs - 5 * dayMs],
+        ]),
+        getCommitTimestampMs: async (sha) => {
+          if (sha === 'sha-reused-fresh') return nowMs - 60 * 60 * 1000;
+          if (sha === 'sha-merged-stale') return nowMs - 5 * dayMs;
+          if (sha === 'sha-null-ts') return null;
+          throw new Error('simulated commit lookup failure');
+        },
+        minAgeDays: 1,
+        nowMs,
+      });
+      assert.deepEqual(reusedMergedRes.deletions, [{ name: 'feature/merged-stale', reason: 'merged' }]);
+      assert.equal(
+        reusedMergedRes.diagnostics.some(
+          (d) =>
+            d.name === 'sync/reused-fresh' &&
+            d.detail.includes('merged branch has newer commit within minAgeDays')
+        ),
+        true
+      );
+      assert.equal(
+        reusedMergedRes.diagnostics.some(
+          (d) =>
+            d.name === 'fix/merged-null-ts' &&
+            d.detail === 'skipped: unable to determine commit timestamp'
+        ),
+        true
+      );
+      assert.equal(
+        reusedMergedRes.diagnostics.some(
+          (d) =>
+            d.name === 'fix/merged-error-ts' &&
+            d.detail === 'skipped: unable to determine commit timestamp'
+        ),
+        true
+      );
+    }
+
+    // cleanup-branches: end-to-end runCleanupBranches with dryRun vs live DELETE
+    {
+      const nowMs = Date.parse('2026-11-13T00:00:00Z');
+      const oldIso = '2026-11-01T00:00:00Z';
+      const createMockFetch = (deleteCalls) => async (url, init = {}) => {
+        const href = String(url);
+        const method = init.method || 'GET';
+        if (method === 'DELETE') {
+          deleteCalls.push(href);
+          return makeMockResponse({ ok: true, status: 204 });
+        }
+        if (href.endsWith('/repos/a/b')) {
+          return makeMockResponse({ ok: true, status: 200, jsonData: { default_branch: 'main' } });
+        }
+        if (href.includes('/pulls') && href.includes('state=open')) {
+          return makeMockResponse({ ok: true, status: 200, jsonData: [] });
+        }
+        if (href.includes('/pulls') && href.includes('state=closed')) {
+          return makeMockResponse({ ok: true, status: 200, jsonData: [] });
+        }
+        if (href.includes('/branches')) {
+          return makeMockResponse({
+            ok: true,
+            status: 200,
+            jsonData: [
+              { name: 'beta', protected: false, commit: { sha: 'sha-beta' } },
+              { name: 'dependabot/npm/stale', protected: false, commit: { sha: 'sha-stale' } },
+            ],
+          });
+        }
+        if (href.includes('/commits/sha-stale')) {
+          return makeMockResponse({
+            ok: true,
+            status: 200,
+            jsonData: { commit: { committer: { date: oldIso } } },
+          });
+        }
+        return makeMockResponse({ ok: false, status: 404 });
+      };
+
+      const dryDeletes = [];
+      await branchCleanupMod.runCleanupBranches({
+        repository: 'a/b',
+        token: 'tok',
+        dryRun: true,
+        includePrefixes: ['dependabot/', 'sync/'],
+        minAgeDays: 1,
+        unmergedMinAgeDays: 7,
+        nowMs,
+        baseDelayMs: 1,
+        sleepImpl: async () => {},
+        fetchImpl: createMockFetch(dryDeletes),
+      });
+      assert.equal(dryDeletes.length, 0);
+
+      const liveDeletes = [];
+      const liveRes = await branchCleanupMod.runCleanupBranches({
+        repository: 'a/b',
+        token: 'tok',
+        dryRun: false,
+        includePrefixes: ['dependabot/', 'sync/'],
+        minAgeDays: 1,
+        unmergedMinAgeDays: 7,
+        nowMs,
+        baseDelayMs: 1,
+        sleepImpl: async () => {},
+        fetchImpl: createMockFetch(liveDeletes),
+      });
+      assert.equal(liveDeletes.length, 1);
+      assert.equal(liveDeletes[0].endsWith('/git/refs/heads/dependabot/npm/stale'), true);
+      assert.deepEqual(liveRes.deleted, ['dependabot/npm/stale']);
     }
 
     // 6. SoundService SSR safety, volume clamping, visibility/disable auto-suspend & rate-throttled woodblock tap
@@ -763,6 +1850,40 @@ async function runCodecAndEngineTests() {
       assert.equal(parsedLink.roomCode, 'ABC123');
       assert.deepEqual(parsedLink.delta?.filledRegionIds, [1, 2, 3]);
       assert.equal(parsedLink.matchedSample?.id, 'capybara_sample');
+    }
+
+    // Corrupt/invalid #s= token must preserve ?room= code and surface tokenError without throwing
+    const corruptTokenLink = await shareLinkMod.parseShareLinkFromUrl(
+      'https://capypaint.com/?room=xy9876#s=not_a_valid_token_!!!'
+    );
+    assert.equal(corruptTokenLink.roomCode, 'XY9876');
+    assert.equal(corruptTokenLink.delta, null);
+    assert.equal(corruptTokenLink.matchedSample, null);
+    assert.equal(corruptTokenLink.hasToken, true);
+    assert.equal(typeof corruptTokenLink.tokenError, 'string');
+
+    // BroadcastChannel Co-op room namespacing across /capy/, /capy/beta/, and /capy/alpha/<num>/ on shared origin
+    const prevChanWindow = globalThis.window;
+    try {
+      globalThis.window = {
+        location: { pathname: '/capy/', origin: 'https://capyboop.github.io', search: '' },
+      };
+      const stableChan = providerMod.resolveCoopBroadcastChannelName('ABC123');
+      globalThis.window = {
+        location: { pathname: '/capy/beta/', origin: 'https://capyboop.github.io', search: '' },
+      };
+      const betaChan = providerMod.resolveCoopBroadcastChannelName('ABC123');
+      globalThis.window = {
+        location: { pathname: '/capy/alpha/495/', origin: 'https://capyboop.github.io', search: '' },
+      };
+      const alphaChan = providerMod.resolveCoopBroadcastChannelName('ABC123');
+      assert.equal(stableChan, 'capy_coop_room_stable_ABC123');
+      assert.equal(betaChan, 'capy_coop_room_beta_ABC123');
+      assert.equal(alphaChan, 'capy_coop_room_alpha_495_ABC123');
+      assert.notEqual(stableChan, betaChan);
+      assert.notEqual(betaChan, alphaChan);
+    } finally {
+      globalThis.window = prevChanWindow;
     }
 
     assert.equal(
@@ -1348,6 +2469,50 @@ async function runCodecAndEngineTests() {
           null,
           'Missing chunk in PlayGamesAndroidDriver must return null cleanly'
         );
+
+        // 3. Unconfigured / Unavailable Play Games fallback must fail fast (no 8s hang)
+        const prevCapyAndroid = globalThis.window.CapyAndroid;
+        try {
+          globalThis.window.CapyAndroid = {
+            isPlayGamesConfigured: () => false,
+            signInPlayGames: () => null,
+          };
+          assert.equal(pgDriver.getDescriptor().isConfigured, false);
+          const autoSignStart = Date.now();
+          assert.equal(await pgDriver.attemptAutoSignIn(), null);
+          assert.equal(Date.now() - autoSignStart < 500, true, 'Unconfigured Play Games auto-sign-in must return null immediately');
+          let unconfErr = null;
+          const signInStart = Date.now();
+          try {
+            await pgDriver.signIn();
+          } catch (err) {
+            unconfErr = err;
+          }
+          assert.equal(unconfErr?.message, 'PLAY_GAMES_UNCONFIGURED');
+          assert.equal(Date.now() - signInStart < 500, true, 'Unconfigured Play Games signIn must fail fast');
+
+          // Configured Play Games that fires native error callback must reject immediately
+          globalThis.window.CapyAndroid = {
+            isPlayGamesConfigured: () => true,
+            signInPlayGames: () => {
+              setTimeout(() => {
+                globalThis.window.__capyReceivePlayGamesError?.('PLAY_GAMES_UNAVAILABLE');
+              }, 10);
+              return null;
+            },
+          };
+          const failStart = Date.now();
+          let unavailErr = null;
+          try {
+            await pgDriver.signIn();
+          } catch (err) {
+            unavailErr = err;
+          }
+          assert.equal(unavailErr?.message, 'PLAY_GAMES_UNAVAILABLE');
+          assert.equal(Date.now() - failStart < 500, true, 'Play Games error callback must reject signIn immediately');
+        } finally {
+          globalThis.window.CapyAndroid = prevCapyAndroid;
+        }
       } finally {
         globalThis.window = prevWindow;
       }
@@ -1355,7 +2520,402 @@ async function runCodecAndEngineTests() {
 
     
 
-    console.log('   PASS: ColorQuantizer, RegionSegmenter, CapyCodec RLE & DoS guards, .capy v2 Gzip, CRDT deltas, SoundService, Zoom Detents, DailyPuzzleService, PlayerStatsService, SvgPrintExporter, Cloudflare Worker Co-op Relay, and Version/Changelog sync verified.');
+    // Verify web/public/404.html redirect logic, .github/scripts/pr-index.html, & generate-pr-manifest.mjs
+    console.log('-> Testing 404.html redirect VM behavior, pr-index.html, generate-pr-manifest.mjs & workflow wiring...');
+    const notFoundHtmlPath = path.resolve(projectRoot, 'public/404.html');
+    const notFoundHtml = fs.readFileSync(notFoundHtmlPath, 'utf8');
+    assert.equal(notFoundHtml.includes('/capy/alpha/?missing='), true, '404.html must redirect to /capy/alpha/?missing=');
+    assert.equal(notFoundHtml.includes('(alpha|PR|pull)'), true, '404.html must match /capy/alpha/, /capy/PR/, and /capy/pull/');
+    assert.equal(notFoundHtml.includes('href="/capy/alpha/"'), true, '404.html must include fallback /capy/alpha/ link');
+
+    const scriptMatch = notFoundHtml.match(/<script>([\s\S]*?)<\/script>/);
+    assert.ok(scriptMatch, '404.html must contain an inline redirect script');
+    const run404Redirect = (pathname) => {
+      let replacedWith = null;
+      const msgEl = { textContent: '' };
+      const prLinkEl = {
+        attrs: {},
+        setAttribute(k, v) {
+          this.attrs[k] = v;
+        },
+      };
+      const sandbox = {
+        encodeURIComponent,
+        window: {
+          location: {
+            pathname,
+            replace(url) {
+              replacedWith = url;
+            },
+          },
+        },
+        document: {
+          getElementById(id) {
+            if (id === 'message') return msgEl;
+            if (id === 'pr-link') return prLinkEl;
+            return null;
+          },
+        },
+      };
+      vm.runInNewContext(scriptMatch[1], sandbox);
+      return { replacedWith, msg: msgEl.textContent, href: prLinkEl.attrs.href ?? null };
+    };
+
+    assert.equal(run404Redirect('/capy/alpha/491/').replacedWith, '/capy/alpha/?missing=491');
+    assert.equal(run404Redirect('/capy/PR/491/').replacedWith, '/capy/alpha/?missing=491');
+    assert.equal(run404Redirect('/capy/pull/489/').replacedWith, '/capy/alpha/?missing=489');
+    assert.equal(run404Redirect('/capy/PR/').replacedWith, '/capy/alpha/');
+    assert.equal(run404Redirect('/capy/pull/').replacedWith, '/capy/alpha/');
+    assert.equal(run404Redirect('/capy/alpha/').replacedWith, null, '404.html must not loop on /capy/alpha/');
+    assert.equal(run404Redirect('/capy/alpha').replacedWith, null, '404.html must not loop on /capy/alpha');
+    assert.equal(run404Redirect('/capy/beta/missing').replacedWith, null, '404.html must not redirect /capy/beta/*');
+    assert.equal(run404Redirect('/capy/unknown').replacedWith, null, '404.html must not redirect /capy/unknown');
+    assert.equal(run404Redirect('/capy/privacy-policy.html').replacedWith, null, '404.html must not redirect /capy/privacy-policy.html');
+    assert.equal(run404Redirect('/capy/preview').replacedWith, null, '404.html must not redirect /capy/preview');
+    assert.equal(run404Redirect('/capy/pull-request').replacedWith, null, '404.html must not redirect /capy/pull-request');
+    assert.equal(run404Redirect('/capy/alpha-test').replacedWith, null, '404.html must not redirect /capy/alpha-test');
+    assert.equal(run404Redirect('/capy/alpha/491').replacedWith, '/capy/alpha/?missing=491');
+    assert.equal(run404Redirect('/capy/alpha///491').replacedWith, '/capy/alpha/?missing=491');
+    assert.equal(run404Redirect('/capy/pull/491').replacedWith, '/capy/alpha/?missing=491');
+    assert.equal(run404Redirect('/capy/PR/491/sub?x=1#y').replacedWith, '/capy/alpha/?missing=491');
+
+    const prIndexHtmlPath = path.resolve(projectRoot, '../.github/scripts/pr-index.html');
+    const prIndexHtml = fs.readFileSync(prIndexHtmlPath, 'utf8');
+    assert.equal(prIndexHtml.includes('/capy/alpha/'), true, 'pr-index.html must target /capy/alpha/');
+    assert.equal(prIndexHtml.includes("fetch('manifest.json', { cache: 'no-store' })"), true, 'pr-index.html must fetch manifest.json with no-store');
+    assert.equal(prIndexHtml.includes("params.get('missing')"), true, 'pr-index.html must read ?missing= query parameter');
+    assert.equal(prIndexHtml.includes('/capy/PR/'), false, 'pr-index.html must not reference legacy /capy/PR/');
+    assert.equal(prIndexHtml.toLowerCase().includes('capyboop'), false, 'pr-index.html must not hardcode owner slug');
+    assert.equal(prIndexHtml.includes('deriveRepoSlug'), true, 'pr-index.html must derive repo slug dynamically');
+
+    const { generatePrManifest } = await import('../../.github/scripts/generate-pr-manifest.mjs');
+    const tmpPagesDir = fs.mkdtempSync(path.join(os.tmpdir(), 'capy-pr-manifest-'));
+    try {
+      const alphaDir = path.join(tmpPagesDir, 'alpha');
+      fs.mkdirSync(path.join(alphaDir, '485'), { recursive: true });
+      fs.mkdirSync(path.join(alphaDir, '491'), { recursive: true });
+      fs.mkdirSync(path.join(alphaDir, 'feature-x'), { recursive: true });
+      fs.mkdirSync(path.join(alphaDir, 'not-a-pr'), { recursive: true });
+      fs.writeFileSync(path.join(alphaDir, '491', 'capy.apk'), 'apk');
+
+      const manifest = generatePrManifest({ pagesDir: tmpPagesDir });
+      assert.deepEqual(
+        manifest.prs.map((p) => ({ number: p.number, path: p.path, hasApk: p.hasApk })),
+        [
+          { number: 491, path: '/capy/alpha/491/', hasApk: true },
+          { number: 485, path: '/capy/alpha/485/', hasApk: false },
+        ],
+        'generatePrManifest must sort numeric PR directories descending, emit /capy/alpha/<id>/, and exclude non-numeric dirs'
+      );
+      const writtenManifest = JSON.parse(fs.readFileSync(path.join(alphaDir, 'manifest.json'), 'utf8'));
+      assert.deepEqual(
+        writtenManifest.prs.map((p) => p.path),
+        ['/capy/alpha/491/', '/capy/alpha/485/']
+      );
+      assert.equal(fs.existsSync(path.join(alphaDir, 'index.html')), true, 'alpha/index.html must be copied');
+      assert.equal(fs.existsSync(path.join(tmpPagesDir, '404.html')), true, 'root 404.html must be seeded when missing');
+
+      // Passing alpha/ subdirectory directly must resolve rootPagesDir cleanly
+      const subManifest = generatePrManifest({ pagesDir: alphaDir });
+      assert.equal(subManifest.prs.length, 2);
+
+      // Existing 404.html must be preserved when refreshNotFound is false, and overwritten when refreshNotFound is true
+      const dest404Path = path.join(tmpPagesDir, '404.html');
+      fs.writeFileSync(dest404Path, 'stale-404-sentinel', 'utf8');
+      generatePrManifest({ pagesDir: tmpPagesDir, refreshNotFound: false });
+      assert.equal(fs.readFileSync(dest404Path, 'utf8'), 'stale-404-sentinel');
+
+      generatePrManifest({ pagesDir: tmpPagesDir, refreshNotFound: true });
+      assert.equal(fs.readFileSync(dest404Path, 'utf8'), notFoundHtml);
+
+      // Verify CLI flags --pages-dir, --not-found-src, and --refresh-404
+      fs.writeFileSync(dest404Path, 'cli-stale-sentinel', 'utf8');
+      execFileSync(process.execPath, [
+        path.resolve(projectRoot, '../.github/scripts/generate-pr-manifest.mjs'),
+        '--pages-dir',
+        tmpPagesDir,
+        '--not-found-src',
+        notFoundHtmlPath,
+        '--refresh-404',
+      ]);
+      assert.equal(fs.readFileSync(dest404Path, 'utf8'), notFoundHtml);
+
+      // cleanup-gh-pages-previews must preserve alpha/index.html and alpha/manifest.json intact
+      const cleanupRes = await previewCleanupMod.runCleanupGhPagesPreviews({
+        pagesDir: tmpPagesDir,
+        ignoreRecency: true,
+        repository: 'a/b',
+        token: 'tok',
+        defaultBranch: 'main',
+        remoteBranches: ['main', 'beta'],
+        baseDelayMs: 1,
+        sleepImpl: async () => {},
+        fetchImpl: async () =>
+          makeMockResponse({
+            ok: true,
+            status: 200,
+            jsonData: [{ number: 491, state: 'open', head: { ref: 'fix/pr-404-redirect' } }],
+          }),
+      });
+      assert.equal(cleanupRes.deleted.includes('alpha/485'), true);
+      assert.equal(fs.existsSync(path.join(alphaDir, '491')), true);
+      assert.equal(fs.existsSync(path.join(alphaDir, '485')), false);
+      assert.equal(fs.existsSync(path.join(alphaDir, 'index.html')), true, 'alpha/index.html must survive preview cleanup');
+      assert.equal(fs.existsSync(path.join(alphaDir, 'manifest.json')), true, 'alpha/manifest.json must survive preview cleanup');
+    } finally {
+      fs.rmSync(tmpPagesDir, { recursive: true, force: true });
+    }
+
+    const deployWorkflowYaml = fs.readFileSync(
+      path.resolve(projectRoot, '../.github/workflows/deploy-branch.yml'),
+      'utf8'
+    );
+    assert.equal(deployWorkflowYaml.includes('generate-pr-manifest.mjs'), true);
+    assert.equal(deployWorkflowYaml.includes('web/public/404.html'), true);
+    assert.equal(deployWorkflowYaml.includes('--refresh-404'), true);
+
+    const cleanupWorkflowYaml = fs.readFileSync(
+      path.resolve(projectRoot, '../.github/workflows/cleanup-closed-pr.yml'),
+      'utf8'
+    );
+    assert.equal(cleanupWorkflowYaml.includes('generate-pr-manifest.mjs'), true);
+
+    // Verify .github/scripts/compile-changelog.mjs & release.yml wiring
+    console.log('-> Testing compile-changelog.mjs release note extraction & release.yml wiring...');
+    const { extractReleaseNotes, formatReleaseNotesMarkdown } = await import(
+      '../../.github/scripts/compile-changelog.mjs'
+    );
+    const sampleChangelog = `### 3.0.7 - 2026-11-13 (Beta)
+
+- Fix Play Games fallback and DPR canvas scaling #495
+
+### 3.0.6 - 2026-11-13
+
+- Prior release note #489
+
+### 2.9 - 2026-11-10
+
+- Minor rollup note #470`;
+    assert.equal(
+      extractReleaseNotes(sampleChangelog, 'v3.0.7'),
+      '- Fix Play Games fallback and DPR canvas scaling #495'
+    );
+    assert.equal(
+      extractReleaseNotes(sampleChangelog.replace(/\n/g, '\r\n'), 'v3.0.7-beta.1'),
+      '- Fix Play Games fallback and DPR canvas scaling #495'
+    );
+    assert.equal(
+      extractReleaseNotes(sampleChangelog, 'v2.9.4'),
+      '- Minor rollup note #470'
+    );
+    assert.equal(extractReleaseNotes(sampleChangelog, 'v9.9.9'), '- Release v9.9.9');
+    assert.throws(() => extractReleaseNotes(sampleChangelog, 'invalid-tag'));
+    assert.equal(
+      formatReleaseNotesMarkdown(sampleChangelog, 'v3.0.6'),
+      '### What\'s New in `v3.0.6`\n\n- Prior release note #489\n'
+    );
+    const tmpReleaseNotesOut = path.join(os.tmpdir(), 'capy-release-notes-test.md');
+    try {
+      execFileSync(process.execPath, [
+        path.resolve(projectRoot, '../.github/scripts/compile-changelog.mjs'),
+        '--tag',
+        `v${webPkgJson.version}`,
+        '--changelog',
+        path.resolve(projectRoot, '../CHANGELOG.md'),
+        '--out',
+        tmpReleaseNotesOut,
+      ]);
+      const cliNotes = fs.readFileSync(tmpReleaseNotesOut, 'utf8');
+      assert.equal(cliNotes.startsWith(`### What's New in \`v${webPkgJson.version}\`\n\n`), true);
+    } finally {
+      fs.rmSync(tmpReleaseNotesOut, { force: true });
+    }
+    const releaseWorkflowYaml = fs.readFileSync(
+      path.resolve(projectRoot, '../.github/workflows/release.yml'),
+      'utf8'
+    );
+    assert.equal(releaseWorkflowYaml.includes('compile-changelog.mjs'), true);
+    assert.equal(releaseWorkflowYaml.includes('python3'), false);
+
+    // Verify .github/scripts/compile-changelog.mjs stops cleanly at ## headings
+    const changelogWithSubheading = `### 3.0.7 - 2026-11-13 (Beta)
+
+- Top bullet [#495](https://example.invalid/pull/495)
+
+## Archive Section
+
+- Should never bleed into v3.0.7 release notes`;
+    assert.equal(
+      extractReleaseNotes(changelogWithSubheading, 'v3.0.7'),
+      '- Top bullet [#495](https://example.invalid/pull/495)'
+    );
+
+    // Verify sanity.mjs .changelog fragment parser + web/scripts/compile-changelog.mjs
+    console.log('-> Testing .changelog fragment validation, compile-changelog.mjs, StorageNamespace & UserSettings enums...');
+    const sanityMod = await import('./sanity.mjs');
+    const compileMod = await import('./compile-changelog.mjs');
+
+    const validFrag = sanityMod.parseChangelogFragment(
+      '---\nbump: minor\nepic: EPIC-3\ntask: TASK-2.5\n---\nAdd crisp new brush stroke effect\n',
+      '.changelog/brush.md'
+    );
+    assert.equal(validFrag.bump, 'minor');
+    assert.equal(validFrag.task, 'TASK-2.5');
+    assert.throws(() => sanityMod.parseChangelogFragment('---\nbump: invalid\n---\nBad bump\n'));
+    assert.throws(() => sanityMod.parseChangelogFragment('---\nbump: patch\n---\nLine 1\nLine 2\n'));
+
+    assert.equal(compileMod.computeNextSemVer('3.0.7', 'patch').version, '3.0.8');
+    assert.equal(compileMod.computeNextSemVer('3.0.7', 'minor').version, '3.1.0');
+    assert.equal(compileMod.computeNextSemVer('3.0.7', 'major').version, '4.0.0');
+
+    const tmpCompileRepo = fs.mkdtempSync(path.join(os.tmpdir(), 'capy-changelog-compile-'));
+    try {
+      fs.mkdirSync(path.join(tmpCompileRepo, 'web/src'), { recursive: true });
+      fs.mkdirSync(path.join(tmpCompileRepo, 'app'), { recursive: true });
+      fs.mkdirSync(path.join(tmpCompileRepo, '.changelog'), { recursive: true });
+      fs.writeFileSync(
+        path.join(tmpCompileRepo, 'web/package.json'),
+        JSON.stringify({ name: 'capy-paint', version: '3.0.7' }, null, 2),
+        'utf8'
+      );
+      fs.writeFileSync(
+        path.join(tmpCompileRepo, 'web/src/version.ts'),
+        `export const APP_VERSION = '3.0.7';\n`,
+        'utf8'
+      );
+      fs.writeFileSync(
+        path.join(tmpCompileRepo, 'app/build.gradle.kts'),
+        `versionCode = 30007\nversionName = "3.0.7"\n`,
+        'utf8'
+      );
+      fs.writeFileSync(
+        path.join(tmpCompileRepo, 'TODO.md'),
+        `# Queue\n\n### TASK-2.5: Finish release\n\nDetails here.\n\n### BUG-4: Keep me\n\nKeep details.\n`,
+        'utf8'
+      );
+      fs.writeFileSync(
+        path.join(tmpCompileRepo, 'CHANGELOG.md'),
+        `### 3.0.7 - 2026-11-12 (Beta)\n\n- Beta item #495\n\n### 3.0.1 - 2026-11-10 (Production)\n\n- Prod item #488\n`,
+        'utf8'
+      );
+      fs.writeFileSync(path.join(tmpCompileRepo, '.changelog/README.md'), '# Fragments\n', 'utf8');
+      fs.writeFileSync(
+        path.join(tmpCompileRepo, '.changelog/01-fix.md'),
+        '---\nbump: patch\npr: 496\ntask: TASK-2.5\n---\nFix edge zoom jitter\n',
+        'utf8'
+      );
+      fs.writeFileSync(
+        path.join(tmpCompileRepo, '.changelog/02-feat.md'),
+        '---\nbump: minor\nepic: EPIC-3\n---\nAdd loupe magnifier\n',
+        'utf8'
+      );
+
+      assert.equal(sanityMod.validateChangelogFragments(tmpCompileRepo), 2);
+      const betaCompileRes = compileMod.compileChangelog({
+        repoRoot: tmpCompileRepo,
+        dateStr: '2026-11-13',
+        prMap: { '02-feat': 497 },
+      });
+      assert.equal(betaCompileRes.version, '3.1.0');
+      assert.equal(betaCompileRes.compiledCount, 2);
+      assert.equal(JSON.parse(fs.readFileSync(path.join(tmpCompileRepo, 'web/package.json'), 'utf8')).version, '3.1.0');
+      assert.equal(fs.readFileSync(path.join(tmpCompileRepo, 'web/src/version.ts'), 'utf8').includes("'3.1.0'"), true);
+      assert.equal(fs.readFileSync(path.join(tmpCompileRepo, 'app/build.gradle.kts'), 'utf8').includes('versionCode = 30100'), true);
+      assert.equal(fs.readFileSync(path.join(tmpCompileRepo, 'app/build.gradle.kts'), 'utf8').includes('versionName = "3.1.0"'), true);
+      const todoAfter = fs.readFileSync(path.join(tmpCompileRepo, 'TODO.md'), 'utf8');
+      assert.equal(todoAfter.includes('TASK-2.5'), false);
+      assert.equal(todoAfter.includes('BUG-4'), true);
+      assert.equal(fs.existsSync(path.join(tmpCompileRepo, '.changelog/01-fix.md')), false);
+      assert.equal(fs.existsSync(path.join(tmpCompileRepo, '.changelog/README.md')), true);
+      const compiledCl = fs.readFileSync(path.join(tmpCompileRepo, 'CHANGELOG.md'), 'utf8');
+      assert.equal(compiledCl.startsWith('### 3.1.0 - 2026-11-13 (Beta)\n'), true);
+      assert.equal(compiledCl.includes('### 3.0.7 - 2026-11-12\n'), true);
+      assert.equal(compiledCl.includes('### 3.0.1 - 2026-11-10 (Production)\n'), true);
+
+      // Promote to Production, Beta
+      const promoRes = compileMod.compileChangelog({ repoRoot: tmpCompileRepo, promote: true });
+      assert.equal(promoRes.promoted, true);
+      const promotedCl = fs.readFileSync(path.join(tmpCompileRepo, 'CHANGELOG.md'), 'utf8');
+      assert.equal(promotedCl.startsWith('### 3.1.0 - 2026-11-13 (Production, Beta)\n'), true);
+      assert.equal(promotedCl.includes('### 3.0.1 - 2026-11-10\n'), true);
+
+      // Refuse promoting an (Alpha) top heading
+      fs.writeFileSync(
+        path.join(tmpCompileRepo, 'CHANGELOG.md'),
+        `### 3.1.0 - 2026-11-13 (Alpha)\n\n- Alpha preview #498\n\n### 3.0.1 - 2026-11-10 (Production)\n\n- Prod #488\n`,
+        'utf8'
+      );
+      assert.throws(() => compileMod.compileChangelog({ repoRoot: tmpCompileRepo, promote: true }));
+    } finally {
+      fs.rmSync(tmpCompileRepo, { recursive: true, force: true });
+    }
+
+    // Verify StorageNamespace isolation + StorageService UserSettings enum round-trips
+    const nsMod = await vite.ssrLoadModule('/src/services/StorageNamespace.ts');
+    const storageMod = await vite.ssrLoadModule('/src/services/StorageService.ts');
+    assert.deepEqual(nsMod.resolveStorageNamespace('/capy/', 'https://capypaint.com', ''), {
+      channel: 'stable',
+      isSandboxed: false,
+      sandboxSuffix: '',
+      dbName: 'capy_game_storage_v8',
+    });
+    assert.deepEqual(nsMod.resolveStorageNamespace('/capy/beta/', 'https://example.github.io', ''), {
+      channel: 'beta',
+      isSandboxed: true,
+      sandboxSuffix: '__sandbox_beta',
+      dbName: 'capy_game_storage_v8_beta',
+    });
+    assert.deepEqual(nsMod.resolveStorageNamespace('/capy/alpha/495/', 'https://example.github.io', ''), {
+      channel: 'alpha',
+      isSandboxed: true,
+      sandboxSuffix: '__sandbox_alpha',
+      dbName: 'capy_game_storage_v8_alpha',
+    });
+    assert.equal(
+      nsMod.resolveScopedStorageKey('capy_snapshots_v8', '/capy/beta/', 'https://example.github.io', '?capy_sandbox=0'),
+      'capy_snapshots_v8'
+    );
+    assert.equal(
+      nsMod.resolveScopedBackupKey('capy_user_settings_v8', '/capy/alpha/495/', 'https://example.github.io', ''),
+      'capy_user_settings_v8__sandbox_alpha'
+    );
+    assert.equal(
+      nsMod.resolveScopedDbName('/capy/', 'https://capypaint.com', '?capy_sandbox=1'),
+      'capy_game_storage_v8_stable'
+    );
+
+    const prevLs = globalThis.localStorage;
+    const prevSsrWin = globalThis.window;
+    const mockStorage = new Map();
+    globalThis.localStorage = {
+      getItem: (k) => (mockStorage.has(k) ? mockStorage.get(k) : null),
+      setItem: (k, v) => mockStorage.set(k, String(v)),
+      removeItem: (k) => mockStorage.delete(k),
+    };
+    globalThis.window = { location: { pathname: '/', origin: 'http://127.0.0.1:3000', search: '' } };
+    try {
+      storageMod.StorageService.saveSettings({
+        ...storageMod.DEFAULT_SETTINGS,
+        difficulty: 'NORMAL',
+        paletteSort: 'HUE',
+        highlightStyle: 'CENTROID_GLOW',
+      });
+      const loadedNormalHue = storageMod.StorageService.loadSettings();
+      assert.equal(loadedNormalHue.difficulty, 'NORMAL');
+      assert.equal(loadedNormalHue.paletteSort, 'HUE');
+      assert.equal(loadedNormalHue.highlightStyle, 'CENTROID_GLOW');
+
+      storageMod.StorageService.saveSettings({
+        ...storageMod.DEFAULT_SETTINGS,
+        paletteSort: 'LIGHTNESS',
+      });
+      assert.equal(storageMod.StorageService.loadSettings().paletteSort, 'LIGHTNESS');
+    } finally {
+      globalThis.localStorage = prevLs;
+      globalThis.window = prevSsrWin;
+    }
+
+    console.log('   PASS: ColorQuantizer, RegionSegmenter, CapyCodec RLE & DoS guards, .capy v2 Gzip, CRDT deltas, SoundService, Zoom Detents, DailyPuzzleService, PlayerStatsService, SvgPrintExporter, Cloudflare Worker Co-op Relay, StorageNamespace, Changelog Compiler, and Version/Changelog sync verified.');
   } finally {
     await vite.close();
   }
@@ -1460,10 +3020,100 @@ async function runBrowserBasicsSuite() {
       };
     }, expectedSwCacheKey);
     assert.equal(bootMeta.count, 4);
-    assert.equal(bootMeta.firstId, 'sample-capybara');
+    assert.equal(bootMeta.firstId, 'sample-capy-forest');
     assert.equal(bootMeta.swReady, true);
     assert.equal(bootMeta.hasScopedCache, true, `Expected Service Worker cache ${expectedSwCacheKey}`);
     assert.equal(bootMeta.hasLegacyCache, false, 'Legacy unscoped capy-cache-v2 must not exist');
+
+    // Verify Interactive First-Run Tutorial appears on cold start, supports live try-it steps (auto-advance + badge), and persists completion
+    const tutorialCard = page.getByTestId('onboarding-tutorial');
+    await tutorialCard.waitFor({ state: 'visible', timeout: 5000 });
+    assert.equal(await page.getByTestId('tutorial-step-indicator').innerText(), 'STEP 1 OF 5');
+    // Step 1: Pick Color (click an unselected palette swatch -> shows Tried! badge and auto-advances to Step 2)
+    await page.locator('[aria-label="Palette dock"] button[aria-pressed="false"]').first().click();
+    await page.getByTestId('tutorial-step-tried-badge').waitFor({ state: 'visible', timeout: 3000 });
+    await page.waitForFunction(
+      () => document.querySelector('[data-testid="tutorial-step-indicator"]')?.textContent?.trim().toUpperCase() === 'STEP 2 OF 5',
+      undefined,
+      { timeout: 3000 }
+    );
+    // Step 2: Tap & Paint Shape (tap canvas below tutorial card -> shows Tried! badge and auto-advances to Step 3)
+    const canvasBoxTut = await page.locator('canvas').first().boundingBox();
+    for (let attempt = 0; attempt < 6; attempt++) {
+      const xFrac = 0.42 + (attempt % 3) * 0.08;
+      const yFrac = 0.60 + Math.floor(attempt / 3) * 0.08;
+      await page.mouse.click(canvasBoxTut.x + canvasBoxTut.width * xFrac, canvasBoxTut.y + canvasBoxTut.height * yFrac);
+      await page.waitForTimeout(80);
+      if ((await page.getByTestId('tutorial-step-tried-badge').count()) > 0) break;
+    }
+    await page.getByTestId('tutorial-step-tried-badge').waitFor({ state: 'visible', timeout: 3000 });
+    await page.waitForFunction(
+      () => document.querySelector('[data-testid="tutorial-step-indicator"]')?.textContent?.trim().toUpperCase() === 'STEP 3 OF 5',
+      undefined,
+      { timeout: 3000 }
+    );
+    // Step 3: Zoom & Pan (step zoom -> shows Tried! badge and auto-advances to Step 4, then restore 1x)
+    await page.keyboard.press('+');
+    await page.getByTestId('tutorial-step-tried-badge').waitFor({ state: 'visible', timeout: 3000 });
+    await page.waitForFunction(
+      () => document.querySelector('[data-testid="tutorial-step-indicator"]')?.textContent?.trim().toUpperCase() === 'STEP 4 OF 5',
+      undefined,
+      { timeout: 3000 }
+    );
+    await page.keyboard.press('0');
+    // Step 4: Smart Hints (use inline Try Hint button -> marks tried and auto-advances to Step 5)
+    await page.getByTestId('tutorial-try-hint-btn').click();
+    await page.getByTestId('tutorial-step-tried-badge').waitFor({ state: 'visible', timeout: 3000 });
+    await page.waitForFunction(
+      () => document.querySelector('[data-testid="tutorial-step-indicator"]')?.textContent?.trim().toUpperCase() === 'STEP 5 OF 5',
+      undefined,
+      { timeout: 3000 }
+    );
+    // Step 5: Finish Coloring
+    await page.getByTestId('tutorial-finish-btn').click();
+    await tutorialCard.waitFor({ state: 'hidden', timeout: 3000 });
+    const tutorialCompletedFlag = await page.evaluate(() => localStorage.getItem('capy_tutorial_completed_v1'));
+    assert.equal(tutorialCompletedFlag, '1');
+
+    // Verify ?skipTutorial=1 suppresses tutorial AND Escape with modal open closes only modal before tutorial
+    const skipTutContext = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+    const skipTutPage = await skipTutContext.newPage();
+    attachErrorListeners(skipTutPage, 'skipTutPage');
+    await skipTutPage.goto(`${BASE_URL}/?skipTutorial=1`, { waitUntil: 'networkidle' });
+    await waitForPuzzleLoaded(skipTutPage);
+    assert.equal(
+      await skipTutPage.getByTestId('onboarding-tutorial').count(),
+      0,
+      '?skipTutorial=1 must suppress OnboardingTutorial on cold start'
+    );
+    await skipTutPage.close();
+    await skipTutContext.close();
+
+    const escTutContext = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+    const escTutPage = await escTutContext.newPage();
+    attachErrorListeners(escTutPage, 'escTutPage');
+    await escTutPage.goto(`${BASE_URL}/`, { waitUntil: 'networkidle' });
+    await waitForPuzzleLoaded(escTutPage);
+    await escTutPage.getByTestId('onboarding-tutorial').waitFor({ state: 'visible', timeout: 5000 });
+    await escTutPage.locator('button[title="Settings and Menu"]').click();
+    await escTutPage.getByTestId('about-screen-card').waitFor({ state: 'visible', timeout: 3000 });
+    await escTutPage.keyboard.press('Escape');
+    await escTutPage.getByTestId('about-screen-card').waitFor({ state: 'hidden', timeout: 3000 });
+    assert.equal(
+      await escTutPage.getByTestId('onboarding-tutorial').isVisible(),
+      true,
+      'Pressing Escape while SettingsModal is open must NOT double-dismiss OnboardingTutorial'
+    );
+    await escTutPage.keyboard.press('Escape');
+    await escTutPage.getByTestId('onboarding-tutorial').waitFor({ state: 'hidden', timeout: 3000 });
+    assert.equal(
+      await escTutPage.evaluate(() => localStorage.getItem('capy_tutorial_completed_v1')),
+      '1',
+      'Pressing Escape with no modal open must dismiss OnboardingTutorial and persist completion'
+    );
+    await escTutPage.close();
+    await escTutContext.close();
+
 
     // Verify malformed #s= DoS token degrades cleanly without crashing the app
     const dosSharePage = await context.newPage();
@@ -1566,14 +3216,30 @@ async function runBrowserBasicsSuite() {
     console.log('3. Verifying Undo, Redo, long-press Replay scrubber, Resume Here & Free Colour auto-undo...');
     assert.equal(await page.$('[data-testid="undo-btn"]'), null, 'Undo hidden by default for standard puzzles');
 
-    // Open Settings -> verify version badge, enable Undo, test Charcoal background reset, and verify tab memory
+    // Open Settings -> verify all 5 distinct tabs (About=0, Settings=1, Hints=2, Create=3, Saves=4), zero duplicates, and tab 4 persistence across reload
     const settingsBtn = page.locator('button[title="Settings and Menu"]');
     await settingsBtn.click();
     await page.waitForTimeout(200);
 
+    // Tab 0: About
     const pkgVersion = JSON.parse(fs.readFileSync(path.resolve(projectRoot, 'package.json'), 'utf8')).version;
     const versionBadgeText = await page.locator('[data-testid="app-version-badge"]').textContent();
     assert.equal(versionBadgeText?.trim(), `v${pkgVersion}`, `Expected app-version-badge to equal v${pkgVersion}`);
+    assert.equal(await page.getByTestId('app-version-badge').count(), 1, 'Expected single app-version-badge in About tab');
+    assert.equal(await page.getByTestId('about-screen-card').isVisible(), true, 'About tab must render about-screen-card');
+    assert.equal(await page.getByTestId('about-replay-tutorial-btn').isVisible(), true, 'About tab must render about-replay-tutorial-btn');
+    assert.equal(await page.getByTestId('lifetime-stats-card').isVisible(), true, 'About tab must render lifetime-stats-card');
+    assert.equal(await page.getByTestId('release-channel-card').isVisible(), true, 'About tab must render release-channel-card');
+    assert.equal(await page.getByText('Highlight Style').count(), 0, 'About tab must not render Hints content');
+
+    // Tab 1: Settings (no duplicated About/Stats/Platforms and no leaked Hints content)
+    await page.getByRole('button', { name: 'Settings', exact: true }).click();
+    await page.waitForTimeout(150);
+    assert.equal(await page.getByText('Canvas Background').isVisible(), true, 'Settings tab must render Canvas Background');
+    assert.equal(await page.getByTestId('app-version-badge').count(), 0, 'Settings tab must not duplicate app-version-badge');
+    assert.equal(await page.getByTestId('lifetime-stats-card').count(), 0, 'Settings tab must not duplicate lifetime-stats-card');
+    assert.equal(await page.getByTestId('release-channel-card').count(), 0, 'Settings tab must not duplicate release-channel-card');
+    assert.equal(await page.getByText('Highlight Style').count(), 0, 'Settings tab must not leak Hints content');
 
     await page.locator('button[title="Charcoal"]').first().click();
     for (const labelText of [
@@ -1585,7 +3251,39 @@ async function runBrowserBasicsSuite() {
       await labelEl.evaluate((el) => el.closest('.flex')?.querySelector('button')?.click());
     }
 
-    // Switch to Hints tab and close -> reopen to verify capy_last_settings_tab persistence
+    // Tab 2: Hints
+    await page.getByRole('button', { name: 'Hints', exact: true }).click();
+    await page.waitForTimeout(120);
+    assert.equal(await page.getByText('Highlight Style').isVisible(), true, 'Hints tab must render Highlight Style');
+    assert.equal(await page.getByText('Hint Fill Pattern').isVisible(), true, 'Hints tab must render Hint Fill Pattern');
+    assert.equal(await page.getByText('Canvas Background').count(), 0, 'Hints tab must not render Settings content');
+
+    // Tab 3: Create
+    await page.getByRole('button', { name: 'Create', exact: true }).click();
+    await page.waitForTimeout(120);
+    assert.equal(await page.getByTestId('daily-puzzle-card').isVisible(), true, 'Create tab must render daily-puzzle-card');
+    assert.equal(await page.getByTestId('gallery-search-input').isVisible(), true, 'Create tab must render gallery-search-input');
+    assert.equal(await page.getByText('Highlight Style').count(), 0, 'Create tab must not render Hints content');
+
+    // Tab 4: Saves (persist tab 4 across full page reload)
+    await page.getByRole('button', { name: 'Saves', exact: true }).click();
+    await page.waitForTimeout(120);
+    assert.equal(await page.getByTestId('cloud-coop-hub').isVisible(), true, 'Saves tab must render cloud-coop-hub');
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(150);
+    assert.equal(await page.evaluate(() => localStorage.getItem('capy_last_settings_tab')), '4');
+
+    await page.reload({ waitUntil: 'networkidle' });
+    await waitForPuzzleLoaded(page);
+    await settingsBtn.click();
+    await page.waitForTimeout(150);
+    assert.equal(
+      await page.getByTestId('cloud-coop-hub').isVisible(),
+      true,
+      'Saves tab (index 4) must restore after page reload via capy_last_settings_tab'
+    );
+
+    // Switch to Hints tab and close -> verify capy_last_settings_tab === '2'
     await page.getByRole('button', { name: 'Hints', exact: true }).click();
     await page.waitForTimeout(150);
     await page.keyboard.press('Escape');
@@ -1594,7 +3292,7 @@ async function runBrowserBasicsSuite() {
     const updatedSettings = await page.evaluate(() => JSON.parse(localStorage.getItem('capy_user_settings_v8') || '{}'));
     assert.equal(updatedSettings.canvasBgColor, 'CHARCOAL');
     assert.equal(updatedSettings.canvasBgArgb >>> 0, 0xff18181b);
-    assert.equal(localStorage_tab(await page.evaluate(() => localStorage.getItem('capy_last_settings_tab'))), '1');
+    assert.equal(localStorage_tab(await page.evaluate(() => localStorage.getItem('capy_last_settings_tab'))), '2');
 
     function localStorage_tab(v) {
       return String(v);
@@ -1670,6 +3368,25 @@ async function runBrowserBasicsSuite() {
     });
     assert.equal(progressAfterCtrlY, 3, 'Expected Ctrl+Y to redo step 3');
 
+    // Verify ReplayControls "Next" button (onOpenCreate) opens Create tab (index 3)
+    const undoBoxForNext = await (await page.waitForSelector('[data-testid="undo-btn"]')).boundingBox();
+    await page.mouse.move(undoBoxForNext.x + undoBoxForNext.width / 2, undoBoxForNext.y + undoBoxForNext.height / 2);
+    await page.mouse.down();
+    await page.waitForTimeout(520);
+    await page.mouse.up();
+    await page.waitForSelector('[data-testid="replay-controls-window"]', { timeout: 3000 });
+    await page.locator('[data-testid="replay-toggle-minimize-btn"]').click();
+    await page.waitForTimeout(120);
+    await page.locator('button[title="Pick Next Artwork"]').click();
+    await page.getByTestId('daily-puzzle-card').waitFor({ state: 'visible', timeout: 3000 });
+    assert.equal(
+      await page.evaluate(() => localStorage.getItem('capy_last_settings_tab')),
+      '3',
+      'ReplayControls Next button must open SettingsModal Create tab (index 3)'
+    );
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(120);
+
     // Verify save-load zoom restoration before replay, offscreen step fast-forward, and pan/zoom during playback
     const zoomInBtn = await page.waitForSelector('[data-testid="zoom-in-btn"]');
     await zoomInBtn.click();
@@ -1704,8 +3421,27 @@ async function runBrowserBasicsSuite() {
     // Immediately check that Fit-to-Screen button is visible (meaning previous zoom extent was restored BEFORE replay)
     await page.waitForSelector('[data-testid="reset-view-btn"]', { timeout: 5000 });
     // Because the painted center regions are offscreen at the restored top-left zoom extent, offscreen steps fast-forward automatically
+    await page.waitForSelector('[data-testid="replay-play-pause-btn"][aria-label="Replay Again"]', { timeout: 5000 });
+    // First Ctrl+Z while awaiting post-load replay dismisses ReplayControls AND immediately performs Undo on the same tick
+    await page.keyboard.press('Control+z');
+    await page.locator('[data-testid="replay-controls-window"]').waitFor({ state: 'hidden', timeout: 3000 });
     await page.waitForSelector('[aria-label="Palette dock"]', { timeout: 4000 });
-    await page.waitForTimeout(220);
+    const progressAfterFirstCtrlZ = await page.evaluate(() => {
+      const list = JSON.parse(localStorage.getItem('capy_snapshots_v8') || '[]');
+      return list[0]?.filledCount || 0;
+    });
+    assert.equal(
+      progressAfterFirstCtrlZ,
+      2,
+      'First Ctrl+Z while awaiting post-load ReplayControls must dismiss replay AND undo immediately (3 -> 2)'
+    );
+    await page.keyboard.press('Control+y');
+    await page.waitForTimeout(150);
+    assert.equal(
+      await page.evaluate(() => (JSON.parse(localStorage.getItem('capy_snapshots_v8') || '[]')[0]?.filledCount || 0)),
+      3,
+      'Ctrl+Y after post-load replay dismiss must redo back to 3'
+    );
 
     // Trigger replay via long-press Undo, start playback from 0, and verify live zoom/pan during playback
     const undoBtnAfterLoad = await page.waitForSelector('[data-testid="undo-btn"]');
@@ -2071,6 +3807,10 @@ async function runBrowserBasicsSuite() {
 
     // Verify completed puzzle Replay button starts replay in place without zooming out or resetting viewport
     await page.waitForSelector('[data-testid="reset-view-btn"]', { timeout: 5000 });
+    if (await page.locator('[data-testid="replay-exit-btn"]').isVisible()) {
+      await page.locator('[data-testid="replay-exit-btn"]').click();
+      await page.waitForTimeout(150);
+    }
     const completedReplayBtn = await page.waitForSelector('[data-testid="replay-btn"]', { timeout: 5000 });
     await completedReplayBtn.click();
     await page.waitForTimeout(380);
@@ -2236,33 +3976,57 @@ async function runBrowserBasicsSuite() {
     await page.keyboard.press('Escape');
     await page.waitForTimeout(100);
 
-    const zoomBadge = page.getByTestId('topbar-zoom-badge');
-    await zoomBadge.waitFor({ state: 'visible', timeout: 5000 });
-
-    // Align to 1x stop if currently zoomed in from previous E2E steps
-    for (let guard = 0; guard < 6; guard++) {
-      const text = (await zoomBadge.innerText()).trim();
-      if (text === '1x') break;
-      await zoomBadge.click();
-    }
-    assert.equal((await zoomBadge.innerText()).trim(), '1x', 'Expected top HUD zoom badge to align to 1x');
-
-    const expectedZoomCycle = ['2x', '4x', '8x', '12x', '1x'];
-    for (const expectedLabel of expectedZoomCycle) {
-      await zoomBadge.click();
-      const actualLabel = (await zoomBadge.innerText()).trim();
-      assert.equal(
-        actualLabel,
-        expectedLabel,
-        `Expected topbar-zoom-badge to step to '${expectedLabel}', got '${actualLabel}'`
-      );
-    }
-    console.log('   PASS: Controls settings (zoomSensitivity, snapZoomLevels, soundEnabled, soundVolume) and HUD zoom-badge cycle (1x -> 2x -> 4x -> 8x -> 12x -> 1x) verified.');
+    assert.equal(
+      await page.getByTestId('topbar-zoom-badge').count(),
+      0,
+      'Expected topbar-zoom-badge to be removed from GameTopBar'
+    );
+    console.log('   PASS: Controls settings (zoomSensitivity, snapZoomLevels, soundEnabled, soundVolume) and topbar-zoom-badge removal verified.');
 
     // ------------------------------------------------------------------
     // 10. Daily Featured Puzzle, Reduced Motion, Keyboard Shortcuts & Lifetime Stats
     // ------------------------------------------------------------------
     console.log('-> [E2E 10] Verifying Daily Featured Puzzle, Reduced Motion, Keyboard Shortcuts & Lifetime Stats...');
+
+    // Prebaked sample viewport reset regression check (date-independent)
+    await page.reload({ waitUntil: 'load' });
+    await waitForPuzzleLoaded(page);
+
+    await page.locator('button[title="Settings and Menu"]').click();
+    await page.getByRole('button', { name: 'Create', exact: true }).click();
+    const snailCard = page.getByTestId('gallery-card-snail_guitar');
+    await snailCard.waitFor({ state: 'visible', timeout: 5000 });
+    await snailCard.getByRole('button', { name: 'Play', exact: true }).click();
+    await waitForPuzzleLoaded(page);
+    await page.waitForTimeout(200);
+
+    assert.equal(
+      await page.getByTestId('reset-view-btn').count(),
+      0,
+      'Expected reset-view-btn to be unmounted after prebaked sample viewport reset'
+    );
+    const prebakedSession = await page.evaluate(() => {
+      return JSON.parse(localStorage.getItem('capy_active_session_v8') || '{}');
+    });
+    assert.equal(
+      prebakedSession.zoomScale,
+      1,
+      `Expected capy_active_session_v8 zoomScale === 1 after prebaked sample load, got ${prebakedSession.zoomScale}`
+    );
+    assert.equal(
+      prebakedSession.panOffsetX,
+      0,
+      `Expected capy_active_session_v8 panOffsetX === 0 after prebaked sample load, got ${prebakedSession.panOffsetX}`
+    );
+    assert.equal(
+      prebakedSession.panOffsetY,
+      0,
+      `Expected capy_active_session_v8 panOffsetY === 0 after prebaked sample load, got ${prebakedSession.panOffsetY}`
+    );
+
+    // Zoom in before Play Daily so 10a also verifies daily puzzle launch resets non-1x zoom
+    await page.keyboard.press('+');
+    await page.waitForTimeout(80);
 
     // 10a. Daily Featured Puzzle hero card at top of Create tab + one-tap Play Daily launch
     await page.locator('button[title="Settings and Menu"]').click();
@@ -2346,10 +4110,11 @@ async function runBrowserBasicsSuite() {
     );
 
     // '+' zooms in above 1.0x (press twice so there is ample horizontal pan headroom)
-    assert.equal((await zoomBadge.innerText()).trim(), '1x', 'Expected daily puzzle initial zoom at 1x');
     await page.keyboard.press('+');
-    await page.waitForTimeout(80);
-    const zoomAfterFirstPlus = parseFloat((await zoomBadge.innerText()).replace('x', '').trim());
+    await page.waitForTimeout(420);
+    const zoomAfterFirstPlus = await page.evaluate(() => {
+      return JSON.parse(localStorage.getItem('capy_active_session_v8') || '{}').zoomScale ?? 1;
+    });
     assert.ok(
       zoomAfterFirstPlus > 1.0,
       `Expected keyboard "+" to zoom above 1.0x, got '${zoomAfterFirstPlus}'`
@@ -2382,10 +4147,13 @@ async function runBrowserBasicsSuite() {
     );
 
     await page.keyboard.press('0');
-    await page.waitForTimeout(100);
+    await page.waitForTimeout(420);
+    const zoomAfterReset = await page.evaluate(() => {
+      return JSON.parse(localStorage.getItem('capy_active_session_v8') || '{}').zoomScale ?? 1;
+    });
     assert.equal(
-      (await zoomBadge.innerText()).trim(),
-      '1x',
+      zoomAfterReset,
+      1,
       'Expected keyboard "0" to reset zoom back to 1x'
     );
 
@@ -2406,7 +4174,7 @@ async function runBrowserBasicsSuite() {
     );
 
     await page.locator('button[title="Settings and Menu"]').click();
-    await page.getByRole('button', { name: 'Settings', exact: true }).click();
+    await page.getByRole('button', { name: 'About', exact: true }).click();
     const statsCard = page.getByTestId('lifetime-stats-card');
     await statsCard.waitFor({ state: 'visible', timeout: 5000 });
     const renderedTotalText = (await page.getByTestId('stat-total-regions').innerText()).replace(/,/g, '').trim();
@@ -2450,13 +4218,6 @@ async function runBrowserBasicsSuite() {
 
     // 11b. TASK-4.1a: Infinite Zoom detail sub-tile sets parentSnapshotId, renders topbar-parent-puzzle-btn,
     // restores parent puzzle & viewport on tap, and hides breadcrumb pill when parent snapshot is deleted
-    await page.getByTestId('topbar-zoom-badge').click();
-    await page.waitForTimeout(120);
-    assert.equal(
-      (await page.getByTestId('topbar-zoom-badge').innerText()).trim(),
-      '2x',
-      'Parent puzzle should be zoomed to 2x before spawning detail sub-tile'
-    );
     const parentSnapId = await page.evaluate(() => {
       return JSON.parse(localStorage.getItem('capy_active_session_v8') || '{}').activeSnapshotId || null;
     });
@@ -2508,11 +4269,6 @@ async function runBrowserBasicsSuite() {
       return JSON.parse(localStorage.getItem('capy_active_session_v8') || '{}').activeSnapshotId || null;
     });
     assert.equal(restoredActiveId, parentSnapId, 'Clicking topbar-parent-puzzle-btn must restore parent snapshot');
-    assert.equal(
-      (await page.getByTestId('topbar-zoom-badge').innerText()).trim(),
-      '2x',
-      'Returning to parent puzzle via breadcrumb must restore parent saved 2x viewport zoom'
-    );
     assert.equal(
       await parentBreadcrumbBtn.count(),
       0,
@@ -2575,6 +4331,10 @@ async function runBrowserBasicsSuite() {
     );
     await waitForPuzzleLoaded(page);
     await page.waitForTimeout(200);
+    if (await page.$('[data-testid="replay-exit-btn"]')) {
+      await page.locator('[data-testid="replay-exit-btn"]').click();
+      await page.waitForTimeout(150);
+    }
 
     // Ensure Enable Undo Action is ON and Free Colour Mode is OFF on Peer A
     await page.locator('button[title="Settings and Menu"]').click();
@@ -2584,13 +4344,14 @@ async function runBrowserBasicsSuite() {
     const currentSettings11c = await page.evaluate(() => {
       return JSON.parse(localStorage.getItem('capy_user_settings_v8') || '{}');
     });
+    await page.locator('button:has(span:text-is("Settings"))').click();
+    await page.waitForTimeout(120);
     if (currentSettings11c.isFreeColorMode) {
       const fcLabel = await page.waitForSelector('text=Free Colour Mode');
       await fcLabel.evaluate((el) => el.closest('.flex')?.querySelector('button')?.click());
       await page.waitForTimeout(80);
     }
-    const isUndoVisibleAlready = (await page.getByTestId('undo-btn').count()) > 0;
-    if (!isUndoVisibleAlready) {
+    if (!currentSettings11c.enableUndo) {
       const undoSettingLabel = await page.waitForSelector('text=Enable Undo Action');
       await undoSettingLabel.evaluate((el) => el.closest('.flex')?.querySelector('button')?.click());
       await page.waitForTimeout(80);
@@ -2613,6 +4374,10 @@ async function runBrowserBasicsSuite() {
     attachErrorListeners(peerB, 'peerB-unfill');
     await peerB.goto(BASE_URL, { waitUntil: 'networkidle' });
     await waitForPuzzleLoaded(peerB);
+    if (await peerB.$('[data-testid="replay-exit-btn"]')) {
+      await peerB.locator('[data-testid="replay-exit-btn"]').click();
+      await peerB.waitForTimeout(150);
+    }
     await peerB.getByTestId('topbar-coop-btn').click();
     await peerB.waitForTimeout(150);
     await peerB.getByTestId('join-coop-room-input').fill(undoRoomCode);
@@ -2693,11 +4458,11 @@ async function runBrowserBasicsSuite() {
     );
     await page.locator('button[title="Settings and Menu"]').click();
     await page.waitForTimeout(150);
-    await page.getByRole('button', { name: 'Settings', exact: true }).click();
+    await page.getByRole('button', { name: 'About', exact: true }).click();
     await page.waitForTimeout(100);
     const channelCard = page.getByTestId('release-channel-card');
     await channelCard.scrollIntoViewIfNeeded();
-    assert.equal(await channelCard.isVisible(), true, 'release-channel-card must be visible in Controls tab');
+    assert.equal(await channelCard.isVisible(), true, 'release-channel-card must be visible in About tab');
     assert.equal(
       await page.getByTestId('toggle-beta-channel-btn').getAttribute('href'),
       'https://capyboop.github.io/capy/beta/',
@@ -2729,7 +4494,7 @@ async function runBrowserBasicsSuite() {
     assert.equal(
       await betaCard.getAttribute('data-channel'),
       'beta',
-      'Clicking topbar-channel-badge must open Settings Controls tab with data-channel="beta"'
+      'Clicking topbar-channel-badge must open About tab with data-channel="beta"'
     );
     assert.equal(
       await betaPage.getByTestId('toggle-beta-channel-btn').getAttribute('href'),
@@ -2837,6 +4602,10 @@ async function runBrowserBasicsSuite() {
     // Reload Peer B before painting any region and verify welcomed regions survive reload
     await peerS2.reload({ waitUntil: 'networkidle' });
     await waitForPuzzleLoaded(peerS2);
+    if (await peerS2.$('[data-testid="replay-exit-btn"]')) {
+      await peerS2.locator('[data-testid="replay-exit-btn"]').click();
+      await peerS2.waitForTimeout(150);
+    }
     assert.equal(
       await readTotalRemainingRegions(peerS2),
       remainingPeerABeforeJoin,
@@ -3020,8 +4789,12 @@ async function runBrowserBasicsSuite() {
       `Minimized ReplayControls X button (${exitBox360.x}..${exitBox360.x + exitBox360.width}) must fit strictly inside 360px mobile pill border (${windowBox360.x}..${windowBox360.x + windowBox360.width})`
     );
 
-    // Wait for loaded save replay to finish and verify it automatically closes ReplayControls and resumes gameplay
-    await mobileReplayWin.waitFor({ state: 'hidden', timeout: 10000 });
+    // Wait for loaded save replay to finish and verify ReplayControls remains onscreen until user interacts with puzzle
+    await page.locator('[data-testid="replay-play-pause-btn"][aria-label="Replay Again"]').waitFor({ state: 'visible', timeout: 10000 });
+    assert.equal(await mobileReplayWin.isVisible(), true, 'ReplayControls must remain onscreen after save-load replay finishes');
+    const canvasBox360 = await page.locator('canvas').first().boundingBox();
+    await page.mouse.click(canvasBox360.x + canvasBox360.width * 0.5, canvasBox360.y + canvasBox360.height * 0.45);
+    await mobileReplayWin.waitFor({ state: 'hidden', timeout: 5000 });
     await page.locator('[aria-label="Palette dock"]').waitFor({ state: 'visible', timeout: 5000 });
     assert.equal(
       await page.evaluate(
@@ -3043,24 +4816,26 @@ async function runBrowserBasicsSuite() {
     await page.waitForTimeout(120);
     console.log('   PASS: 360px mobile ReplayControls fit, save-load replayLoop reset & auto-resume, Co-op WELCOME_STATE persistence, Replay Scrubber rewind UNFILL, and CRDT resetEpoch verified.');
 
-    // 12f. Mobile (360x780) GameTopBar two-lane non-overlap with BETA pill + zoomed badge
+    // 12f. Mobile (360x780) GameTopBar two-lane non-overlap + SettingsModal tab bar fit
     const mobileTopbarPage = await context.newPage();
     attachErrorListeners(mobileTopbarPage, 'mobileTopbarPage');
     await mobileTopbarPage.setViewportSize({ width: 360, height: 780 });
     await mobileTopbarPage.goto(`${BASE_URL}/?capy_channel=beta`, { waitUntil: 'networkidle' });
     await mobileTopbarPage.locator('canvas').first().waitFor({ state: 'visible', timeout: 15000 });
     await mobileTopbarPage.getByTestId('topbar-channel-badge').waitFor({ state: 'visible', timeout: 5000 });
-    await mobileTopbarPage.getByTestId('topbar-zoom-badge').click();
-    await mobileTopbarPage.waitForTimeout(100);
+    assert.equal(
+      await mobileTopbarPage.getByTestId('topbar-zoom-badge').count(),
+      0,
+      'Expected topbar-zoom-badge to be absent on 360x780 mobile'
+    );
 
     const leftLaneBox = await mobileTopbarPage.getByTestId('topbar-left-lane').boundingBox();
     const rightLaneBox = await mobileTopbarPage.getByTestId('topbar-right-lane').boundingBox();
     const savesBox = await mobileTopbarPage.getByTestId('topbar-saves-btn').boundingBox();
     const channelBox = await mobileTopbarPage.getByTestId('topbar-channel-badge').boundingBox();
-    const zoomBox = await mobileTopbarPage.getByTestId('topbar-zoom-badge').boundingBox();
     const settingsBox = await mobileTopbarPage.locator('button[title="Settings and Menu"]').boundingBox();
 
-    assert.ok(leftLaneBox && rightLaneBox && savesBox && channelBox && zoomBox && settingsBox);
+    assert.ok(leftLaneBox && rightLaneBox && savesBox && channelBox && settingsBox);
     assert.equal(
       leftLaneBox.x + leftLaneBox.width <= rightLaneBox.x,
       true,
@@ -3076,8 +4851,247 @@ async function runBrowserBasicsSuite() {
       true,
       'Settings button must fit inside right lane and 360px viewport'
     );
+
+    // Open SettingsModal on 360x780 mobile and verify all header tabs fit without horizontal clipping
+    await mobileTopbarPage.locator('button[title="Settings and Menu"]').click();
+    const tabsContainer = mobileTopbarPage.getByTestId('settings-modal-tabs');
+    const closeBtn = mobileTopbarPage.getByTestId('settings-modal-close');
+    await tabsContainer.waitFor({ state: 'visible', timeout: 5000 });
+    await closeBtn.waitFor({ state: 'visible', timeout: 5000 });
+
+    const tabsOverflow = await tabsContainer.evaluate((el) => ({
+      scrollWidth: el.scrollWidth,
+      clientWidth: el.clientWidth,
+    }));
+    assert.equal(
+      tabsOverflow.scrollWidth <= tabsOverflow.clientWidth,
+      true,
+      `SettingsModal tabs must not overflow horizontally at 360x780 (scrollWidth=${tabsOverflow.scrollWidth}, clientWidth=${tabsOverflow.clientWidth})`
+    );
+
+    const tabsBox = await tabsContainer.boundingBox();
+    const closeBox = await closeBtn.boundingBox();
+    assert.ok(tabsBox && closeBox);
+    for (const tabKey of ['about', 'settings', 'hints', 'create', 'saves']) {
+      const tabBox = await mobileTopbarPage.getByTestId(`settings-tab-${tabKey}`).boundingBox();
+      assert.ok(tabBox, `Expected settings-tab-${tabKey} boundingBox to exist`);
+      assert.equal(
+        tabBox.x >= tabsBox.x && tabBox.x + tabBox.width <= closeBox.x,
+        true,
+        `settings-tab-${tabKey} (${tabBox.x}..${tabBox.x + tabBox.width}) must fit inside tabs container (${tabsBox.x}) and to the left of close button (${closeBox.x})`
+      );
+    }
+
     await mobileTopbarPage.close();
-    console.log('   PASS: 360x780 mobile GameTopBar two-lane non-overlap with BETA and zoom badges verified.');
+    console.log('   PASS: 360x780 mobile GameTopBar two-lane non-overlap, zoom-badge removal, and SettingsModal tab fit verified.');
+
+    // -------------------------------------------------------------------------
+    // 13. Phase 3 Bugfixes: Atomic Malformed Import Notice, Sample Ordering, Zero-Snapshot Recovery & Fractional DPR
+    // -------------------------------------------------------------------------
+    console.log('-> [3.0] Verifying malformed import inline notice, sample_saves ordering, zero-snapshot recovery & fractional DPR...');
+    const m3Page = await context.newPage();
+    attachErrorListeners(m3Page, 'm3Page');
+    // Force a fractional devicePixelRatio (1.25) to verify PuzzleCanvas backing store rounds cleanly without drift
+    await m3Page.addInitScript(() => {
+      Object.defineProperty(window, 'devicePixelRatio', { get: () => 1.25, configurable: true });
+      window.__capyAlertCalls = 0;
+      window.alert = () => {
+        window.__capyAlertCalls += 1;
+      };
+    });
+    await m3Page.setViewportSize({ width: 540, height: 420 });
+    await m3Page.goto(`${BASE_URL}/`, { waitUntil: 'networkidle' });
+    await waitForPuzzleLoaded(m3Page);
+
+    const fractionalDprCheck = await m3Page.evaluate(() => {
+      const c = document.querySelector('canvas');
+      return {
+        clientWidth: c ? c.clientWidth : 0,
+        canvasWidth: c ? c.width : 0,
+        expectedWidth: c ? Math.round(c.clientWidth * 1.25) : 0,
+      };
+    });
+    assert.equal(
+      fractionalDprCheck.canvasWidth,
+      fractionalDprCheck.expectedWidth,
+      `Expected fractional 1.25x DPR canvas.width=${fractionalDprCheck.expectedWidth}, got ${fractionalDprCheck.canvasWidth}`
+    );
+
+    // Seed a custom user save, then trigger import of malformed .capy JSON -> must show inline notice without alert() or partial state
+    await m3Page.getByTestId('topbar-saves-btn').click();
+    await m3Page.getByTestId('import-save-btn').waitFor({ state: 'visible', timeout: 5000 });
+    const preBadImportSnapCount = await m3Page.evaluate(
+      () => JSON.parse(localStorage.getItem('capy_snapshots_v8') || '[]').length
+    );
+    const badJsonPath = path.join(os.tmpdir(), 'capy_malformed_test.json');
+    fs.writeFileSync(
+      badJsonPath,
+      JSON.stringify({
+        format: 'capy-single-save',
+        snapshot: { id: 'corrupt_snap_1', title: 'Corrupt Save' },
+        puzzle: { width: -5, height: 10, palette: [], regions: [] },
+      }),
+      'utf8'
+    );
+    await m3Page.locator('input[type="file"][accept*=".capy"]').setInputFiles(badJsonPath);
+    fs.rmSync(badJsonPath, { force: true });
+    await m3Page.getByTestId('saves-import-notice').waitFor({ state: 'visible', timeout: 5000 });
+    assert.equal(
+      await m3Page.getByTestId('saves-import-notice').getAttribute('role'),
+      'alert',
+      'Malformed save import must display inline role="alert" banner'
+    );
+    assert.equal(
+      await m3Page.evaluate(() => window.__capyAlertCalls),
+      0,
+      'Malformed save import must never call blocking window.alert()'
+    );
+    assert.equal(
+      await m3Page.evaluate(() => JSON.parse(localStorage.getItem('capy_snapshots_v8') || '[]').length),
+      preBadImportSnapCount,
+      'Malformed save import must leave zero partial snapshots in localStorage'
+    );
+
+    // Delete all saves -> must clear active session cleanly and auto-regenerate Capy Forest with zero broken thumbnails
+    await m3Page.getByRole('button', { name: 'Delete All Saves' }).click();
+    await m3Page.getByRole('button', { name: 'Yes, Delete All' }).click();
+    await m3Page.waitForFunction(
+      () => {
+        const snaps = JSON.parse(localStorage.getItem('capy_snapshots_v8') || '[]');
+        return snaps.length === 1 && snaps[0].title === 'Capy Forest' && snaps[0].totalCount > 0;
+      },
+      null,
+      { timeout: 15000 }
+    );
+    await m3Page.waitForFunction(
+      () => {
+        const imgs = Array.from(document.querySelectorAll('img'));
+        return imgs.length > 0 && imgs.every((img) => img.complete && img.naturalWidth > 0);
+      },
+      null,
+      { timeout: 5000 }
+    );
+
+    // Verify sample_saves.capy bootstrap import does not shadow existing custom user saves
+    const sampleOrderCheck = await m3Page.evaluate(async () => {
+      const customTs = Date.now() - 60_000;
+      const customSave = {
+        id: 'custom_user_save_check',
+        title: 'Custom User Art',
+        timestamp: customTs,
+        lastOpened: customTs,
+        filledCount: 2,
+        totalCount: 10,
+        filledRegionIds: [1, 2],
+        isAutoSample: false,
+      };
+      window.capyStorage.saveSnapshots([customSave]);
+      const resp = await fetch('./assets/sample_saves.capy');
+      const buf = await resp.arrayBuffer();
+      await window.capyStorage.importSnapshotData(buf, { refreshTimestamps: true });
+      const after = window.capyStorage.loadSnapshots();
+      const samples = after.filter((s) => s.isAutoSample);
+      return {
+        firstId: after[0]?.id,
+        sampleCount: samples.length,
+        allSamplesOlder: samples.every((s) => s.lastOpened < customTs && s.timestamp < customTs),
+      };
+    });
+    assert.equal(sampleOrderCheck.firstId, 'custom_user_save_check', 'Custom user save must remain first');
+    assert.equal(sampleOrderCheck.sampleCount >= 4, true, 'All sample_saves.capy entries must import');
+    assert.equal(sampleOrderCheck.allSamplesOlder, true, 'Auto-sample timestamps must stay strictly older than custom saves');
+
+    // Corrupt #s= deep-link with valid ?room= must join room and strip invalid #s= hash without throwing
+    await m3Page.goto(`${BASE_URL}/?room=ABCD23#s=invalid_corrupt_token`, { waitUntil: 'networkidle' });
+    await waitForPuzzleLoaded(m3Page);
+    await m3Page.waitForFunction(
+      () => !window.location.hash.includes('s='),
+      null,
+      { timeout: 5000 }
+    );
+    const m3RoomTitle = await m3Page.getByTestId('topbar-coop-btn').getAttribute('title');
+    assert.equal(
+      Boolean(m3RoomTitle && m3RoomTitle.includes('ABCD23')),
+      true,
+      `Expected ?room=ABCD23 to remain joined even when #s= token is invalid, got ${m3RoomTitle}`
+    );
+
+    await m3Page.close();
+    console.log('   PASS: Atomic malformed import UI, zero-snapshot Capy Forest recovery, corrupt #s= deep link, and fractional DPR verified.');
+
+    // -------------------------------------------------------------------------
+    // 14. Channel Storage Sandbox Isolation & UserSettings Enum Persistence E2E
+    // -------------------------------------------------------------------------
+    console.log('-> [3.0.7] Verifying Beta/Alpha StorageNamespace browser isolation & UserSettings enum persistence...');
+    await page.evaluate(() => {
+      const s = window.capyStorage.loadSettings();
+      s.difficulty = 'NORMAL';
+      s.paletteSort = 'HUE';
+      s.highlightStyle = 'CENTROID_GLOW';
+      window.capyStorage.saveSettings(s);
+    });
+    await page.reload({ waitUntil: 'networkidle' });
+    await waitForPuzzleLoaded(page);
+    const persistedEnums = await page.evaluate(() => {
+      const s = window.capyStorage.loadSettings();
+      return {
+        difficulty: s.difficulty,
+        paletteSort: s.paletteSort,
+        highlightStyle: s.highlightStyle,
+      };
+    });
+    assert.deepEqual(persistedEnums, {
+      difficulty: 'NORMAL',
+      paletteSort: 'HUE',
+      highlightStyle: 'CENTROID_GLOW',
+    });
+
+    const sandboxBetaPage = await context.newPage();
+    attachErrorListeners(sandboxBetaPage, 'sandboxBetaPage');
+    await sandboxBetaPage.goto(`${BASE_URL}/?capy_channel=beta&skipTutorial=1`, {
+      waitUntil: 'networkidle',
+    });
+    await waitForPuzzleLoaded(sandboxBetaPage);
+    await sandboxBetaPage.evaluate(() => {
+      const s = window.capyStorage.loadSettings();
+      s.difficulty = 'EASY';
+      s.paletteSort = 'LIGHTNESS';
+      window.capyStorage.saveSettings(s);
+    });
+    const sandboxKeys = await sandboxBetaPage.evaluate(() => ({
+      betaSettingsRaw: localStorage.getItem('capy_user_settings_v8__sandbox_beta'),
+      betaSnapsRaw: localStorage.getItem('capy_snapshots_v8__sandbox_beta'),
+      betaActiveRaw: localStorage.getItem('capy_active_session_v8__sandbox_beta'),
+      betaIdentityRaw: localStorage.getItem('capy_player_identity_v1__sandbox_beta'),
+      betaTabSuffix: sessionStorage.getItem('capy_tab_peer_suffix_v1__sandbox_beta'),
+      prodSettings: JSON.parse(localStorage.getItem('capy_user_settings_v8') || '{}'),
+    }));
+    assert.ok(sandboxKeys.betaSettingsRaw, 'Beta sandbox must persist capy_user_settings_v8__sandbox_beta');
+    assert.ok(sandboxKeys.betaSnapsRaw, 'Beta sandbox must persist capy_snapshots_v8__sandbox_beta');
+    assert.ok(sandboxKeys.betaActiveRaw, 'Beta sandbox must persist capy_active_session_v8__sandbox_beta');
+    assert.ok(sandboxKeys.betaIdentityRaw, 'Beta sandbox must persist capy_player_identity_v1__sandbox_beta');
+    assert.ok(sandboxKeys.betaTabSuffix, 'Beta sandbox must persist capy_tab_peer_suffix_v1__sandbox_beta');
+    assert.equal(
+      sandboxKeys.prodSettings.difficulty,
+      'NORMAL',
+      'Beta sandbox mutations must never overwrite Production capy_user_settings_v8.difficulty'
+    );
+    assert.equal(
+      sandboxKeys.prodSettings.paletteSort,
+      'HUE',
+      'Beta sandbox mutations must never overwrite Production capy_user_settings_v8.paletteSort'
+    );
+
+    // Check Release Channel card mentions isolated sandbox
+    await sandboxBetaPage.getByTestId('topbar-channel-badge').click();
+    await sandboxBetaPage.getByTestId('release-channel-card').waitFor({ state: 'visible', timeout: 5000 });
+    const betaChannelCopy = await sandboxBetaPage.getByTestId('release-channel-card').innerText();
+    assert.equal(
+      betaChannelCopy.toLowerCase().includes('isolated'),
+      true,
+      'Release Channel card must explain isolated channel sandbox'
+    );
+    await sandboxBetaPage.close();
 
     assert.equal(consoleErrors.length, 0, `Expected zero unhandled page errors, got:\n${consoleErrors.join('\n')}`);
     console.log('\nALL UNIFIED ENGINE, CODEC & E2E BROWSER TESTS PASSED!');

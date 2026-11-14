@@ -126,6 +126,8 @@ class CapyAndroidBridgeTest {
         assertTrue(CapyAndroidBridge.isAllowedCapyDeepLink("https://capyboop.github.io/capy/?room=ABC123#s=abc123"))
         assertTrue(CapyAndroidBridge.isAllowedCapyDeepLink("https://capyboop.github.io/capy"))
         assertTrue(CapyAndroidBridge.isAllowedCapyDeepLink("https://capypaint.com/#s=token"))
+        assertTrue(CapyAndroidBridge.isAllowedCapyDeepLink("https://capypaint.com/#s=token"))
+        assertTrue(CapyAndroidBridge.isAllowedCapyDeepLink("https://capypaint.com/#s=token"))
 
         assertFalse(CapyAndroidBridge.isAllowedCapyDeepLink(null))
         assertFalse(CapyAndroidBridge.isAllowedCapyDeepLink(""))
@@ -320,5 +322,12 @@ class CapyAndroidBridgeTest {
         // 4. Malformed metadata header must return null cleanly
         assertTrue(CapyAndroidBridge.saveBackupToDir(cloudDir, "corrupt_target_bin_meta", "not_valid_meta"))
         assertNull(CapyAndroidBridge.loadCloudBinaryBytesFromDir(cloudDir, "corrupt_target"))
+    }
+
+    @Test
+    fun `isPlayGamesAppIdConfigured rejects whitespace and placeholder values`() {
+        assertFalse(CapyAndroidBridge.isPlayGamesAppIdConfigured("   "))
+        assertFalse(CapyAndroidBridge.isPlayGamesAppIdConfigured("12345"))
+        assertTrue(CapyAndroidBridge.isPlayGamesAppIdConfigured("123456"))
     }
 }
