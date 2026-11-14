@@ -106,5 +106,6 @@ All detailed architectural guides, computer vision algorithms, and native bridge
 - **Project Management and Release Governance**: [`PROJECT.md`](./PROJECT.md) -- Lean Agile triad, sprint cadence, Epic triage, PR sync and readiness gates, release promotion, `CHANGELOG.md` governance, and continuous improvement retro log.
 - **Development and Maintenance Guide**: [`DEV.md`](./DEV.md) -- Human + AI co-development workflow, CImodel routing, session hygiene, shared technical guardrails, 3-tier CI/CD architecture, SemVer versioning, and troubleshooting.
 - **contributor Operational Playbook**: `project docs` -- Auto-loaded AI guardrails, mobile-first formatting rules, and PR checklist contract for redacted.
+- **Company Structure and contributor Handbook**: `project docs` -- CapyBoop Games organizational chart, standing contributor chat roles, startup kickoff prompts for instance recovery, and cross-chat coordination protocols.
 - **Privacy Policy and Data Safety**: [`web/public/privacy-policy.html`](./web/public/privacy-policy.html) -- Local-first photo processing and optional Google Drive `appDataFolder` / Play Games Cloud Sync disclosures.
 - **License**: [`LICENSE.md`](./LICENSE.md) -- Capybara Chill Preamble and CC BY-NC-SA 4.0 terms.
