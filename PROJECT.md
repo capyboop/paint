@@ -60,7 +60,7 @@ Capy separates strategic multi-sprint planning from day-to-day execution across 
 2. **GitHub Parent Epic Tracking Issues (`1 Issue = 1 Epic`) & Milestones**:
    - Strictly one GitHub Issue per Epic: EPIC-1 (`CLOSED`), EPIC-2 (Sprint 1), EPIC-3 (Sprint 2), EPIC-4 (Sprint 3), EPIC-5 (Blocked).
    - **Zero Sub-Issue Sprawl**: Never open separate GitHub Issues for `TASK-*` slices, Sprint `BUG-*` fixes, or `ICE-*` items unless explicitly requested. Charter a new `EPIC-N` issue only when promoting an `ICE-*` item or new product theme into active scheduling.
-   - **Epic Triage (`EPIC-2` vs. `EPIC-3..5`)**: Keep EPIC-2 (`v3.0.1` Critical Bugfixes & Release) scoped strictly to priority bugfixes, explicitly Owner-approved stabilization polish, and Android Play release (`TASK-2.5`). Route unapproved or post-stabilization feature work to EPIC-3--EPIC-5; never attach `epic:2` to unapproved features.
+   - **Epic Triage (`EPIC-2` vs. `EPIC-3..5`)**: Keep EPIC-2 (`v3.0.x` Critical Bugfixes & Stabilization) scoped strictly to priority bugfixes and explicitly Owner-approved stabilization polish. Route unapproved or post-stabilization feature work and Android Play release (`TASK-2.5`) to EPIC-3--EPIC-5; never attach `epic:2` to unapproved features.
 3. **[`TODO.md`](./TODO.md) (*Focused 1-Sprint Ready Queue*)**:
    - Holds **only** active-sprint approved items (`~8--10` max). Separate **contributor-ready `1-PR` dev slices** (`[quick-win]` for `<= 15 min`, `1--3` file slices) clearly from any **Release & Human Ops Gates** subsection (DNS cutover, Play Store keystore/console uploads) so contributor never treat manual infrastructure ops as code tasks.
 4. **Definition of Ready (Anti-Busywork Gate)**:
