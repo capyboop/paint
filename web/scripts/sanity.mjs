@@ -420,7 +420,7 @@ export function validatePR checklistSpec(
     if (relFile === 'project docs') {
       assert.match(publicText, /PR checklist/i, 'project docs must document PR checklist format');
       assert.match(publicText, /<details>/i, 'project docs must document <details> PR checklist block');
-      assert.match(publicText, /95%/, 'project docs must specify >= 95% PR checklist threshold');
+      assert.match(publicText, /(?:95|100)%/, 'project docs must specify >= 95% or 100% PR checklist threshold');
       assert.match(
         publicText,
         /(?:start of each|at the start|%\s*-first)/i,
