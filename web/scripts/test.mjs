@@ -1188,8 +1188,10 @@ async function runCodecAndEngineTests() {
         fs.writeFileSync(path.join(tmpMainSpecDir, 'DEV.md'), '# DEV\nVerify PR checklist 100%.\n', 'utf8');
         fs.writeFileSync(path.join(tmpMainSpecDir, 'TESTING.md'), '# TESTING\nAll checks.\n', 'utf8');
         fs.writeFileSync(path.join(tmpMainSpecDir, 'README.md'), '# README\n100% offline.\n', 'utf8');
-        const mainSpecRes = validatePR checklistSpec(tmpMainSpecDir, { requireProjectMd: false });
-        assert.equal(mainSpecRes.scannedFiles.length, 4);
+        assert.throws(
+          () => validatePR checklistSpec(tmpMainSpecDir, { requireProjectMd: false }),
+          /contributor\.md must specify 100% PR checklist threshold/
+        );
 
         fs.writeFileSync(
           path.join(tmpMainSpecDir, 'project docs'),

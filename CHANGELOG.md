@@ -1,6 +1,6 @@
 ### 3.0.13 - 2026-11-15 (Beta)
 
-- Preserve active puzzle progress across debounced and beforeunload viewport saves, harden async puzzle transition and blob URL cleanup, remove idle polling from TargetSpotlightOverlay, speed up CI via async Android/E2E/Pages jobs with headless --unit blocking checks, add verified main-to-beta ancestry sync and strict 100% CI auto-merge to the PR review workflow, and expand E2E regression coverage #530
+- Preserve active puzzle progress across debounced (`lastSavedViewportRef`) and beforeunload viewport saves, harden async puzzle transition and blob URL cleanup, remove idle polling from `TargetSpotlightOverlay`, speed up CI via async Android/E2E/Pages jobs with headless `--unit` blocking checks and hidden-files artifact preservation, harden PR review workflow Probe 9b clock-skew anchoring and strict `100%` CI auto-merge, tighten `project docs` `100%` sanity check and `stripHtmlComments`, expand Probe 2g/unit/workflow tests, and sync `PROJECT.md` and `TESTING.md` #530
 
 ### 3.0.12 - 2026-11-14 (Production)
 
