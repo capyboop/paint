@@ -1,5 +1,6 @@
 ### 3.0.18 - 2026-11-15 (Beta)
 
+- Add repo-scoped `dev environment config` for repeatable root `wrangler` and `web/` dependency setup, reclassify legacy `BUG-4` as clickable environment/ops Issue #543 — Production capypaint.com DNS, Cloudflare Worker & /env-setup cutover, and update `TODO.md`, `ROADMAP.md`, and `CLOUD.md` with clickable [capypaint.com](https://capypaint.com/), [capyboop.com](https://capyboop.com/), and preview/Pages deployment links #544
 - Wait two animation frames after the second wheel zoom in `web/scripts/test.mjs` so React's `useEffect` schedules the `350ms` `viewportSaveTimer` before `reload()` triggers `beforeunload`, eliminating the `1.2 vs 1.2` `flushPendingViewportSave` race #540
 
 ### 3.0.17 - 2026-11-15
