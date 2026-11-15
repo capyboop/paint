@@ -257,6 +257,7 @@ npm ci                   # Clean dependency install (first run or lockfile chang
 npm run dev              # Local Vite dev server on http://localhost:3000
 npm run lint             # Strict TypeScript check (tsc --noEmit) -- MANDATORY for code PRs
 npm run build            # Production bundle (tsc && vite build -> web/dist/) -- MANDATORY for code PRs
+npm run test:unit        # Fast Vite SSR engine, codec, version/changelog & workflow unit checks
 npm test                 # Unified engine, codec, version/changelog & Playwright E2E suite
 npm run gallery:capture  # Refresh docs/gallery/*.png when UI/theme visuals change
 npm run generate:samples # Rebuild web/public/assets/sample_saves.capy when built-in samples change
