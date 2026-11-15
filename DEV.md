@@ -286,16 +286,18 @@ All PR title/label/Milestone rules, top-of-PR live preview templates, **`PR chec
 
 Capy runs five core GitHub Actions workflows in [`.github/workflows/`](./.github/workflows):
 
-### 1. Unified 3-Tier Build, E2E Release Gate & Pages Deployment ([`deploy-branch.yml`](./.github/workflows/deploy-branch.yml))
-- **Fast Daily CI + Full E2E Production Gate**: Daily `feature/* -> beta` PRs run `< 2s` sanity checks, TypeScript lint, Web compilation, and Android JUnit4 checks without heavy Playwright Chromium downloads so Alpha `/alpha/<number>/` previews deploy rapidly (while the contributor runs `npm test` locally in the dev environment VM). Marking a **Release Promotion PR (`beta -> main`)** ready for review (`draft == false`) automatically activates the **`Playwright E2E Release Gate`** job in GitHub Actions so live production `/` cannot be updated unless the full SSR + Chromium E2E suite passes in CI.
-- **Sub-2s Documentation Fast-Path (`isDocsOnlyPr`)**: Pull requests that exclusively touch `**.md`, `docs/**`, `notes/**`, `.gitignore`, or `LICENSE` pass the `Build & Test` check run in `< 2s` (satisfying required branch ruleset checks) while skipping Web/Android compilation and Pages deployment.
-- **Job 1 -- `build` (`Build & Test`, `contents: read`)**:
+### 1. Unified 3-Tier Fast Build Gate, Async E2E/Android & Pages Deployment ([`deploy-branch.yml`](./.github/workflows/deploy-branch.yml))
+- **Fast Blocking Gate + Async Heavy Jobs**: Required branch ruleset checks (`Build & Test` + `capy/review workflow`) complete in `< 30s` using cached `web/node_modules`, `< 2s` sanity checks, TypeScript lint, Web build, and headless `--unit` tests (`node scripts/test.mjs --unit`, zero Chromium). **`Android Build & JUnit Tests`**, **`Playwright E2E Release Gate`**, and **`Deploy to GitHub Pages`** run asynchronously without blocking PR approval or auto-merge (nor holding Pages deploys behind Playwright E2E flakes).
+- **Fast Sanity Paths (`isDocsOnlyPr` & `is_main_sync`)**: Pull requests that exclusively touch `**.md`, `docs/**`, `notes/**`, `.gitignore`, or `LICENSE`, or verified `sync/beta-from-main -> beta` ancestry syncs whose `HEAD` tree is byte-identical to `origin/main`, run the `< 2s` `npm run test:sanity` check in `Build & Test` while skipping redundant Web/Android builds, E2E re-runs, and Alpha Pages deployment.
+- **Job 1 -- `build` (`Build & Test`, `contents: read`, required)**:
   - Runs concurrently across open PRs (`main` and `beta` bases) with `cancel-in-progress: true` per PR/ref.
-  - Injects `vars.VITE_GOOGLE_CLIENT_ID`, `vars.CAPY_PLAY_GAMES_APP_ID`, and `vars.CAPY_ANDROID_SHA256_CERT_FINGERPRINTS`, executes `npm ci && npm run test:sanity && npm run lint && npm run build` in `web/`, runs Android JUnit4 tests (`./gradlew app:testDebugUnitTest`), and assembles the debug APK (`./gradlew app:assembleDebug`).
-- **Job 2 -- `e2e_release_gate` (`Playwright E2E Release Gate`, `contents: read`)**:
-  - Runs automatically when `github.event_name == 'pull_request' && github.base_ref == 'main' && github.event.pull_request.draft == false`, executing `npx playwright install --with-deps chromium && npm test` and gating `deploy`.
-- **Job 3 -- `deploy` (`Deploy to GitHub Pages`, `contents: write`, `pages: write`, `id-token: write`, `pull-requests: write`)**:
-  - Guarded by `github.event.repository.has_pages == true` and serialized under the `deploy-pages` concurrency lock (`cancel-in-progress: false`).
+  - Injects `vars.VITE_GOOGLE_CLIENT_ID` and `vars.CAPY_ANDROID_SHA256_CERT_FINGERPRINTS`, restores cached `web/node_modules`, runs `npm run test:sanity && npm run lint && npm run build` plus `node scripts/test.mjs --unit`, and uploads `web-dist` (`web/dist/`).
+- **Job 2 -- `android_build` (`Android Build & JUnit Tests`, `contents: read`, async)**:
+  - Downloads `web-dist`, sets up JDK 17 + Gradle, executes `./gradlew app:testDebugUnitTest app:assembleDebug --build-cache`, and uploads `build-artifacts` (`staging/web/` + `staging/apk/capy.apk`) for Pages without slowing down `Build & Test`.
+- **Job 3 -- `e2e_release_gate` (`Playwright E2E Release Gate`, `contents: read`, async)**:
+  - Runs asynchronously on ready non-docs/non-main-sync PRs targeting `beta` or `main` **and** on `push` to `beta`/`main`, downloading `web-dist` + cached `~/.cache/ms-playwright` and running `npm test` without blocking `deploy` or PR merge.
+- **Job 4 -- `deploy` (`Deploy to GitHub Pages`, `contents: write`, `pages: write`, `id-token: write`, `pull-requests: write`, async)**:
+  - Runs as soon as `build` and `android_build` finish (never blocked by `e2e_release_gate`), guarded by `github.event.repository.has_pages == true` and serialized under the `deploy-pages` concurrency lock (`cancel-in-progress: false`).
   - Publishes open Alpha PR builds to `/alpha/<number>/` and `/alpha/<number>/capy.apk`, regenerates `/alpha/index.html` + `/alpha/manifest.json` via [`.github/scripts/generate-pr-manifest.mjs`](./.github/scripts/generate-pr-manifest.mjs) (seeding root `404.html` from [`web/public/404.html`](./web/public/404.html) when missing), and posts or updates the zero-emoji PR preview comment.
   - Publishes `beta` branch pushes to `/beta/` (`https://capyboop.github.io/capy/beta/`) and `/beta/capy.apk` without modifying production `/`, refreshing root `404.html` via `--refresh-404`.
   - Publishes `main` branch pushes to `/` (`https://capyboop.github.io/capy/`) and `/capy.apk` (excluding `/alpha/` and `/beta/` during `rsync`), refreshing root `404.html` via `--refresh-404`.
