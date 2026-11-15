@@ -2235,6 +2235,45 @@ async function runCodecAndEngineTests() {
       ).reason,
       'room_mismatch'
     );
+    assert.equal(relayProtoMod.RESERVED_RELAY_PLAYER_ID, '__capy_room_relay__');
+    assert.equal(
+      relayProtoMod.validateCoopFrame(
+        JSON.stringify({
+          type: 'HELLO',
+          roomCode: 'ABC123',
+          sender: { playerId: ' __capy_room_relay__ ', displayName: 'Fake', avatarColorHex: '#fff', lastActiveAt: 1 },
+          sentAt: 1,
+        }),
+        'ABC123'
+      ).reason,
+      'reserved_sender_id'
+    );
+    assert.deepEqual(
+      relayProtoMod.resolveBoundSocketSender(null, {
+        playerId: 'p1',
+        displayName: 'Capy',
+        avatarColorHex: '#fff',
+        lastActiveAt: 1,
+      }),
+      { ok: true, boundPlayerId: 'p1' }
+    );
+    assert.deepEqual(
+      relayProtoMod.resolveBoundSocketSender('p1', {
+        playerId: 'p2',
+        displayName: 'Spoofer',
+        avatarColorHex: '#fff',
+        lastActiveAt: 1,
+      }),
+      { ok: false, reason: 'sender_mismatch' }
+    );
+    const workerIndexSrc = fs.readFileSync(path.resolve(projectRoot, '../worker/index.ts'), 'utf8');
+    assert.equal(
+      workerIndexSrc.includes('resolveBoundSocketSender') &&
+        workerIndexSrc.includes('RESERVED_RELAY_PLAYER_ID') &&
+        workerIndexSrc.includes("'pending_seed'"),
+      true,
+      'worker/index.ts must bind socket sender IDs, block reserved relay IDs, and checkpoint pending_seed in SQLite'
+    );
 
     // Rate limiting (40 frames / 5000ms) & write-once initial HELLO seedToken policy
     let rlTimestamps = [];
@@ -2471,6 +2510,7 @@ async function runCodecAndEngineTests() {
         addEventListener() {},
         removeEventListener() {},
       };
+      nativeBridgeMod.NativeBridge.attachWindowCallbacks();
       try {
         const pgDriver = new driversMod.PlayGamesAndroidDriver();
         const largeBinary = new Uint8Array(420_000);
@@ -2563,6 +2603,72 @@ async function runCodecAndEngineTests() {
           }
           assert.equal(unavailErr?.message, 'PLAY_GAMES_UNAVAILABLE');
           assert.equal(Date.now() - failStart < 500, true, 'Play Games error callback must reject signIn immediately');
+
+          // 4. Cold-start bridge callbacks arriving before listener mount must flush on subscribe
+          globalThis.window.__capyReceiveSharedImage?.('Early Photo', 'data:image/png;base64,AA==');
+          globalThis.window.__capyReceiveDeepLink?.('https://capypaint.com/#s=early_token');
+          globalThis.window.__capyReceivePlayGamesProfile?.(
+            JSON.stringify({ playerId: 'pg_early', displayName: 'Early Capy' })
+          );
+          globalThis.window.__capyReceivePlayGamesError?.('PLAY_GAMES_EARLY_ERR');
+          globalThis.window.__capyReceiveCloudSnapshot?.('slot_early', '{"v":1}');
+
+          const receivedShared = [];
+          const receivedDeep = [];
+          const receivedProfiles = [];
+          const receivedErrors = [];
+          const receivedSnaps = [];
+          const offShared = nativeBridgeMod.NativeBridge.onSharedImage((t, d) =>
+            receivedShared.push({ t, d })
+          );
+          const offDeep = nativeBridgeMod.NativeBridge.onDeepLink((u) => receivedDeep.push(u));
+          const offProf = nativeBridgeMod.NativeBridge.onPlayGamesProfile((p) =>
+            receivedProfiles.push(p)
+          );
+          const offErr = nativeBridgeMod.NativeBridge.onPlayGamesError((e) =>
+            receivedErrors.push(e)
+          );
+          const offSnap = nativeBridgeMod.NativeBridge.onCloudSnapshot((k, v) =>
+            receivedSnaps.push({ k, v })
+          );
+          try {
+            assert.deepEqual(receivedShared, [
+              { t: 'Early Photo', d: 'data:image/png;base64,AA==' },
+            ]);
+            assert.deepEqual(receivedDeep, ['https://capypaint.com/#s=early_token']);
+            assert.deepEqual(receivedProfiles, [{ playerId: 'pg_early', displayName: 'Early Capy' }]);
+            assert.deepEqual(receivedErrors, ['PLAY_GAMES_EARLY_ERR']);
+            assert.deepEqual(receivedSnaps, [{ k: 'slot_early', v: '{"v":1}' }]);
+          } finally {
+            offShared();
+            offDeep();
+            offProf();
+            offErr();
+            offSnap();
+          }
+
+          // 5. Structural check: Android APK cards hidden inside NativeBridge.isAndroid & OAuth never falls back to GIS
+          const settingsSrc = fs.readFileSync(
+            path.join(projectRoot, 'src/components/SettingsModal.tsx'),
+            'utf8'
+          );
+          const providerRegistrySrc = fs.readFileSync(
+            path.join(projectRoot, 'src/services/providers/ProviderRegistry.ts'),
+            'utf8'
+          );
+          assert.equal(
+            settingsSrc.includes('{!NativeBridge.isAndroid && (') &&
+              settingsSrc.includes('data-testid="android-apk-download-link"') &&
+              settingsSrc.includes('data-testid="beta-apk-download-link"'),
+            true,
+            'SettingsModal must hide Android APK download cards when running inside NativeBridge.isAndroid'
+          );
+          assert.equal(
+            providerRegistrySrc.includes("return this.signInWithProvider('play_games_v2');") &&
+              !providerRegistrySrc.includes('// Fall through to Google OAuth'),
+            true,
+            'ProviderRegistry must not fall back from Play Games to web Google OAuth popup inside Android WebView'
+          );
         } finally {
           globalThis.window.CapyAndroid = prevCapyAndroid;
         }
@@ -2726,12 +2832,50 @@ async function runCodecAndEngineTests() {
     assert.equal(deployWorkflowYaml.includes('generate-pr-manifest.mjs'), true);
     assert.equal(deployWorkflowYaml.includes('web/public/404.html'), true);
     assert.equal(deployWorkflowYaml.includes('--refresh-404'), true);
+    assert.equal(deployWorkflowYaml.includes('ls -lah "${LIST_PATH}"'), true);
 
     const cleanupWorkflowYaml = fs.readFileSync(
       path.resolve(projectRoot, '../.github/workflows/cleanup-closed-pr.yml'),
       'utf8'
     );
     assert.equal(cleanupWorkflowYaml.includes('generate-pr-manifest.mjs'), true);
+
+    // Parse all .github/workflows/*.yml via yaml.safe_load and verify Upload Pages artifact preserves hidden dotfiles
+    const parsedWorkflows = JSON.parse(
+      execFileSync(
+        'python3',
+        [
+          '-c',
+          [
+            'import glob, json, os, sys, yaml',
+            'wf_dir = sys.argv[1]',
+            'out = {}',
+            'for p in sorted(glob.glob(os.path.join(wf_dir, "*.yml"))):',
+            '    with open(p, encoding="utf-8") as f:',
+            '        out[os.path.basename(p)] = yaml.safe_load(f)',
+            'print(json.dumps(out))',
+          ].join('\n'),
+          path.resolve(projectRoot, '../.github/workflows'),
+        ],
+        { encoding: 'utf8' }
+      )
+    );
+    for (const [wfFile, jobName] of [
+      ['deploy-branch.yml', 'deploy'],
+      ['cleanup-closed-pr.yml', 'cleanup'],
+      ['cleanup-branches.yml', 'cleanup'],
+    ]) {
+      const steps = parsedWorkflows?.[wfFile]?.jobs?.[jobName]?.steps || [];
+      const uploadPagesStep = steps.find(
+        (s) => typeof s?.uses === 'string' && s.uses.startsWith('actions/upload-pages-artifact@')
+      );
+      assert.ok(uploadPagesStep, `Expected actions/upload-pages-artifact step in ${wfFile}`);
+      assert.equal(
+        uploadPagesStep?.with?.['include-hidden-files'],
+        true,
+        `${wfFile} Upload Pages artifact step must set include-hidden-files: true`
+      );
+    }
 
     // Verify .github/scripts/compile-changelog.mjs & release.yml wiring
     console.log('-> Testing compile-changelog.mjs release note extraction & release.yml wiring...');
@@ -3088,7 +3232,103 @@ async function runCodecAndEngineTests() {
       );
       assert.ok(sideConn, 'Expected valid connector for side target');
       assert.equal(sideConn.endX > sideConn.startX, true, 'Connector to right side must point right');
+
+      // Verify StorageService inline preview stripping, legacy migration, debounced backups, QuotaExceededError notifications, and PuzzleWorkerService code-split
+      globalThis.window.location = { pathname: '/', origin: 'http://127.0.0.1:3000', search: '' };
+      const previewFixture = 'data:image/webp;base64,UklGRh4AAABXRUJQVlA4TBEAAAAvAAAAAAfQ//73v/+BiOh/AAA=';
+      storageMod.StorageService.saveSnapshots([
+        {
+          id: 'snap-strip-1',
+          title: 'Preview Strip Test',
+          timestamp: 1000,
+          lastOpened: 2000,
+          filledCount: 2,
+          totalCount: 10,
+          filledRegionIds: [1, 2],
+          config: storageMod.DEFAULT_SETTINGS.generatorConfig,
+          previewDataUrl: previewFixture,
+        },
+      ]);
+      const rawStrippedSnaps = JSON.parse(mockStorage.get('capy_snapshots_v8') || '[]');
+      assert.equal(rawStrippedSnaps.length, 1);
+      assert.equal(
+        'previewDataUrl' in rawStrippedSnaps[0],
+        false,
+        'saveSnapshots must strip inline previewDataUrl from localStorage'
+      );
+      const cachedLoaded = storageMod.StorageService.loadSnapshots();
+      assert.equal(cachedLoaded[0]?.previewDataUrl, previewFixture, 'loadSnapshots must keep cached previewDataUrl in memory');
+
+      // Legacy snapshot entry with inline previewDataUrl migrates out of localStorage on loadSnapshots()
+      mockStorage.set(
+        'capy_snapshots_v8',
+        JSON.stringify([
+          {
+            id: 'snap-legacy-migrate',
+            title: 'Legacy Inline Preview',
+            timestamp: 1500,
+            lastOpened: 2500,
+            filledCount: 1,
+            totalCount: 5,
+            filledRegionIds: [3],
+            config: storageMod.DEFAULT_SETTINGS.generatorConfig,
+            previewDataUrl: previewFixture,
+          },
+        ])
+      );
+      const migratedLoaded = storageMod.StorageService.loadSnapshots();
+      assert.equal(migratedLoaded[0]?.previewDataUrl, previewFixture);
+      const postMigrateRaw = JSON.parse(mockStorage.get('capy_snapshots_v8') || '[]');
+      assert.equal(
+        'previewDataUrl' in postMigrateRaw[0],
+        false,
+        'loadSnapshots must migrate legacy inline previewDataUrl out of localStorage'
+      );
+
+      // Debounced backup writes coalesce and flush synchronously via flushPendingBackups()
+      mockBackups.delete('capy_user_settings_v8');
+      storageMod.StorageService.saveSettings({ ...storageMod.DEFAULT_SETTINGS, zoomSensitivity: 1.5 });
+      storageMod.StorageService.saveSettings({ ...storageMod.DEFAULT_SETTINGS, zoomSensitivity: 1.75 });
+      assert.equal(mockBackups.has('capy_user_settings_v8'), false, 'Backup writes must debounce before timer/flush');
+      storageMod.StorageService.flushPendingBackups();
+      assert.equal(
+        JSON.parse(mockBackups.get('capy_user_settings_v8') || '{}').zoomSensitivity,
+        1.75,
+        'flushPendingBackups must coalesce and flush the latest backup payload'
+      );
+
+      // QuotaExceededError triggers registered listeners cleanly
+      const quotaEvents = [];
+      const unsubQuota = storageMod.StorageService.onQuotaWarning((w) => quotaEvents.push(w));
+      const origLsSet = globalThis.localStorage.setItem;
+      globalThis.localStorage.setItem = (k, v) => {
+        if (k === 'capy_user_settings_v8') {
+          const err = new Error('Storage quota exceeded');
+          err.name = 'QuotaExceededError';
+          throw err;
+        }
+        return origLsSet(k, v);
+      };
+      try {
+        storageMod.StorageService.saveSettings({ ...storageMod.DEFAULT_SETTINGS, largeText: true });
+      } finally {
+        globalThis.localStorage.setItem = origLsSet;
+        unsubQuota();
+      }
+      assert.equal(quotaEvents.length >= 1, true, 'QuotaExceededError must notify quota warning listeners');
+      assert.equal(quotaEvents[0]?.reason, 'quota');
+
+      const workerSvcSrc = fs.readFileSync(
+        path.resolve(projectRoot, 'src/services/PuzzleWorkerService.ts'),
+        'utf8'
+      );
+      assert.equal(
+        /^\s*import\s+[^;]*PuzzleGenerator/m.test(workerSvcSrc),
+        false,
+        'PuzzleWorkerService.ts must dynamically import PuzzleGenerator on fallback instead of static bundle import'
+      );
     } finally {
+      storageMod.StorageService.flushPendingBackups();
       globalThis.localStorage = prevLs;
       globalThis.window = prevSsrWin;
     }
@@ -3686,7 +3926,6 @@ async function runBrowserBasicsSuite() {
     await tutPage.getByTestId('tutorial-topics-btn').click();
     await tutPage.getByTestId('tutorial-topic-item-7').click();
     await tutPage.getByTestId('replay-controls-window').waitFor({ state: 'hidden', timeout: 3000 });
-    await tutPage.waitForTimeout(250);
     // Jump back to Step 6, open replay, and click Skip -> must dismiss tutorial-opened replay
     await tutPage.getByTestId('tutorial-topics-btn').click();
     await tutPage.getByTestId('tutorial-topic-item-5').click();
@@ -3699,7 +3938,6 @@ async function runBrowserBasicsSuite() {
     await tutPage.mouse.up();
     await tutPage.getByTestId('tutorial-skip-btn').click();
     await tutPage.getByTestId('replay-controls-window').waitFor({ state: 'hidden', timeout: 3000 });
-    await tutPage.waitForTimeout(250);
 
     // Pre-existing manual Replay opened BEFORE tutorial must survive Step 6 -> Step 7 Next
     const undoBtnPreManual = await getStableBoundingBox(tutPage.getByTestId('undo-btn'));
@@ -3761,7 +3999,11 @@ async function runBrowserBasicsSuite() {
       window.dispatchEvent(new KeyboardEvent('keydown', { key: 'z', ctrlKey: true, bubbles: true }));
       window.dispatchEvent(new KeyboardEvent('keydown', { key: 'z', ctrlKey: true, bubbles: true }));
     });
-    await tutPage.waitForTimeout(150);
+    await tutPage.waitForFunction(
+      (expected) => Number(document.querySelector('[data-testid="topbar-saves-btn"]')?.getAttribute('data-filled-count')) === expected,
+      beforeBurstUndo - 2,
+      { timeout: 3000 }
+    );
     const afterBurstUndo = Number(await tutPage.getByTestId('topbar-saves-btn').getAttribute('data-filled-count'));
     assert.equal(
       afterBurstUndo,
@@ -3888,10 +4130,10 @@ async function runBrowserBasicsSuite() {
     // 2 & 3) Queue create_gallery -> saves_export while SettingsModal suppresses banner; markOfferSeen stays deferred until shown
     await offerPage.locator('button[title="Settings and Menu"]').click();
     await offerPage.getByTestId('settings-tab-create').click();
-    await offerPage.waitForTimeout(120);
+    await offerPage.getByTestId('daily-puzzle-card').waitFor({ state: 'visible', timeout: 3000 });
     assert.equal(await offerPage.getByTestId('feature-offer-banner').count(), 0);
     await offerPage.getByTestId('settings-tab-saves').click();
-    await offerPage.waitForTimeout(120);
+    await offerPage.getByTestId('saves-list-section').waitFor({ state: 'visible', timeout: 3000 });
     const seenWhileModalOpen = await offerPage.evaluate(() =>
       JSON.parse(localStorage.getItem('capy_feature_offers_v1') || '[]')
     );
@@ -4051,17 +4293,16 @@ async function runBrowserBasicsSuite() {
     // Verify Google Login button auto-hides on Web when VITE_GOOGLE_CLIENT_ID is unconfigured
     const hasBakedClientId = Boolean((process.env.VITE_GOOGLE_CLIENT_ID || '').trim());
     await page.locator('button[title="Settings and Menu"]').click();
-    await page.waitForTimeout(150);
-    await page.getByRole('button', { name: 'Saves', exact: true }).click();
-    await page.waitForTimeout(120);
-    await page.getByTestId('cloud-provider-badge-google').waitFor({ state: 'visible' });
+    await page.getByTestId('settings-tab-saves').waitFor({ state: 'visible', timeout: 3000 });
+    await page.getByTestId('settings-tab-saves').click();
+    await page.getByTestId('cloud-provider-badge-google').waitFor({ state: 'visible', timeout: 3000 });
     assert.equal(
       await page.getByTestId('play-games-signin-btn').count(),
       hasBakedClientId ? 1 : 0,
       'Web Google Login button must auto-hide when VITE_GOOGLE_CLIENT_ID is empty'
     );
     await page.keyboard.press('Escape');
-    await page.waitForTimeout(100);
+    await page.getByTestId('cloud-provider-badge-google').waitFor({ state: 'hidden', timeout: 3000 });
 
     // Disable autoReplayOnLoad and enable EASY difficulty for fast deterministic E2E interaction checks
     await page.evaluate(() => {
@@ -4145,7 +4386,7 @@ async function runBrowserBasicsSuite() {
     // Open Settings -> verify all 5 distinct tabs (About=0, Settings=1, Hints=2, Create=3, Saves=4), zero duplicates, and tab 4 persistence across reload
     const settingsBtn = page.locator('button[title="Settings and Menu"]');
     await settingsBtn.click();
-    await page.waitForTimeout(200);
+    await page.getByTestId('app-version-badge').waitFor({ state: 'visible', timeout: 3000 });
 
     // Tab 0: About
     const pkgVersion = JSON.parse(fs.readFileSync(path.resolve(projectRoot, 'package.json'), 'utf8')).version;
@@ -4160,7 +4401,7 @@ async function runBrowserBasicsSuite() {
 
     // Tab 1: Settings (no duplicated About/Stats/Platforms and no leaked Hints content)
     await page.getByRole('button', { name: 'Settings', exact: true }).click();
-    await page.waitForTimeout(150);
+    await page.getByText('Canvas Background').waitFor({ state: 'visible', timeout: 3000 });
     assert.equal(await page.getByText('Canvas Background').isVisible(), true, 'Settings tab must render Canvas Background');
     assert.equal(await page.getByTestId('app-version-badge').count(), 0, 'Settings tab must not duplicate app-version-badge');
     assert.equal(await page.getByTestId('lifetime-stats-card').count(), 0, 'Settings tab must not duplicate lifetime-stats-card');
@@ -4178,7 +4419,7 @@ async function runBrowserBasicsSuite() {
     // Verify toggling Enable Undo Action OFF hides undo-btn & persists, then toggle back ON for Undo/Redo suite
     const undoToggleLabel = await page.waitForSelector('text=Enable Undo Action');
     await undoToggleLabel.evaluate((el) => el.closest('.flex')?.querySelector('button')?.click());
-    await page.waitForTimeout(100);
+    await page.getByTestId('undo-btn').waitFor({ state: 'hidden', timeout: 3000 });
     assert.equal(await page.$('[data-testid="undo-btn"]'), null, 'Undo must hide when toggled off');
     const undoPersistedOff = await page.evaluate(() => {
       for (let i = 0; i < localStorage.length; i++) {
@@ -4191,32 +4432,31 @@ async function runBrowserBasicsSuite() {
     });
     assert.equal(undoPersistedOff, true, 'Opting out of enableUndo must persist to localStorage');
     await undoToggleLabel.evaluate((el) => el.closest('.flex')?.querySelector('button')?.click());
-    await page.waitForTimeout(100);
+    await page.getByTestId('undo-btn').waitFor({ state: 'visible', timeout: 3000 });
     assert.ok(await page.$('[data-testid="undo-btn"]'), 'Undo must reappear when toggled back on');
 
     // Tab 2: Hints
     await page.getByRole('button', { name: 'Hints', exact: true }).click();
-    await page.waitForTimeout(120);
+    await page.getByText('Highlight Style').waitFor({ state: 'visible', timeout: 3000 });
     assert.equal(await page.getByText('Highlight Style').isVisible(), true, 'Hints tab must render Highlight Style');
     assert.equal(await page.getByText('Hint Fill Pattern').isVisible(), true, 'Hints tab must render Hint Fill Pattern');
     assert.equal(await page.getByText('Canvas Background').count(), 0, 'Hints tab must not render Settings content');
 
     // Tab 3: Create
     await page.getByRole('button', { name: 'Create', exact: true }).click();
-    await page.waitForTimeout(120);
+    await page.getByTestId('daily-puzzle-card').waitFor({ state: 'visible', timeout: 3000 });
     assert.equal(await page.getByTestId('daily-puzzle-card').isVisible(), true, 'Create tab must render daily-puzzle-card');
     assert.equal(await page.getByTestId('gallery-search-input').isVisible(), true, 'Create tab must render gallery-search-input');
     assert.equal(await page.getByText('Highlight Style').count(), 0, 'Create tab must not render Hints content');
 
     // Tab 4: Saves (persist tab 4 across full page reload; cold-start default must be THUMBNAILS with list first)
     await page.getByRole('button', { name: 'Saves', exact: true }).click();
-    await page.waitForTimeout(120);
+    await page.getByTestId('saves-list-section').waitFor({ state: 'visible', timeout: 3000 });
     assert.equal(
       await page.evaluate(() => localStorage.getItem('capy_saves_view_mode')),
       null,
       'Cold-start must have no stored capy_saves_view_mode yet'
     );
-    await page.getByTestId('saves-list-section').waitFor({ state: 'visible' });
     assert.equal(
       await page.getByTestId('saves-list-section').getAttribute('data-view-mode'),
       'THUMBNAILS',
@@ -4259,13 +4499,13 @@ async function runBrowserBasicsSuite() {
       `selected-save-action-bar (${savesActionBarBoxInit.y + savesActionBarBoxInit.height}) must appear above cloud-coop-hub (${savesHubBoxInit.y})`
     );
     await page.keyboard.press('Escape');
-    await page.waitForTimeout(150);
+    await page.getByTestId('saves-list-section').waitFor({ state: 'hidden', timeout: 3000 });
     assert.equal(await page.evaluate(() => localStorage.getItem('capy_last_settings_tab')), '4');
 
     await page.reload({ waitUntil: 'networkidle' });
     await waitForPuzzleLoaded(page);
     await settingsBtn.click();
-    await page.waitForTimeout(150);
+    await page.getByTestId('cloud-coop-hub').waitFor({ state: 'visible', timeout: 3000 });
     assert.equal(
       await page.getByTestId('cloud-coop-hub').isVisible(),
       true,
@@ -4274,9 +4514,9 @@ async function runBrowserBasicsSuite() {
 
     // Switch to Hints tab and close -> verify capy_last_settings_tab === '2'
     await page.getByRole('button', { name: 'Hints', exact: true }).click();
-    await page.waitForTimeout(150);
+    await page.getByText('Highlight Style').waitFor({ state: 'visible', timeout: 3000 });
     await page.keyboard.press('Escape');
-    await page.waitForTimeout(200);
+    await page.getByText('Highlight Style').waitFor({ state: 'hidden', timeout: 3000 });
 
     const updatedSettings = await page.evaluate(() => JSON.parse(localStorage.getItem('capy_user_settings_v8') || '{}'));
     assert.equal(updatedSettings.canvasBgColor, 'CHARCOAL');
@@ -4291,20 +4531,18 @@ async function runBrowserBasicsSuite() {
     const undoBtn = await page.waitForSelector('[data-testid="undo-btn"]');
     assert.equal(await page.$('[data-testid="redo-btn"]'), null, 'Redo hidden before Undo');
     await undoBtn.click();
-    await page.waitForTimeout(200);
 
     const redoBtn = await page.waitForSelector('[data-testid="redo-btn"]');
     const [redoBox, undoBox] = await Promise.all([redoBtn.boundingBox(), undoBtn.boundingBox()]);
     assert.equal(redoBox.y < undoBox.y, true, 'Redo button must stack above Undo button');
     await redoBtn.click();
-    await page.waitForTimeout(200);
+    await page.getByTestId('redo-btn').waitFor({ state: 'hidden', timeout: 3000 });
 
     // Long-press Undo (>=450ms) -> Replay Scrubber (minimised by default) -> Expand -> Scrub to step 2 -> Resume Here
     await page.mouse.move(undoBox.x + undoBox.width / 2, undoBox.y + undoBox.height / 2);
     await page.mouse.down();
-    await page.waitForTimeout(520);
+    await page.getByTestId('replay-controls-window').waitFor({ state: 'visible', timeout: 3000 });
     await page.mouse.up();
-    await page.waitForTimeout(250);
 
     const replayWin = await page.waitForSelector('[data-testid="replay-controls-window"]');
     assert.equal(
@@ -4329,7 +4567,11 @@ async function runBrowserBasicsSuite() {
     assert.equal(valAfterDrag >= 0 && valAfterDrag <= 3, true, `Expected instant pointer-drag scrub in compact mode, got ${valAfterDrag}`);
 
     await page.locator('[data-testid="replay-toggle-minimize-btn"]').click();
-    await page.waitForTimeout(150);
+    await page.waitForFunction(
+      () => document.querySelector('[data-testid="replay-controls-window"]')?.getAttribute('data-minimized') === 'false',
+      undefined,
+      { timeout: 3000 }
+    );
     assert.equal(
       await page.locator('[data-testid="replay-controls-window"]').getAttribute('data-minimized'),
       'false',
@@ -4339,9 +4581,13 @@ async function runBrowserBasicsSuite() {
     const scrubber = await page.waitForSelector('[data-testid="replay-scrubber"]');
     await scrubber.fill('2');
     await scrubber.dispatchEvent('change');
-    await page.waitForTimeout(200);
     await page.locator('[data-testid="replay-resume-btn"]').click();
-    await page.waitForTimeout(250);
+    await page.getByTestId('replay-controls-window').waitFor({ state: 'hidden', timeout: 3000 });
+    await page.waitForFunction(
+      () => (JSON.parse(localStorage.getItem('capy_snapshots_v8') || '[]')[0]?.filledCount || 0) === 2,
+      undefined,
+      { timeout: 3000 }
+    );
 
     const progressAfterResume = await page.evaluate(() => {
       const list = JSON.parse(localStorage.getItem('capy_snapshots_v8') || '[]');
@@ -4350,7 +4596,11 @@ async function runBrowserBasicsSuite() {
     assert.equal(progressAfterResume, 2, 'Expected filledCount rewound to 2 after Resume Here');
 
     await page.keyboard.press('Control+y');
-    await page.waitForTimeout(150);
+    await page.waitForFunction(
+      () => (JSON.parse(localStorage.getItem('capy_snapshots_v8') || '[]')[0]?.filledCount || 0) === 3,
+      undefined,
+      { timeout: 3000 }
+    );
     const progressAfterCtrlY = await page.evaluate(() => {
       const list = JSON.parse(localStorage.getItem('capy_snapshots_v8') || '[]');
       return list[0]?.filledCount || 0;
@@ -4367,7 +4617,11 @@ async function runBrowserBasicsSuite() {
     await page.getByTestId('replay-controls-window').waitFor({ state: 'visible', timeout: 3000 });
     await page.mouse.up();
     await page.locator('[data-testid="replay-toggle-minimize-btn"]').click();
-    await page.waitForTimeout(120);
+    await page.waitForFunction(
+      () => document.querySelector('[data-testid="replay-controls-window"]')?.getAttribute('data-minimized') === 'false',
+      undefined,
+      { timeout: 3000 }
+    );
     await page.locator('button[title="Pick Next Artwork"]').click();
     await page.getByTestId('daily-puzzle-card').waitFor({ state: 'visible', timeout: 3000 });
     assert.equal(
@@ -4376,7 +4630,7 @@ async function runBrowserBasicsSuite() {
       'ReplayControls Next button must open SettingsModal Create tab (index 3)'
     );
     await page.keyboard.press('Escape');
-    await page.waitForTimeout(120);
+    await page.getByTestId('daily-puzzle-card').waitFor({ state: 'hidden', timeout: 3000 });
 
     // Verify save-load zoom restoration before replay, offscreen step fast-forward, and pan/zoom during playback
     const zoomInBtn = await page.waitForSelector('[data-testid="zoom-in-btn"]');
@@ -4384,7 +4638,11 @@ async function runBrowserBasicsSuite() {
     await zoomInBtn.click();
     await zoomInBtn.click();
     await zoomInBtn.click();
-    await page.waitForTimeout(450);
+    await page.waitForFunction(
+      () => (JSON.parse(localStorage.getItem('capy_active_session_v8') || '{}').zoomScale ?? 1) > 1.8,
+      undefined,
+      { timeout: 3000 }
+    );
 
     const savedZoomBeforeLoad = await page.evaluate(() => {
       const s = JSON.parse(localStorage.getItem('capy_user_settings_v8') || '{}');
@@ -4458,7 +4716,11 @@ async function runBrowserBasicsSuite() {
       'First Ctrl+Z while awaiting post-load ReplayControls must dismiss replay AND undo immediately (3 -> 2)'
     );
     await page.keyboard.press('Control+y');
-    await page.waitForTimeout(150);
+    await page.waitForFunction(
+      () => (JSON.parse(localStorage.getItem('capy_snapshots_v8') || '[]')[0]?.filledCount || 0) === 3,
+      undefined,
+      { timeout: 3000 }
+    );
     assert.equal(
       await page.evaluate(() => (JSON.parse(localStorage.getItem('capy_snapshots_v8') || '[]')[0]?.filledCount || 0)),
       3,
@@ -4466,15 +4728,20 @@ async function runBrowserBasicsSuite() {
     );
 
     // Verify expanded ReplayControls non-overlap on desktop AND auto-dismiss when clicking the already-selected active swatch
-    const undoBtnForSwatchTest = await page.waitForSelector('[data-testid="undo-btn"]');
-    const uBoxSwatch = await undoBtnForSwatchTest.boundingBox();
+    const undoBtnForSwatchTest = page.getByTestId('undo-btn');
+    await undoBtnForSwatchTest.waitFor({ state: 'visible', timeout: 3000 });
+    const uBoxSwatch = await getStableBoundingBox(undoBtnForSwatchTest);
+    assert.ok(uBoxSwatch, 'Expected stable boundingBox for undo-btn before swatch replay test');
     await page.mouse.move(uBoxSwatch.x + uBoxSwatch.width / 2, uBoxSwatch.y + uBoxSwatch.height / 2);
     await page.mouse.down();
-    await page.waitForTimeout(520);
-    await page.mouse.up();
     await page.getByTestId('replay-controls-window').waitFor({ state: 'visible', timeout: 3000 });
+    await page.mouse.up();
     await page.getByTestId('replay-toggle-minimize-btn').click();
-    await page.waitForTimeout(150);
+    await page.waitForFunction(
+      () => document.querySelector('[data-testid="replay-controls-window"]')?.getAttribute('data-minimized') === 'false',
+      undefined,
+      { timeout: 3000 }
+    );
     assert.equal(
       await page.getByTestId('replay-controls-window').getAttribute('data-minimized'),
       'false',
@@ -4517,9 +4784,8 @@ async function runBrowserBasicsSuite() {
     const uBox2 = await getStableBoundingBox(undoBtnAfterLoad);
     await page.mouse.move(uBox2.x + uBox2.width / 2, uBox2.y + uBox2.height / 2);
     await page.mouse.down();
-    await page.waitForTimeout(520);
+    await page.getByTestId('replay-controls-window').waitFor({ state: 'visible', timeout: 3000 });
     await page.mouse.up();
-    await page.waitForTimeout(200);
 
     // Minimised by default: enable Follow Painting and Auto-Loop, then start playback and verify camera follows offscreen regions and loops
     const followBtn = await page.waitForSelector('[data-testid="replay-follow-btn"]');
@@ -4529,7 +4795,13 @@ async function runBrowserBasicsSuite() {
 
     await followBtn.click();
     await loopBtn.click();
-    await page.waitForTimeout(100);
+    await page.waitForFunction(
+      () =>
+        document.querySelector('[data-testid="replay-follow-btn"]')?.getAttribute('aria-pressed') === 'true' &&
+        document.querySelector('[data-testid="replay-loop-btn"]')?.getAttribute('aria-pressed') === 'true',
+      undefined,
+      { timeout: 3000 }
+    );
     assert.equal(await followBtn.getAttribute('aria-pressed'), 'true', 'Follow button toggled on');
     assert.equal(await loopBtn.getAttribute('aria-pressed'), 'true', 'Loop button toggled on');
 
@@ -4578,11 +4850,15 @@ async function runBrowserBasicsSuite() {
 
     // Turn off Loop toggle before exiting replay
     await page.locator('[data-testid="replay-loop-btn"]').click();
-    await page.waitForTimeout(100);
+    await page.waitForFunction(
+      () => document.querySelector('[data-testid="replay-loop-btn"]')?.getAttribute('aria-pressed') === 'false',
+      undefined,
+      { timeout: 3000 }
+    );
 
     if (await page.$('[data-testid="replay-exit-btn"]')) {
       await page.locator('[data-testid="replay-exit-btn"]').click();
-      await page.waitForTimeout(150);
+      await page.getByTestId('replay-controls-window').waitFor({ state: 'hidden', timeout: 3000 });
     }
 
     const afterFollowAndZoom = await page.evaluate(() => {
@@ -4615,7 +4891,7 @@ async function runBrowserBasicsSuite() {
     );
     if (await page.$('[data-testid="reset-view-btn"]')) {
       await page.locator('[data-testid="reset-view-btn"]').click();
-      await page.waitForTimeout(350);
+      await page.getByTestId('reset-view-btn').waitFor({ state: 'hidden', timeout: 3000 });
     }
 
     // Verify clicking an unselected swatch during replay auto-dismisses ReplayControls, selects the color, and allows immediate painting
@@ -4628,9 +4904,8 @@ async function runBrowserBasicsSuite() {
       undoBoxUnselected.y + undoBoxUnselected.height / 2
     );
     await page.mouse.down();
-    await page.waitForTimeout(520);
+    await page.getByTestId('replay-controls-window').waitFor({ state: 'visible', timeout: 5000 });
     await page.mouse.up();
-    await page.getByTestId('replay-controls-window').waitFor({ state: 'visible', timeout: 3000 });
     await page.locator('[aria-label="Palette dock"]').waitFor({ state: 'visible', timeout: 3000 });
     const unselectedSwatch = page
       .locator('[aria-label="Palette dock"] button[data-testid^="palette-swatch-"][aria-pressed="false"]')
@@ -4667,7 +4942,12 @@ async function runBrowserBasicsSuite() {
       `Expected immediate canvas paint after swatch auto-dismissed replay (${filledBeforeUnselected} -> ${filledAfterUnselectedTap})`
     );
     await page.keyboard.press('Control+z');
-    await page.waitForTimeout(150);
+    await page.waitForFunction(
+      (expectedLen) =>
+        (JSON.parse(localStorage.getItem('capy_active_session_v8') || '{}').filledRegionIds || []).length === expectedLen,
+      filledBeforeUnselected,
+      { timeout: 3000 }
+    );
     console.log('   PASS: Undo/Redo, default-minimised ReplayControls, zoom restoration before replay, offscreen fast-forward, Follow Painting camera tracking, Auto-Loop, swatch auto-dismiss, and live pan/zoom during playback verified.');
 
     // -------------------------------------------------------------------------
@@ -4675,12 +4955,13 @@ async function runBrowserBasicsSuite() {
     // -------------------------------------------------------------------------
     console.log('4. Verifying Create tab gallery filters, Community Puzzle Ideas, and Infinite Zoom...');
     await settingsBtn.click();
-    await page.waitForTimeout(200);
-    await page.getByRole('button', { name: 'Create', exact: true }).click();
-    await page.waitForTimeout(200);
+    const createTabBtn = page.getByRole('button', { name: 'Create', exact: true });
+    await createTabBtn.waitFor({ state: 'visible', timeout: 3000 });
+    await createTabBtn.click();
+    await page.getByTestId('gallery-tag-music').waitFor({ state: 'visible', timeout: 3000 });
 
     await page.getByTestId('gallery-tag-music').click();
-    await page.waitForTimeout(100);
+    await page.waitForFunction(() => document.body.innerText.includes('Snail Guitar'), undefined, { timeout: 3000 });
     const bodyText = await page.evaluate(() => document.body.innerText);
     assert.equal(bodyText.includes('Snail Guitar'), true);
 
@@ -4700,7 +4981,7 @@ async function runBrowserBasicsSuite() {
     assert.equal((await page.getByTestId('community-ideas-section').innerText()).includes('Lantern Capybara Festival'), true);
 
     await page.keyboard.press('Escape');
-    await page.waitForTimeout(200);
+    await page.getByTestId('settings-modal-close').waitFor({ state: 'hidden', timeout: 3000 });
     console.log('   PASS: Gallery search, category chips, and community idea moderation verified.');
 
     // -------------------------------------------------------------------------
@@ -4714,9 +4995,13 @@ async function runBrowserBasicsSuite() {
     });
 
     await page.getByTestId('topbar-coop-btn').click();
-    await page.waitForTimeout(200);
+    await page.getByTestId('share-progress-link-btn').waitFor({ state: 'visible', timeout: 3000 });
     await page.getByTestId('share-progress-link-btn').click();
-    await page.waitForTimeout(200);
+    await page.waitForFunction(
+      async () => (await navigator.clipboard.readText()).includes('#s='),
+      undefined,
+      { timeout: 3000 }
+    );
 
     const sharedUrl = await page.evaluate(() => navigator.clipboard.readText());
     assert.equal(sharedUrl.includes('#s='), true);
@@ -4728,7 +5013,12 @@ async function runBrowserBasicsSuite() {
     attachErrorListeners(pageRecipient, 'recipient');
     await pageRecipient.goto(sharedUrl, { waitUntil: 'networkidle' });
     await waitForPuzzleLoaded(pageRecipient);
-    await pageRecipient.waitForTimeout(350);
+    await pageRecipient.waitForFunction(
+      (expectedLen) =>
+        (JSON.parse(localStorage.getItem('capy_active_session_v8') || '{}').filledRegionIds || []).length === expectedLen,
+      paintedIdsOnA.length,
+      { timeout: 5000 }
+    );
     const recipientIds = await pageRecipient.evaluate(() => {
       const active = JSON.parse(localStorage.getItem('capy_active_session_v8') || '{}');
       return active.filledRegionIds || [];
@@ -4738,18 +5028,18 @@ async function runBrowserBasicsSuite() {
 
     // Host Co-op room on Page A and join from Page B in same context
     await page.getByTestId('host-coop-room-btn').click();
-    await page.waitForTimeout(200);
+    await page.getByTestId('active-coop-room-code').waitFor({ state: 'visible', timeout: 5000 });
     const roomBadgeText = await page.getByTestId('active-coop-room-code').innerText();
     const roomCode = roomBadgeText.match(/Room\s+([A-Z0-9]{6})/)[1];
     await page.keyboard.press('Escape');
-    await page.waitForTimeout(150);
+    await page.getByTestId('active-coop-room-code').waitFor({ state: 'hidden', timeout: 3000 });
 
     const pageB = await context.newPage();
     attachErrorListeners(pageB, 'pageB');
     await pageB.goto(BASE_URL, { waitUntil: 'networkidle' });
     await waitForPuzzleLoaded(pageB);
     await pageB.getByTestId('topbar-coop-btn').click();
-    await pageB.waitForTimeout(200);
+    await pageB.getByTestId('join-coop-room-input').waitFor({ state: 'visible', timeout: 3000 });
     await pageB.getByTestId('join-coop-room-input').fill(roomCode);
     await pageB.getByTestId('join-coop-room-btn').click();
     await pageB.waitForFunction(
@@ -4785,20 +5075,28 @@ async function runBrowserBasicsSuite() {
 
     // BF-1: Verify Free Colour repaint of an already-filled region preserves chronological order and Undo syncs restored color to Co-op peer
     await settingsBtn.click();
-    await page.waitForTimeout(150);
-    await page.getByRole('button', { name: 'Settings', exact: true }).click();
-    await page.waitForTimeout(100);
+    const settingsTabBtn = page.getByRole('button', { name: 'Settings', exact: true });
+    await settingsTabBtn.waitFor({ state: 'visible', timeout: 3000 });
+    await settingsTabBtn.click();
     const freeColorLabel = await page.waitForSelector('text=Free Colour Mode');
     await freeColorLabel.evaluate((el) => el.closest('.flex')?.querySelector('button')?.click());
     await page.keyboard.press('Escape');
-    await page.waitForTimeout(150);
+    await page.getByTestId('settings-modal-close').waitFor({ state: 'hidden', timeout: 3000 });
 
     // Pick a different swatch in the palette dock on Page A
     const swatchButtons = page.locator('[aria-label="Palette dock"] button[aria-label^="Color "]');
     const swatchCount = await swatchButtons.count();
     if (swatchCount > 1) {
-      await swatchButtons.nth(swatchCount - 1).click();
-      await page.waitForTimeout(100);
+      const targetSwatch = swatchButtons.nth(swatchCount - 1);
+      const targetSwatchTestId = await targetSwatch.getAttribute('data-testid');
+      await targetSwatch.click();
+      if (targetSwatchTestId) {
+        await page.waitForFunction(
+          (tid) => document.querySelector(`[data-testid="${tid}"]`)?.getAttribute('aria-pressed') === 'true',
+          targetSwatchTestId,
+          { timeout: 3000 }
+        );
+      }
     }
     const orderBeforeFreeRepaint = await page.evaluate(() => {
       const active = JSON.parse(localStorage.getItem('capy_active_session_v8') || '{}');
@@ -4845,7 +5143,20 @@ async function runBrowserBasicsSuite() {
 
     // Undo the last Free Colour repaint on Page A and verify Page B's paintedRegionColors stays synchronized
     await page.keyboard.press('Control+z');
-    await page.waitForTimeout(100);
+    await page.waitForFunction(
+      ({ prevCount, prevPaintedJson }) => {
+        const count = Number(
+          document.querySelector('[data-testid="topbar-saves-btn"]')?.getAttribute('data-filled-count')
+        );
+        const active = JSON.parse(localStorage.getItem('capy_active_session_v8') || '{}');
+        return count !== prevCount || JSON.stringify(active.paintedRegionColors || {}) !== prevPaintedJson;
+      },
+      {
+        prevCount: filledAfterFreeRepaintA,
+        prevPaintedJson: JSON.stringify(afterFreeRepaint.paintedRegionColors),
+      },
+      { timeout: 3000 }
+    );
     const [paintedAfterUndoA, filledAfterUndoA] = await Promise.all([
       page.evaluate(() => JSON.parse(localStorage.getItem('capy_active_session_v8') || '{}').paintedRegionColors || {}),
       page.getByTestId('topbar-saves-btn').getAttribute('data-filled-count').then(Number),
@@ -4881,19 +5192,18 @@ async function runBrowserBasicsSuite() {
 
     // Turn Free Colour Mode back off before closing pageB
     await settingsBtn.click();
-    await page.waitForTimeout(150);
     const freeColorLabelOff = await page.waitForSelector('text=Free Colour Mode');
     await freeColorLabelOff.evaluate((el) => el.closest('.flex')?.querySelector('button')?.click());
     await page.keyboard.press('Escape');
-    await page.waitForTimeout(150);
+    await page.getByTestId('settings-modal-close').waitFor({ state: 'hidden', timeout: 3000 });
 
     await pageB.close();
 
     // Leave Co-op room and verify Saves view modes + .capy v2 binary export/import
     await page.getByTestId('topbar-coop-btn').click();
-    await page.waitForTimeout(200);
+    await page.getByTestId('leave-coop-room-btn').waitFor({ state: 'visible', timeout: 3000 });
     await page.getByTestId('leave-coop-room-btn').click();
-    await page.waitForTimeout(150);
+    await page.getByTestId('active-coop-room-code').waitFor({ state: 'hidden', timeout: 3000 });
 
     await page.getByTestId('cloud-provider-badge-google').waitFor({ state: 'visible' });
     assert.equal(
@@ -4906,11 +5216,10 @@ async function runBrowserBasicsSuite() {
       'true'
     );
     await page.getByTestId('saves-view-detail-btn').click();
-    await page.waitForTimeout(150);
+    await page.getByTestId('saves-list-detail').waitFor({ state: 'visible', timeout: 5000 });
     assert.equal(await page.evaluate(() => localStorage.getItem('capy_saves_view_mode')), 'DETAIL');
     assert.equal(await page.getByTestId('saves-view-detail-btn').getAttribute('aria-pressed'), 'true');
     assert.equal(await page.getByTestId('saves-view-thumbnails-btn').getAttribute('aria-pressed'), 'false');
-    await page.getByTestId('saves-list-detail').waitFor({ state: 'visible', timeout: 5000 });
 
     // Verify DETAIL preference persists across full page reload
     await page.reload({ waitUntil: 'networkidle' });
@@ -4951,7 +5260,7 @@ async function runBrowserBasicsSuite() {
     fs.rmSync(exportedPath, { force: true });
 
     await page.keyboard.press('Escape');
-    await page.waitForTimeout(200);
+    await page.getByTestId('settings-modal-close').waitFor({ state: 'hidden', timeout: 3000 });
     console.log('   PASS: #s=<token> share link, 2-peer real-time Co-op, Saves view modes, and .capy v2 export verified.');
 
     // -------------------------------------------------------------------------
@@ -4973,9 +5282,19 @@ async function runBrowserBasicsSuite() {
     });
     const tmpUploadPath = path.join(os.tmpdir(), 'capy_test_upload.png');
     fs.writeFileSync(tmpUploadPath, Buffer.from(pngBytes));
+    const snapIdBeforeUpload = await page.evaluate(
+      () => JSON.parse(localStorage.getItem('capy_active_session_v8') || '{}').activeSnapshotId || null
+    );
     try {
       await page.locator('input[type="file"][accept="image/*"]').setInputFiles(tmpUploadPath);
-      await page.waitForTimeout(300);
+      await page.waitForFunction(
+        (prevId) => {
+          const active = JSON.parse(localStorage.getItem('capy_active_session_v8') || '{}');
+          return Boolean(active.activeSnapshotId && active.activeSnapshotId !== prevId);
+        },
+        snapIdBeforeUpload,
+        { timeout: 15000 }
+      );
       await waitForPuzzleLoaded(page);
     } finally {
       fs.rmSync(tmpUploadPath, { force: true });
@@ -4995,7 +5314,11 @@ async function runBrowserBasicsSuite() {
     await zoomInUpload.click();
     await zoomInUpload.click();
     await zoomInUpload.click();
-    await page.waitForTimeout(420);
+    await page.waitForFunction(
+      () => (JSON.parse(localStorage.getItem('capy_active_session_v8') || '{}').zoomScale || 1) > 1.5,
+      undefined,
+      { timeout: 3000 }
+    );
 
     const preReplayCompletedView = await page.evaluate((snapId) => {
       const snaps = JSON.parse(localStorage.getItem('capy_snapshots_v8') || '[]');
@@ -5030,11 +5353,10 @@ async function runBrowserBasicsSuite() {
     await page.waitForSelector('[data-testid="reset-view-btn"]', { timeout: 5000 });
     if (await page.locator('[data-testid="replay-exit-btn"]').isVisible()) {
       await page.locator('[data-testid="replay-exit-btn"]').click();
-      await page.waitForTimeout(150);
+      await page.getByTestId('replay-controls-window').waitFor({ state: 'hidden', timeout: 3000 });
     }
     const completedReplayBtn = await page.waitForSelector('[data-testid="replay-btn"]', { timeout: 5000 });
     await completedReplayBtn.click();
-    await page.waitForTimeout(380);
     await page.waitForSelector('[data-testid="replay-controls-window"]', { timeout: 5000 });
     assert.equal(
       Boolean(await page.$('[data-testid="reset-view-btn"]')),
@@ -5052,12 +5374,20 @@ async function runBrowserBasicsSuite() {
     );
 
     // Close replay overlay before testing BF-2 container resize and BF-6 IndexedDB eviction fallback
-    await page.keyboard.press('Escape');
-    await page.waitForTimeout(200);
+    await page.getByTestId('replay-exit-btn').click();
+    await page.getByTestId('replay-controls-window').waitFor({ state: 'hidden', timeout: 3000 });
 
     // 7. BF-2: Container ResizeObserver immediately updates canvas backing store and clamps pan offsets
     await page.setViewportSize({ width: 540, height: 420 });
-    await page.waitForTimeout(450);
+    await page.waitForFunction(
+      () => {
+        const c = document.querySelector('canvas');
+        const dpr = window.devicePixelRatio || 1;
+        return Boolean(c && c.clientWidth > 0 && c.clientWidth <= 540 && c.width === Math.round(c.clientWidth * dpr));
+      },
+      undefined,
+      { timeout: 5000 }
+    );
     const resizedCanvasCheck = await page.evaluate(() => {
       const c = document.querySelector('canvas');
       const active = JSON.parse(localStorage.getItem('capy_active_session_v8') || '{}');
@@ -5079,7 +5409,15 @@ async function runBrowserBasicsSuite() {
       'ResizeObserver must immediately update canvas backing width without waiting for pointer events'
     );
     await page.setViewportSize({ width: 1280, height: 860 });
-    await page.waitForTimeout(350);
+    await page.waitForFunction(
+      () => {
+        const c = document.querySelector('canvas');
+        const dpr = window.devicePixelRatio || 1;
+        return Boolean(c && c.clientWidth > 540 && c.width === Math.round(c.clientWidth * dpr));
+      },
+      undefined,
+      { timeout: 5000 }
+    );
 
     // 8. BF-6: IndexedDB Cache Eviction Fallback preserves snapshot.customPalette and added swatches
     const evicted = await page.evaluate(async (snapId) => {
@@ -5125,7 +5463,11 @@ async function runBrowserBasicsSuite() {
 
     await page.reload({ waitUntil: 'load' });
     await waitForPuzzleLoaded(page);
-    await page.waitForTimeout(350);
+    await page.waitForFunction(
+      () => document.querySelectorAll('[aria-label="Palette dock"] button[data-testid^="palette-swatch-"]').length > 0,
+      undefined,
+      { timeout: 5000 }
+    );
 
     const postEvictionPalette = await page.evaluate((snapId) => {
       const snaps = JSON.parse(localStorage.getItem('capy_snapshots_v8') || '[]');
@@ -5195,7 +5537,7 @@ async function runBrowserBasicsSuite() {
     // Re-enable sound effects so gameplay defaults stay clean
     await soundEnabledToggle.click();
     await page.keyboard.press('Escape');
-    await page.waitForTimeout(100);
+    await page.getByTestId('settings-modal-close').waitFor({ state: 'hidden', timeout: 3000 });
 
     assert.equal(
       await page.getByTestId('topbar-zoom-badge').count(),
@@ -5218,8 +5560,16 @@ async function runBrowserBasicsSuite() {
     const snailCard = page.getByTestId('gallery-card-snail_guitar');
     await snailCard.waitFor({ state: 'visible', timeout: 5000 });
     await snailCard.getByRole('button', { name: 'Play', exact: true }).click();
+    await page.waitForFunction(
+      () => {
+        const active = JSON.parse(localStorage.getItem('capy_active_session_v8') || '{}');
+        return active.activeSnapshotId === 'sample-snail-guitar';
+      },
+      undefined,
+      { timeout: 5000 }
+    );
     await waitForPuzzleLoaded(page);
-    await page.waitForTimeout(200);
+    await page.getByTestId('reset-view-btn').waitFor({ state: 'hidden', timeout: 3000 });
 
     assert.equal(
       await page.getByTestId('reset-view-btn').count(),
@@ -5247,7 +5597,7 @@ async function runBrowserBasicsSuite() {
 
     // Zoom in before Play Daily so 10a also verifies daily puzzle launch resets non-1x zoom
     await page.keyboard.press('+');
-    await page.waitForTimeout(80);
+    await page.getByTestId('reset-view-btn').waitFor({ state: 'visible', timeout: 3000 });
 
     // 10a. Daily Featured Puzzle hero card at top of Create tab + one-tap Play Daily launch
     await page.locator('button[title="Settings and Menu"]').click();
@@ -5287,11 +5637,15 @@ async function runBrowserBasicsSuite() {
       `Expected reducedMotion=true in capy_user_settings_v8, got ${persistedA11y.reducedMotion}`
     );
     await page.keyboard.press('Escape');
-    await page.waitForTimeout(100);
+    await page.getByTestId('settings-modal-close').waitFor({ state: 'hidden', timeout: 3000 });
 
     // 10c. Keyboard shortcuts: '1' / '2' swatch select, input-focus guard, '+' zoom, ArrowRight/ArrowLeft pan, '0' reset
     await page.keyboard.press('1');
-    await page.waitForTimeout(80);
+    await page.waitForFunction(
+      () => document.querySelector('[data-testid="palette-swatch-1"]')?.getAttribute('aria-pressed') === 'true',
+      undefined,
+      { timeout: 3000 }
+    );
     assert.equal(
       await page.getByTestId('palette-swatch-1').getAttribute('aria-pressed'),
       'true',
@@ -5305,10 +5659,14 @@ async function runBrowserBasicsSuite() {
     await gallerySearchInput.waitFor({ state: 'visible', timeout: 5000 });
     await gallerySearchInput.focus();
     await page.keyboard.type('2');
-    await page.waitForTimeout(80);
+    await page.waitForFunction(
+      () => document.querySelector('[data-testid="gallery-search-input"]')?.value === '2',
+      undefined,
+      { timeout: 3000 }
+    );
     await gallerySearchInput.fill('');
     await page.keyboard.press('Escape');
-    await page.waitForTimeout(100);
+    await page.getByTestId('settings-modal-close').waitFor({ state: 'hidden', timeout: 3000 });
 
     assert.equal(
       await page.getByTestId('palette-swatch-1').getAttribute('aria-pressed'),
@@ -5323,7 +5681,11 @@ async function runBrowserBasicsSuite() {
 
     // Active canvas keyboard '2' selects swatch #2
     await page.keyboard.press('2');
-    await page.waitForTimeout(80);
+    await page.waitForFunction(
+      () => document.querySelector('[data-testid="palette-swatch-2"]')?.getAttribute('aria-pressed') === 'true',
+      undefined,
+      { timeout: 3000 }
+    );
     assert.equal(
       await page.getByTestId('palette-swatch-2').getAttribute('aria-pressed'),
       'true',
@@ -5425,7 +5787,7 @@ async function runBrowserBasicsSuite() {
       `Expected lifetime-stats-card stat-total-regions (${renderedTotalText}) to match persisted totalRegionsColored (${nextTotalColored})`
     );
     await page.keyboard.press('Escape');
-    await page.waitForTimeout(100);
+    await page.getByTestId('settings-modal-close').waitFor({ state: 'hidden', timeout: 3000 });
     console.log('   PASS: Daily Featured Puzzle card/launch, Reduced Motion persistence, Keyboard Gameplay Shortcuts + input-focus guard, and Lifetime Stats verified.');
 
     // -------------------------------------------------------------------------
@@ -5435,7 +5797,7 @@ async function runBrowserBasicsSuite() {
 
     // 11a. TASK-4.2a: Clicking export-printable-svg-btn triggers a valid .svg download
     await page.getByTestId('topbar-coop-btn').click();
-    await page.waitForTimeout(150);
+    await page.getByTestId('export-printable-svg-btn').waitFor({ state: 'visible', timeout: 3000 });
     const svgDownloadPromise = page.waitForEvent('download', { timeout: 10000 });
     await page.getByTestId('export-printable-svg-btn').click();
     const svgDownload = await svgDownloadPromise;
@@ -5455,7 +5817,7 @@ async function runBrowserBasicsSuite() {
       'Downloaded .svg file must contain valid vector <svg> coloring sheet content'
     );
     await page.keyboard.press('Escape');
-    await page.waitForTimeout(150);
+    await page.getByTestId('settings-modal-close').waitFor({ state: 'hidden', timeout: 3000 });
 
     // 11b. TASK-4.1a: Infinite Zoom detail sub-tile sets parentSnapshotId, renders topbar-parent-puzzle-btn,
     // restores parent puzzle & viewport on tap, and hides breadcrumb pill when parent snapshot is deleted
@@ -5465,9 +5827,9 @@ async function runBrowserBasicsSuite() {
     assert.ok(parentSnapId, 'Parent puzzle must have an activeSnapshotId');
 
     await page.locator('button[title="Settings and Menu"]').click();
-    await page.waitForTimeout(120);
+    await page.getByRole('button', { name: 'Create', exact: true }).waitFor({ state: 'visible', timeout: 3000 });
     await page.getByRole('button', { name: 'Create', exact: true }).click();
-    await page.waitForTimeout(120);
+    await page.getByTestId('infinite-zoom-subtile-btn').waitFor({ state: 'visible', timeout: 3000 });
     await page.getByTestId('infinite-zoom-subtile-btn').click();
     await page.waitForFunction(
       (prevId) => {
@@ -5478,7 +5840,8 @@ async function runBrowserBasicsSuite() {
       { timeout: 25000 }
     );
     await waitForPuzzleLoaded(page);
-    await page.waitForTimeout(200);
+    const parentBreadcrumbBtn = page.getByTestId('topbar-parent-puzzle-btn');
+    await parentBreadcrumbBtn.waitFor({ state: 'visible', timeout: 5000 });
 
     const childSnapMeta = await page.evaluate(() => {
       const active = JSON.parse(localStorage.getItem('capy_active_session_v8') || '{}');
@@ -5491,8 +5854,6 @@ async function runBrowserBasicsSuite() {
       parentSnapId,
       'Detail sub-tile snapshot must persist parentSnapshotId pointing to parent puzzle'
     );
-    const parentBreadcrumbBtn = page.getByTestId('topbar-parent-puzzle-btn');
-    await parentBreadcrumbBtn.waitFor({ state: 'visible', timeout: 5000 });
 
     // Clicking topbar-parent-puzzle-btn switches back to parent puzzle and restores its saved 2x zoom
     await parentBreadcrumbBtn.click();
@@ -5505,7 +5866,7 @@ async function runBrowserBasicsSuite() {
       { timeout: 15000 }
     );
     await waitForPuzzleLoaded(page);
-    await page.waitForTimeout(250);
+    await parentBreadcrumbBtn.waitFor({ state: 'hidden', timeout: 3000 });
     const restoredActiveId = await page.evaluate(() => {
       return JSON.parse(localStorage.getItem('capy_active_session_v8') || '{}').activeSnapshotId || null;
     });
@@ -5518,9 +5879,9 @@ async function runBrowserBasicsSuite() {
 
     // Reload child sub-tile, delete parent snapshot, and verify dangling breadcrumb pill hides gracefully
     await page.getByTestId('topbar-coop-btn').click();
-    await page.waitForTimeout(150);
+    await page.getByTestId(`save-card-${childSnapMeta.id}`).waitFor({ state: 'visible', timeout: 3000 });
     await page.getByTestId(`save-card-${childSnapMeta.id}`).click();
-    await page.waitForTimeout(100);
+    await page.getByTestId('save-action-load').waitFor({ state: 'visible', timeout: 3000 });
     await page.getByTestId('save-action-load').click();
     await page.waitForFunction(
       (expectedId) => {
@@ -5534,15 +5895,15 @@ async function runBrowserBasicsSuite() {
     await parentBreadcrumbBtn.waitFor({ state: 'visible', timeout: 5000 });
 
     await page.getByTestId('topbar-coop-btn').click();
-    await page.waitForTimeout(150);
+    await page.getByTestId(`save-card-${parentSnapId}`).waitFor({ state: 'visible', timeout: 3000 });
     await page.getByTestId(`save-card-${parentSnapId}`).click();
-    await page.waitForTimeout(100);
+    await page.getByTestId('save-action-delete').waitFor({ state: 'visible', timeout: 3000 });
     await page.getByTestId('save-action-delete').click();
-    await page.waitForTimeout(80);
+    await page.getByTestId('save-action-confirm-delete').waitFor({ state: 'visible', timeout: 3000 });
     await page.getByTestId('save-action-confirm-delete').click();
-    await page.waitForTimeout(150);
+    await page.getByTestId(`save-card-${parentSnapId}`).waitFor({ state: 'hidden', timeout: 3000 });
     await page.keyboard.press('Escape');
-    await page.waitForTimeout(150);
+    await page.getByTestId('settings-modal-close').waitFor({ state: 'hidden', timeout: 3000 });
     assert.equal(
       await parentBreadcrumbBtn.count(),
       0,
@@ -5558,9 +5919,9 @@ async function runBrowserBasicsSuite() {
     });
     assert.ok(coopSampleId, 'Expected a pre-baked sample-* snapshot in capy_snapshots_v8');
     await page.getByTestId('topbar-coop-btn').click();
-    await page.waitForTimeout(150);
+    await page.getByTestId(`save-card-${coopSampleId}`).waitFor({ state: 'visible', timeout: 3000 });
     await page.getByTestId(`save-card-${coopSampleId}`).click();
-    await page.waitForTimeout(100);
+    await page.getByTestId('save-action-load').waitFor({ state: 'visible', timeout: 3000 });
     await page.getByTestId('save-action-load').click();
     await page.waitForFunction(
       (expectedId) => {
@@ -5571,45 +5932,40 @@ async function runBrowserBasicsSuite() {
       { timeout: 15000 }
     );
     await waitForPuzzleLoaded(page);
-    await page.waitForTimeout(200);
     if (await page.$('[data-testid="replay-exit-btn"]')) {
       await page.locator('[data-testid="replay-exit-btn"]').click();
-      await page.waitForTimeout(150);
+      await page.getByTestId('replay-controls-window').waitFor({ state: 'hidden', timeout: 3000 });
     }
 
     // Ensure Enable Undo Action is ON and Free Colour Mode is OFF on Peer A
     await page.locator('button[title="Settings and Menu"]').click();
-    await page.waitForTimeout(120);
+    await page.getByRole('button', { name: 'Settings', exact: true }).waitFor({ state: 'visible', timeout: 3000 });
     await page.getByRole('button', { name: 'Settings', exact: true }).click();
-    await page.waitForTimeout(100);
     const currentSettings11c = await page.evaluate(() => {
       return JSON.parse(localStorage.getItem('capy_user_settings_v8') || '{}');
     });
     await page.locator('button:has(span:text-is("Settings"))').click();
-    await page.waitForTimeout(120);
     if (currentSettings11c.isFreeColorMode) {
       const fcLabel = await page.waitForSelector('text=Free Colour Mode');
       await fcLabel.evaluate((el) => el.closest('.flex')?.querySelector('button')?.click());
-      await page.waitForTimeout(80);
     }
     if (!currentSettings11c.enableUndo) {
       const undoSettingLabel = await page.waitForSelector('text=Enable Undo Action');
       await undoSettingLabel.evaluate((el) => el.closest('.flex')?.querySelector('button')?.click());
-      await page.waitForTimeout(80);
     }
     await page.keyboard.press('Escape');
-    await page.waitForTimeout(150);
+    await page.getByTestId('settings-modal-close').waitFor({ state: 'hidden', timeout: 3000 });
     await page.getByTestId('undo-btn').waitFor({ state: 'visible', timeout: 5000 });
 
     // Host Co-op room on Peer A and join on Peer B
     await page.getByTestId('topbar-coop-btn').click();
-    await page.waitForTimeout(150);
+    await page.getByTestId('host-coop-room-btn').waitFor({ state: 'visible', timeout: 3000 });
     await page.getByTestId('host-coop-room-btn').click();
-    await page.waitForTimeout(200);
+    await page.getByTestId('active-coop-room-code').waitFor({ state: 'visible', timeout: 5000 });
     const undoRoomBadge = await page.getByTestId('active-coop-room-code').innerText();
     const undoRoomCode = undoRoomBadge.match(/Room\s+([A-Z0-9]{6})/)[1];
     await page.keyboard.press('Escape');
-    await page.waitForTimeout(150);
+    await page.getByTestId('active-coop-room-code').waitFor({ state: 'hidden', timeout: 3000 });
 
     const peerB = await context.newPage();
     attachErrorListeners(peerB, 'peerB-unfill');
@@ -5617,20 +5973,24 @@ async function runBrowserBasicsSuite() {
     await waitForPuzzleLoaded(peerB);
     if (await peerB.$('[data-testid="replay-exit-btn"]')) {
       await peerB.locator('[data-testid="replay-exit-btn"]').click();
-      await peerB.waitForTimeout(150);
+      await peerB.getByTestId('replay-controls-window').waitFor({ state: 'hidden', timeout: 3000 });
     }
     await peerB.getByTestId('topbar-coop-btn').click();
-    await peerB.waitForTimeout(150);
+    await peerB.getByTestId('join-coop-room-input').waitFor({ state: 'visible', timeout: 3000 });
     await peerB.getByTestId('join-coop-room-input').fill(undoRoomCode);
     await peerB.getByTestId('join-coop-room-btn').click();
-    await peerB.waitForTimeout(350);
+    await peerB.waitForFunction(
+      () => document.querySelector('[data-testid="active-coop-room-code"]')?.textContent?.includes('2 online'),
+      undefined,
+      { timeout: 5000 }
+    );
     assert.equal(
       (await peerB.getByTestId('active-coop-room-code').innerText()).includes('2 online'),
       true,
       'Peer B must join Peer A Co-op room with 2 peers online'
     );
     await peerB.keyboard.press('Escape');
-    await peerB.waitForTimeout(200);
+    await peerB.getByTestId('active-coop-room-code').waitFor({ state: 'hidden', timeout: 3000 });
 
     const readTotalRemainingRegions = async (targetPage) => {
       return targetPage.evaluate(() => {
@@ -5652,7 +6012,16 @@ async function runBrowserBasicsSuite() {
 
     // Fill regions on Peer A and verify Peer B's remaining region count decrements
     await tapCanvasGrid(page, 0.45, 10, 35);
-    await peerB.waitForTimeout(350);
+    const filled11cAfterFillA = Number(
+      await page.getByTestId('topbar-saves-btn').getAttribute('data-filled-count')
+    );
+    await peerB.waitForFunction(
+      (expectedCount) =>
+        Number(document.querySelector('[data-testid="topbar-saves-btn"]')?.getAttribute('data-filled-count')) ===
+        expectedCount,
+      filled11cAfterFillA,
+      { timeout: 5000 }
+    );
     const remainingAfterFillA = await readTotalRemainingRegions(page);
     const remainingAfterFillB = await readTotalRemainingRegions(peerB);
     assert.ok(
@@ -5667,8 +6036,20 @@ async function runBrowserBasicsSuite() {
 
     // Click Undo (undo-btn) on Peer A and verify Peer B's unfilled region count increments by +1 via UNFILL_EVENT
     await page.getByTestId('undo-btn').click();
-    await page.waitForTimeout(150);
-    await peerB.waitForTimeout(350);
+    await page.waitForFunction(
+      (expectedCount) =>
+        Number(document.querySelector('[data-testid="topbar-saves-btn"]')?.getAttribute('data-filled-count')) ===
+        expectedCount,
+      filled11cAfterFillA - 1,
+      { timeout: 3000 }
+    );
+    await peerB.waitForFunction(
+      (expectedCount) =>
+        Number(document.querySelector('[data-testid="topbar-saves-btn"]')?.getAttribute('data-filled-count')) ===
+        expectedCount,
+      filled11cAfterFillA - 1,
+      { timeout: 5000 }
+    );
     const remainingAfterUndoA = await readTotalRemainingRegions(page);
     const remainingAfterUndoB = await readTotalRemainingRegions(peerB);
     assert.equal(
@@ -5684,11 +6065,11 @@ async function runBrowserBasicsSuite() {
 
     await peerB.close();
     await page.getByTestId('topbar-coop-btn').click();
-    await page.waitForTimeout(150);
+    await page.getByTestId('leave-coop-room-btn').waitFor({ state: 'visible', timeout: 3000 });
     await page.getByTestId('leave-coop-room-btn').click();
-    await page.waitForTimeout(120);
+    await page.getByTestId('active-coop-room-code').waitFor({ state: 'hidden', timeout: 3000 });
     await page.keyboard.press('Escape');
-    await page.waitForTimeout(100);
+    await page.getByTestId('settings-modal-close').waitFor({ state: 'hidden', timeout: 3000 });
     console.log('   PASS: Printable SVG download, Sub-Tile Parent Breadcrumbs + parent delete cleanup, and 2-peer Co-op UNFILL_EVENT Undo sync verified.');
 
     console.log('-> [2.6] Verifying Release Channel switcher card & Beta HUD pill...');
@@ -5698,10 +6079,10 @@ async function runBrowserBasicsSuite() {
       'Default Stable/Dev root view must not display topbar-channel-badge clutter'
     );
     await page.locator('button[title="Settings and Menu"]').click();
-    await page.waitForTimeout(150);
+    await page.getByRole('button', { name: 'About', exact: true }).waitFor({ state: 'visible', timeout: 3000 });
     await page.getByRole('button', { name: 'About', exact: true }).click();
-    await page.waitForTimeout(100);
     const channelCard = page.getByTestId('release-channel-card');
+    await channelCard.waitFor({ state: 'visible', timeout: 3000 });
     await channelCard.scrollIntoViewIfNeeded();
     assert.equal(await channelCard.isVisible(), true, 'release-channel-card must be visible in About tab');
     assert.equal(
@@ -5715,7 +6096,7 @@ async function runBrowserBasicsSuite() {
       'Beta Android APK link must point to /capy/beta/capy.apk'
     );
     await page.keyboard.press('Escape');
-    await page.waitForTimeout(100);
+    await page.getByTestId('settings-modal-close').waitFor({ state: 'hidden', timeout: 3000 });
 
     const betaPage = await context.newPage();
     attachErrorListeners(betaPage, 'betaPage');
@@ -5729,8 +6110,8 @@ async function runBrowserBasicsSuite() {
       'Beta channel view must render BETA pill in GameTopBar'
     );
     await betaTopPill.click();
-    await betaPage.waitForTimeout(200);
     const betaCard = betaPage.getByTestId('release-channel-card');
+    await betaCard.waitFor({ state: 'visible', timeout: 3000 });
     await betaCard.scrollIntoViewIfNeeded();
     assert.equal(
       await betaCard.getAttribute('data-channel'),
@@ -5753,9 +6134,15 @@ async function runBrowserBasicsSuite() {
     // 12a. F7 & F8 (BUG-1, M-08, F-01): 2-peer BroadcastChannel WELCOME_STATE reload persistence, Replay Resume Here UNFILL & Reset Progress resetEpoch
     // Reset active puzzle cleanly first so both Peer A and localStorage start at 0 filled regions
     await page.getByTestId('topbar-coop-btn').click();
-    await page.waitForTimeout(150);
+    await page.getByTestId('reset-progress-btn').waitFor({ state: 'visible', timeout: 3000 });
     await page.getByTestId('reset-progress-btn').click();
-    await page.waitForTimeout(450);
+    await page.waitForFunction(
+      () =>
+        Number(document.querySelector('[data-testid="topbar-saves-btn"]')?.getAttribute('data-filled-count')) === 0 &&
+        (JSON.parse(localStorage.getItem('capy_active_session_v8') || '{}').filledRegionIds || []).length === 0,
+      undefined,
+      { timeout: 5000 }
+    );
 
     const totalPuzzleRegions27 = await readTotalRemainingRegions(page);
     assert.ok(totalPuzzleRegions27 > 10, `Expected > 10 total puzzle regions after reset, got ${totalPuzzleRegions27}`);
@@ -5797,12 +6184,13 @@ async function runBrowserBasicsSuite() {
 
     // Host Co-op room on Peer A (live React state + room seedToken carry the >= 3 filled regions)
     await page.getByTestId('topbar-coop-btn').click();
-    await page.waitForTimeout(150);
+    await page.getByTestId('host-coop-room-btn').waitFor({ state: 'visible', timeout: 3000 });
     await page.getByTestId('host-coop-room-btn').click();
-    await page.waitForTimeout(200);
+    await page.getByTestId('active-coop-room-code').waitFor({ state: 'visible', timeout: 5000 });
     const s2RoomText = await page.getByTestId('active-coop-room-code').innerText();
     const s2RoomCode = s2RoomText.match(/Room\s+([A-Z0-9]{6})/)[1];
     await page.keyboard.press('Escape');
+    await page.getByTestId('active-coop-room-code').waitFor({ state: 'hidden', timeout: 3000 });
     await page.waitForTimeout(450);
 
     // Clear persisted localStorage fills after Peer A settles so only Peer B's WELCOME_STATE can repopulate capy_active_session_v8
@@ -5818,7 +6206,7 @@ async function runBrowserBasicsSuite() {
     }, peerAStateBeforeRoom.activeSnapshotId);
 
     await peerS2.getByTestId('topbar-coop-btn').click();
-    await peerS2.waitForTimeout(150);
+    await peerS2.getByTestId('join-coop-room-input').waitFor({ state: 'visible', timeout: 3000 });
     await peerS2.getByTestId('join-coop-room-input').fill(s2RoomCode);
     await peerS2.getByTestId('join-coop-room-btn').click();
     await peerS2.waitForFunction(
@@ -5857,7 +6245,7 @@ async function runBrowserBasicsSuite() {
     await waitForPuzzleLoaded(peerS2);
     if (await peerS2.$('[data-testid="replay-exit-btn"]')) {
       await peerS2.locator('[data-testid="replay-exit-btn"]').click();
-      await peerS2.waitForTimeout(150);
+      await peerS2.getByTestId('replay-controls-window').waitFor({ state: 'hidden', timeout: 3000 });
     }
     assert.equal(
       await readTotalRemainingRegions(peerS2),
@@ -5867,7 +6255,7 @@ async function runBrowserBasicsSuite() {
 
     // Rejoin s2RoomCode on Peer B so both peers are live for Replay Rewind & Reset Progress sync
     await peerS2.getByTestId('topbar-coop-btn').click();
-    await peerS2.waitForTimeout(150);
+    await peerS2.getByTestId('join-coop-room-input').waitFor({ state: 'visible', timeout: 3000 });
     await peerS2.getByTestId('join-coop-room-input').fill(s2RoomCode);
     await peerS2.getByTestId('join-coop-room-btn').click();
     await peerS2.waitForFunction(
@@ -5880,16 +6268,20 @@ async function runBrowserBasicsSuite() {
 
     // Launch Replay on Peer A via Saves -> Replay, scrub backward to step 1, and click Resume Here
     await page.getByTestId('topbar-coop-btn').click();
-    await page.waitForTimeout(150);
+    await page.getByTestId(`save-card-${peerAStateBeforeRoom.activeSnapshotId}`).waitFor({ state: 'visible', timeout: 3000 });
     await page.getByTestId(`save-card-${peerAStateBeforeRoom.activeSnapshotId}`).click();
-    await page.waitForTimeout(100);
+    await page.getByTestId('save-action-replay').waitFor({ state: 'visible', timeout: 3000 });
     await page.getByTestId('save-action-replay').click();
 
     await page.getByTestId('replay-controls-window').waitFor({ state: 'visible', timeout: 5000 });
     await page.getByTestId('replay-toggle-minimize-btn').click();
-    await page.waitForTimeout(120);
+    await page.getByTestId('replay-scrubber').waitFor({ state: 'visible', timeout: 3000 });
     await page.getByTestId('replay-scrubber').fill('1');
-    await page.waitForTimeout(120);
+    await page.waitForFunction(
+      () => document.querySelector('[data-testid="replay-scrubber"]')?.value === '1',
+      undefined,
+      { timeout: 3000 }
+    );
     await page.getByTestId('replay-resume-btn').click();
     await page.waitForFunction(
       () => Number(document.querySelector('[data-testid="topbar-saves-btn"]')?.getAttribute('data-filled-count')) === 1,
@@ -5922,7 +6314,7 @@ async function runBrowserBasicsSuite() {
 
     // Trigger Reset Progress on Peer A and verify Peer B clears to 0 filled regions + resetEpoch increments
     await page.getByTestId('topbar-coop-btn').click();
-    await page.waitForTimeout(150);
+    await page.getByTestId('reset-progress-btn').waitFor({ state: 'visible', timeout: 3000 });
     await page.getByTestId('reset-progress-btn').click();
     await page.waitForFunction(
       () => Number(document.querySelector('[data-testid="topbar-saves-btn"]')?.getAttribute('data-filled-count')) === 0,
@@ -5967,11 +6359,11 @@ async function runBrowserBasicsSuite() {
 
     await peerS2.close();
     await page.getByTestId('topbar-coop-btn').click();
-    await page.waitForTimeout(150);
+    await page.getByTestId('leave-coop-room-btn').waitFor({ state: 'visible', timeout: 3000 });
     await page.getByTestId('leave-coop-room-btn').click();
-    await page.waitForTimeout(120);
+    await page.getByTestId('active-coop-room-code').waitFor({ state: 'hidden', timeout: 3000 });
     await page.keyboard.press('Escape');
-    await page.waitForTimeout(120);
+    await page.getByTestId('settings-modal-close').waitFor({ state: 'hidden', timeout: 3000 });
 
     // 12c. Mobile 360x800 minimized ReplayControls pill fit & save-load replayLoop auto-disable + gameplay auto-resume
     for (let attempt = 0; attempt < 4; attempt++) {
@@ -6002,11 +6394,11 @@ async function runBrowserBasicsSuite() {
 
     // Switch to narrow 360x800 mobile viewport and load secondary sample first
     await page.setViewportSize({ width: 360, height: 800 });
-    await page.waitForTimeout(150);
+    await page.waitForFunction(() => window.innerWidth === 360, undefined, { timeout: 3000 });
     await page.getByTestId('topbar-coop-btn').click();
-    await page.waitForTimeout(150);
+    await page.getByTestId(`save-card-${mobileReplaySetup.otherSnapId}`).waitFor({ state: 'visible', timeout: 3000 });
     await page.getByTestId(`save-card-${mobileReplaySetup.otherSnapId}`).click();
-    await page.waitForTimeout(100);
+    await page.getByTestId('save-action-load').waitFor({ state: 'visible', timeout: 3000 });
     await page.getByTestId('save-action-load').click();
     await page.waitForFunction(
       (expectedId) =>
@@ -6019,14 +6411,17 @@ async function runBrowserBasicsSuite() {
 
     // Enable Auto-Loop Replay (true) + 0.5x speed in Settings Tab 0, and ensure Replay on Load is ON in Saves
     await page.locator('button[title="Settings and Menu"]').click();
-    await page.waitForTimeout(150);
+    await page.locator('button', { hasText: /^Settings$/ }).first().waitFor({ state: 'visible', timeout: 3000 });
     await page.locator('button', { hasText: /^Settings$/ }).first().click();
-    await page.waitForTimeout(120);
     const settingsLoopToggle = page.getByTestId('toggle-replay-loop-btn');
     await settingsLoopToggle.scrollIntoViewIfNeeded();
     if ((await settingsLoopToggle.getAttribute('aria-checked')) !== 'true') {
       await settingsLoopToggle.click();
-      await page.waitForTimeout(80);
+      await page.waitForFunction(
+        () => document.querySelector('[data-testid="toggle-replay-loop-btn"]')?.getAttribute('aria-checked') === 'true',
+        undefined,
+        { timeout: 3000 }
+      );
     }
     assert.equal(
       await settingsLoopToggle.getAttribute('aria-checked'),
@@ -6036,18 +6431,26 @@ async function runBrowserBasicsSuite() {
     const speedHalfBtn = page.locator('button', { hasText: /^0\.5x$/ }).first();
     await speedHalfBtn.scrollIntoViewIfNeeded();
     await speedHalfBtn.click();
-    await page.waitForTimeout(80);
+    await page.waitForFunction(
+      () => Number(JSON.parse(localStorage.getItem('capy_user_settings_v8') || '{}').replaySpeed) === 0.5,
+      undefined,
+      { timeout: 3000 }
+    );
 
     // Switch to Saves tab, ensure Replay on Load is enabled, and load targetSnapId
     await page.locator('button', { hasText: /^Saves$/ }).first().click();
-    await page.waitForTimeout(120);
     const autoReplaySavesSwitch = page.getByTestId('toggle-auto-replay-saves-btn');
+    await autoReplaySavesSwitch.waitFor({ state: 'visible', timeout: 3000 });
     if ((await autoReplaySavesSwitch.getAttribute('aria-checked')) !== 'true') {
       await autoReplaySavesSwitch.click();
-      await page.waitForTimeout(80);
+      await page.waitForFunction(
+        () => document.querySelector('[data-testid="toggle-auto-replay-saves-btn"]')?.getAttribute('aria-checked') === 'true',
+        undefined,
+        { timeout: 3000 }
+      );
     }
     await page.getByTestId(`save-card-${mobileReplaySetup.targetSnapId}`).click();
-    await page.waitForTimeout(100);
+    await page.getByTestId('save-action-load').waitFor({ state: 'visible', timeout: 3000 });
     await page.getByTestId('save-action-load').click();
 
     const mobileReplayWin = page.getByTestId('replay-controls-window');
@@ -6204,9 +6607,8 @@ async function runBrowserBasicsSuite() {
     const undoBoxFlow1 = await getStableBoundingBox(page.getByTestId('undo-btn'));
     await page.mouse.move(undoBoxFlow1.x + undoBoxFlow1.width / 2, undoBoxFlow1.y + undoBoxFlow1.height / 2);
     await page.mouse.down();
-    await page.waitForTimeout(520);
-    await page.mouse.up();
     await mobileReplayWin.waitFor({ state: 'visible', timeout: 5000 });
+    await page.mouse.up();
     await page.locator('[aria-label="Toggle Paint Mode"]').click();
     await mobileReplayWin.waitFor({ state: 'hidden', timeout: 3000 });
     assert.equal(
@@ -6220,7 +6622,7 @@ async function runBrowserBasicsSuite() {
     await page.mouse.down();
     await page.mouse.move(canvasBoxFlow1.x + canvasBoxFlow1.width * 0.65, canvasBoxFlow1.y + canvasBoxFlow1.height * 0.55, { steps: 10 });
     await page.mouse.up();
-    await page.waitForTimeout(200);
+    await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
 
     // Flow 2: Post-load replay with Paint Mode ALREADY ON -> 100% -> first canvas drag paints & dismisses ReplayControls
     await page.reload({ waitUntil: 'networkidle' });
@@ -6268,11 +6670,14 @@ async function runBrowserBasicsSuite() {
       mobileUndoBox.y + mobileUndoBox.height / 2
     );
     await page.mouse.down();
-    await page.waitForTimeout(520);
-    await page.mouse.up();
     await mobileReplayWin.waitFor({ state: 'visible', timeout: 5000 });
+    await page.mouse.up();
     await page.getByTestId('replay-toggle-minimize-btn').click();
-    await page.waitForTimeout(150);
+    await page.waitForFunction(
+      () => document.querySelector('[data-testid="replay-controls-window"]')?.getAttribute('data-minimized') === 'false',
+      undefined,
+      { timeout: 3000 }
+    );
     assert.equal(
       await mobileReplayWin.getAttribute('data-minimized'),
       'false',
@@ -6327,7 +6732,7 @@ async function runBrowserBasicsSuite() {
       s.replayLoop = false;
       localStorage.setItem('capy_user_settings_v8', JSON.stringify(s));
     });
-    await page.waitForTimeout(120);
+    await page.waitForFunction(() => window.innerWidth === 1280, undefined, { timeout: 3000 });
     console.log('   PASS: 360px mobile ReplayControls fit, save-load replayLoop reset & auto-resume, Co-op WELCOME_STATE persistence, Replay Scrubber rewind UNFILL, and CRDT resetEpoch verified.');
 
     // 12f. Mobile (360x780) GameTopBar two-lane non-overlap + ALPHA #520 pill fit + SettingsModal tab bar fit + OnboardingTutorial & FeatureOfferBanner & TargetSpotlightOverlay overflow
@@ -6462,7 +6867,11 @@ async function runBrowserBasicsSuite() {
     const largeTextSwitch = mobileTopbarPage.getByTestId('setting-large-text');
     await largeTextSwitch.waitFor({ state: 'visible', timeout: 5000 });
     await largeTextSwitch.click();
-    await mobileTopbarPage.waitForTimeout(100);
+    await mobileTopbarPage.waitForFunction(
+      () => document.documentElement.dataset.largeText === 'true',
+      undefined,
+      { timeout: 3000 }
+    );
     assert.equal(
       await mobileTopbarPage.evaluate(() => document.documentElement.dataset.largeText),
       'true',
@@ -6478,7 +6887,7 @@ async function runBrowserBasicsSuite() {
       `Large Text SettingsModal tabs must not overflow at 360x780 (scrollWidth=${largeTabsOverflow.scrollWidth}, clientWidth=${largeTabsOverflow.clientWidth})`
     );
     await closeBtn.click();
-    await mobileTopbarPage.waitForTimeout(150);
+    await closeBtn.waitFor({ state: 'hidden', timeout: 3000 });
     const largeLeftLaneBox = await mobileTopbarPage.getByTestId('topbar-left-lane').boundingBox();
     const largeRightLaneBox = await mobileTopbarPage.getByTestId('topbar-right-lane').boundingBox();
     const largeChannelBox = await mobileTopbarPage.getByTestId('topbar-channel-badge').boundingBox();
@@ -6533,9 +6942,15 @@ async function runBrowserBasicsSuite() {
     await mobileTopbarPage.getByTestId('tutorial-topics-drawer').waitFor({ state: 'hidden', timeout: 3000 });
     // Re-open SettingsModal, turn off Large Text, and continue Saves tab verification
     await mobileTopbarPage.locator('button[title="Settings and Menu"]').click();
+    await mobileTopbarPage.getByTestId('settings-tab-settings').waitFor({ state: 'visible', timeout: 3000 });
     await mobileTopbarPage.getByTestId('settings-tab-settings').click();
+    await mobileTopbarPage.getByTestId('setting-large-text').waitFor({ state: 'visible', timeout: 3000 });
     await mobileTopbarPage.getByTestId('setting-large-text').click();
-    await mobileTopbarPage.waitForTimeout(100);
+    await mobileTopbarPage.waitForFunction(
+      () => document.documentElement.dataset.largeText !== 'true',
+      undefined,
+      { timeout: 3000 }
+    );
 
     // Verify 360x780 Saves tab renders Thumbnails grid first, 2-column mobile grid, static action bar, and zero horizontal overflow
     await mobileTopbarPage.getByTestId('settings-tab-saves').click();
@@ -6597,7 +7012,7 @@ async function runBrowserBasicsSuite() {
       `selected-save-action-bar must not be sticky (${JSON.stringify(actionBarPosition)})`
     );
     await mobileTopbarPage.getByTestId('cloud-coop-hub').scrollIntoViewIfNeeded();
-    await mobileTopbarPage.waitForTimeout(100);
+    await mobileTopbarPage.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
     const [mActionAfterScroll, mHubAfterScroll] = await Promise.all([
       mobileTopbarPage.getByTestId('selected-save-action-bar').boundingBox(),
       mobileTopbarPage.getByTestId('cloud-coop-hub').boundingBox(),
@@ -6707,7 +7122,8 @@ async function runBrowserBasicsSuite() {
     await mobileTopbarPage.getByTestId('settings-tab-settings').click();
     await mobileTopbarPage.getByTestId('setting-large-text').click();
     await mobileTopbarPage.getByTestId('settings-modal-close').click();
-    await mobileTopbarPage.waitForTimeout(100);
+    await mobileTopbarPage.waitForFunction(() => document.documentElement.dataset.largeText !== 'true', { timeout: 3000 });
+    await mobileTopbarPage.getByTestId('settings-modal-close').waitFor({ state: 'hidden', timeout: 3000 });
     const normal100ScrollCheck = await mobileTopbarPage.getByTestId('topbar-left-lane').evaluate((el) => ({
       scrollWidth: el.scrollWidth,
       clientWidth: el.clientWidth,
@@ -6766,8 +7182,11 @@ async function runBrowserBasicsSuite() {
       `Debounced viewportSaveTimer must persist zoomed scale (got ${afterTimerState?.zoomScale})`
     );
 
-    // Trigger second zoom, immediately write 100% completion, and reload immediately so beforeunload flush fires while timer is pending
+    // Trigger second zoom, wait for React useEffect to arm the 350ms viewportSaveTimer, write 100% completion, and reload immediately so beforeunload flush fires while timer is pending
     await viewportRacePage.mouse.wheel(0, -240);
+    await viewportRacePage.evaluate(
+      () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)))
+    );
     const fullRaceState = await viewportRacePage.evaluate(async () => {
       const snaps = window.capyStorage.loadSnapshots();
       const active = window.capyStorage.loadActiveState();
@@ -7216,10 +7635,17 @@ async function runBrowserBasicsSuite() {
       `Normal BETA badge must fit cleanly inside topbar-left-lane at 360x780 (${JSON.stringify({ betaNormalScrollCheck, betaNormalChannelBox, betaNormalLaneBox })})`
     );
     await mobileBetaPage.locator('button[title="Settings and Menu"]').click();
+    await mobileBetaPage.getByTestId('settings-tab-settings').waitFor({ state: 'visible', timeout: 3000 });
     await mobileBetaPage.getByTestId('settings-tab-settings').click();
+    await mobileBetaPage.getByTestId('setting-large-text').waitFor({ state: 'visible', timeout: 3000 });
     await mobileBetaPage.getByTestId('setting-large-text').click();
+    await mobileBetaPage.waitForFunction(
+      () => document.documentElement.dataset.largeText === 'true',
+      undefined,
+      { timeout: 3000 }
+    );
     await mobileBetaPage.getByTestId('settings-modal-close').click();
-    await mobileBetaPage.waitForTimeout(100);
+    await mobileBetaPage.getByTestId('settings-modal-close').waitFor({ state: 'hidden', timeout: 3000 });
     const betaLargeScrollCheck = await mobileBetaPage.getByTestId('topbar-left-lane').evaluate((el) => ({
       scrollWidth: el.scrollWidth,
       clientWidth: el.clientWidth,
@@ -7458,6 +7884,186 @@ async function runBrowserBasicsSuite() {
       'Release Channel card must explain isolated channel sandbox'
     );
     await sandboxBetaPage.close();
+
+    // -------------------------------------------------------------------------
+    // 15. PR 2A (v3.0.15): IndexedDB Preview Offload, Quota Toast & Cloud Sync Race E2E
+    // -------------------------------------------------------------------------
+    console.log('-> [3.0.15] Verifying inline preview offloading, storage quota toast above modal, and async cloud sync stroke preservation...');
+    const rawSnapsBeforeReload = await page.evaluate(() =>
+      JSON.parse(localStorage.getItem('capy_snapshots_v8') || '[]')
+    );
+    assert.equal(rawSnapsBeforeReload.length >= 4, true);
+    assert.equal(
+      rawSnapsBeforeReload.some((s) => typeof s.previewDataUrl === 'string' && s.previewDataUrl.length > 0),
+      false,
+      'capy_snapshots_v8 in localStorage must never inline previewDataUrl'
+    );
+
+    await page.getByTestId('topbar-saves-btn').click();
+    await page.getByTestId('saves-list-section').waitFor({ state: 'visible', timeout: 5000 });
+    await page.waitForFunction(
+      async () => {
+        const snaps = window.capyStorage?.loadSnapshots?.() || [];
+        if (snaps.length === 0) return false;
+        const hydrated = await window.capyStorage.hydrateSnapshotPreviews(snaps);
+        return hydrated.some(
+          (s) => typeof s.previewDataUrl === 'string' && s.previewDataUrl.startsWith('data:image/')
+        );
+      },
+      null,
+      { timeout: 5000 }
+    );
+
+    await page.evaluate(() => {
+      const origSetItem = Storage.prototype.setItem;
+      Storage.prototype.setItem = function (key, value) {
+        if (typeof key === 'string' && key.includes('capy_user_settings_v8')) {
+          const err = new Error('Simulated QuotaExceededError');
+          err.name = 'QuotaExceededError';
+          throw err;
+        }
+        return origSetItem.call(this, key, value);
+      };
+      try {
+        window.capyStorage.saveSettings(window.capyStorage.loadSettings());
+      } finally {
+        Storage.prototype.setItem = origSetItem;
+      }
+    });
+    const quotaToast = page.getByTestId('storage-quota-toast');
+    await quotaToast.waitFor({ state: 'visible', timeout: 3000 });
+    await page.getByTestId('storage-quota-dismiss').click();
+    await quotaToast.waitFor({ state: 'hidden', timeout: 3000 });
+    await page.keyboard.press('Escape');
+    await page.getByTestId('saves-list-section').waitFor({ state: 'hidden', timeout: 3000 });
+
+    const syncRaceContext = await browser.newContext({ viewport: { width: 1280, height: 860 } });
+    const syncRacePage = await syncRaceContext.newPage();
+    attachErrorListeners(syncRacePage, 'syncRacePage');
+    let holdDriveRead = false;
+    let heldReadStartedResolve = null;
+    let releaseHeldRead = null;
+    let heldReadStartedPromise = new Promise((resolve) => {
+      heldReadStartedResolve = resolve;
+    });
+
+    await syncRacePage.route('https://www.googleapis.com/**', async (route) => {
+      const url = route.request().url();
+      const method = route.request().method();
+      if (url.includes('/oauth2/v3/userinfo')) {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ sub: 'g-race-1', name: 'Race Tester', email: 'race@example.com' }),
+        });
+        return;
+      }
+      if (holdDriveRead && method === 'GET' && url.includes('/drive/v3/files')) {
+        holdDriveRead = false;
+        heldReadStartedResolve?.();
+        await new Promise((resolve) => {
+          releaseHeldRead = resolve;
+        });
+      }
+      if (method === 'GET' && url.includes('/drive/v3/files')) {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ files: [] }),
+        });
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ id: 'mock-drive-file-id' }),
+      });
+    });
+
+    await syncRacePage.goto(`${BASE_URL}/?skipTutorial=1`, { waitUntil: 'networkidle' });
+    await waitForPuzzleLoaded(syncRacePage);
+    await syncRacePage.evaluate(() => {
+      localStorage.setItem(
+        'capy_google_oauth_token_v1',
+        JSON.stringify({
+          accessToken: 'mock-race-token',
+          expiresAt: Date.now() + 3600 * 1000,
+          sub: 'g-race-1',
+          displayName: 'Race Tester',
+          email: 'race@example.com',
+        })
+      );
+      localStorage.setItem(
+        'capy_player_identity_v1',
+        JSON.stringify({
+          playerId: 'google:g-race-1',
+          displayName: 'Race Tester',
+          avatarColorHex: '#fbbf24',
+          provider: 'google',
+          isAuthenticated: true,
+          email: 'race@example.com',
+        })
+      );
+    });
+    await syncRacePage.reload({ waitUntil: 'networkidle' });
+    await waitForPuzzleLoaded(syncRacePage);
+
+    await syncRacePage.getByTestId('topbar-coop-btn').click();
+    await syncRacePage.getByTestId('reset-progress-btn').waitFor({ state: 'visible', timeout: 3000 });
+    await syncRacePage.getByTestId('reset-progress-btn').click();
+    await syncRacePage.waitForFunction(
+      () =>
+        Number(document.querySelector('[data-testid="topbar-saves-btn"]')?.getAttribute('data-filled-count')) === 0 &&
+        (JSON.parse(localStorage.getItem('capy_active_session_v8') || '{}').filledRegionIds || []).length === 0,
+      undefined,
+      { timeout: 5000 }
+    );
+    await syncRacePage.keyboard.press('Escape');
+    await syncRacePage.getByTestId('settings-modal-close').waitFor({ state: 'hidden', timeout: 3000 }).catch(() => {});
+
+    holdDriveRead = true;
+    await syncRacePage.evaluate(() => {
+      window.__capyReceiveCloudSnapshot?.(
+        'capy_cloud_manifest_v2',
+        JSON.stringify({ syncedAt: Date.now() })
+      );
+    });
+    await heldReadStartedPromise;
+
+    for (let attempt = 0; attempt < 6; attempt++) {
+      const curFilled = Number(
+        await syncRacePage.getByTestId('topbar-saves-btn').getAttribute('data-filled-count')
+      );
+      if (curFilled >= 1) break;
+      await tapCanvasGrid(syncRacePage, 0.42 + attempt * 0.04, 8, 80);
+    }
+    const midFlightCount = Number(
+      await syncRacePage.getByTestId('topbar-saves-btn').getAttribute('data-filled-count')
+    );
+    assert.equal(midFlightCount >= 1, true, 'Expected at least 1 mid-flight canvas stroke before releasing cloud sync');
+
+    releaseHeldRead?.();
+    await syncRacePage.waitForTimeout(450);
+
+    const postSyncCount = Number(
+      await syncRacePage.getByTestId('topbar-saves-btn').getAttribute('data-filled-count')
+    );
+    const postSyncStoredLen = await syncRacePage.evaluate(() => {
+      const active = JSON.parse(localStorage.getItem('capy_active_session_v8') || '{}');
+      return Array.isArray(active.filledRegionIds) ? active.filledRegionIds.length : 0;
+    });
+    assert.equal(
+      postSyncCount,
+      midFlightCount,
+      'Async cloud sync completion must preserve mid-flight painted regions'
+    );
+    assert.equal(
+      postSyncStoredLen,
+      midFlightCount,
+      'Async cloud sync completion must preserve mid-flight filledRegionIds in capy_active_session_v8'
+    );
+    await syncRacePage.close();
+    await syncRaceContext.close();
 
     assert.equal(consoleErrors.length, 0, `Expected zero unhandled page errors, got:\n${consoleErrors.join('\n')}`);
     console.log('\nALL UNIFIED ENGINE, CODEC & E2E BROWSER TESTS PASSED!');
