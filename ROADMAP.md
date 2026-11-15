@@ -15,7 +15,7 @@ Strategic product horizon for **Capy** ([`web/`](./web/) and [`app/`](./app/)). 
 <details>
 <summary>Roadmap Rollup (`16` Stories + `TASK-2.5` & Active `v3.0.x` Queue across `4` Epics)</summary>
 
-- EPIC-2 (*`v3.0.x` Stabilization & Live Cutover -- Sprint 1 (`#2`)*): `BUG-4` (`ops` Human Cloudflare & DNS Cutover in [`TODO.md`](./TODO.md)); `v3.0.2`--`v3.0.11` stabilization promoted to `main` (`v3.0.2`--`v3.0.8` via #501; `v3.0.9`--`v3.0.11` via #517--#520)
+- EPIC-2 (*`v3.0.x` Stabilization & Live Cutover -- Sprint 1 (`#2`)*): `BUG-4` (`ops` Human Cloudflare & DNS Cutover in [`TODO.md`](./TODO.md)); `v3.0.2`--`v3.0.12` stabilization promoted to `main` (`v3.0.2`--`v3.0.8` via #501; `v3.0.9`--`v3.0.12` via #517--#526)
 - EPIC-3 (*8 Stories + `TASK-2.5` -- Sprint 2 (`#3`), Awaiting Owner Review*): `~274k tokens` (`~129--186 min contributor`)
 - EPIC-4 (*3 Stories -- Sprint 3 (`#4`), Ready After EPIC-3*): `~68k tokens` (`~32--46 min contributor`)
 - EPIC-5 (*5 Stories -- Blocked on External Infra*): `~245k tokens` (`~113--165 min contributor`)
@@ -29,10 +29,10 @@ Strategic product horizon for **Capy** ([`web/`](./web/) and [`app/`](./app/)). 
 
 **Epic Goal**: Stabilize `v3.0.x` with critical reliability fixes, explicitly Owner-approved UX polish, and `https://capypaint.com/` live cutover (`BUG-4`). Unapproved feature stories (`US-2.1`, `US-2.3b`, `US-2.4`) and deferred Android Play deployment (`TASK-2.5`) live in EPIC-3. *(Tracking: EPIC-2 | Sprint 1 (`#2`)).*
 
-- **Active Execution Queue**: See [`TODO.md`](./TODO.md) for `BUG-4` (`capypaint.com` live DNS & Cloudflare Worker cutover -- Human Ops Gate). All Sprint 1 stabilization and UI slices (`v3.0.2`--`v3.0.11`) are promoted to `main` (`beta -> main`); zero active contributor dev tasks remain in `TODO.md`.
+- **Active Execution Queue**: See [`TODO.md`](./TODO.md) for `BUG-4` (`capypaint.com` live DNS & Cloudflare Worker cutover -- Human Ops Gate). All Sprint 1 stabilization and UI slices (`v3.0.2`--`v3.0.12`) are promoted to `main` (`beta -> main`); zero active contributor dev tasks remain in `TODO.md` (with `v3.0.13` CI sync/E2E speedup and viewport-save race fix staged on `beta`).
 - **Shipped & Re-Scoped History**:
   - **Shipped to `main` (`Production`)**: `BUG-1` & `BUG-3` (#484, #485), `BUG-2` (#485), and `BUG-5` mobile `GameTopBar` overlap & `99%` progress cap (#486, promoted to `main` in #488).
-  - **Promoted to `main` (`v3.0.2`--`v3.0.11`, `v3.0.2`--`v3.0.8` via #501)**: Prebaked sample `1x` viewport reset & one-click PR approval workflow (#490), prior `TASK-2.5` Play Store backlog sync (#487, later moved to EPIC-3), CI/CD & governance hardening (#491, #492, #493, #494), `TASK-2.6` post-load replay controls, `Capy Forest` default, interactive first-run tutorial & `About` tab (#489), `v3.0.7` storage sandbox isolation, fractional DPR & settings/import/Play Games fixes + `.changelog/` compiler & Epic tracker sync (#495), cross-chat `status notes` coordination rule (#496), `v3.0.8` zoom pill badge removal & 360px `SettingsModal` tab clipping fix (#497), backlog/roadmap & `%`-first PR checklist governance (#502, #509), `main -> beta` `project docs` syncs (#499, #500, #504, #505, #507, #508), `v3.0.9` `PaletteDock` replay visibility & `Saves` tab `Thumbnails` list-first layout (#517), `v3.0.10` Low-Vision Large Text mode, sorted/centered `PaletteDock` & default Undo (#518), `v3.0.11` 14-step `OnboardingTutorial`, 9 `FeatureOfferBanner` quick tips & 100% PR/review workflows (#519), and `100%` PR checklist & workflow hardening (#520).
+  - **Promoted to `main` (`v3.0.2`--`v3.0.12`, `v3.0.2`--`v3.0.8` via #501; `v3.0.9`--`v3.0.11` via #526)**: Prebaked sample `1x` viewport reset & one-click PR approval workflow (#490), prior `TASK-2.5` Play Store backlog sync (#487, later moved to EPIC-3), CI/CD & governance hardening (#491, #492, #493, #494), `TASK-2.6` post-load replay controls, `Capy Forest` default, interactive first-run tutorial & `About` tab (#489), `v3.0.7` storage sandbox isolation, fractional DPR & settings/import/Play Games fixes + `.changelog/` compiler & Epic tracker sync (#495), cross-chat `status notes` coordination rule (#496), `v3.0.8` zoom pill badge removal & 360px `SettingsModal` tab clipping fix (#497), backlog/roadmap & `%`-first PR checklist governance (#502, #509), `main -> beta` `project docs` syncs (#499, #500, #504, #505, #507, #508), `v3.0.9` `PaletteDock` replay visibility & `Saves` tab `Thumbnails` list-first layout (#517), `v3.0.10` Low-Vision Large Text mode, sorted/centered `PaletteDock` & default Undo (#518), `v3.0.11` 14-step `OnboardingTutorial`, 9 `FeatureOfferBanner` quick tips & 100% PR/review workflows (#519), `100%` PR checklist & `beta` syncs (#520, #522, #524, #526), CapyBoop handbook (#521), and `v3.0.12` tutorial target spotlight ring, replay auto-dismissal & mobile badge polish (#523).
   - **Moved to EPIC-3**: Shipped pre-re-scope touch/audio slices `US-2.2` & `TASK-2.3a` (#472, archived under EPIC-3 in [Section 6](#6-shipped-epics--stories-epic-1--completed-stories)), unapproved feature stories `US-2.1`, `US-2.3b`, and `US-2.4`, and deferred Android Play deployment `TASK-2.5` ([Section 2](#2-epic-3-touch-assist-sensory-polish-retention-accessibility--replays-awaiting-owner-review--approval)).
 
 ---
@@ -438,9 +438,11 @@ Parked native desktop/mobile store wrappers awaiting completion of EPIC-2--EPIC-
 Completed Epics and User Stories archived upon merge to `main` (full granular PR history lives in [`CHANGELOG.md`](./CHANGELOG.md)):
 
 <details>
-<summary>Expand Shipped Epics & Stories (EPIC-1 & Shipped Slices -- PRs #431--#520)</summary>
+<summary>Expand Shipped Epics & Stories (EPIC-1 & Shipped Slices -- PRs #431--#526)</summary>
 
-- **Sprint 1 `v3.0.0`--`v3.0.11` Bugfix, Onboarding, Mobile UI & Automation Slices (`BUG-1`--`BUG-3`, `BUG-5`, `TASK-2.6`, PR Workflows & Governance)**:
+- **Sprint 1 `v3.0.0`--`v3.0.12` Bugfix, Onboarding, Mobile UI & Automation Slices (`BUG-1`--`BUG-3`, `BUG-5`, `TASK-2.6`, PR Workflows & Governance)**:
+  - **`v3.0.12` Non-Blocking Tutorial Target Spotlight, Replay Auto-Dismissal & Mobile Badge Polish** -- #523
+  - **`v3.0.11` Production Promotion (`v3.0.9`--`v3.0.11` Bundle & `beta` Syncs)** -- #521, #522, #524, #526
   - **Enforce `100%` PR checklist Gate & Harden GitHub Actions Workflows** -- #520
   - **`v3.0.11` 14-Step Interactive `OnboardingTutorial`, 9 `FeatureOfferBanner` Quick Tips & `100%` PR/review workflows** -- #519
   - **`v3.0.10` Low-Vision Large Text Mode, Sorted/Centered `PaletteDock` & Default Undo** -- #518

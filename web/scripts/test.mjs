@@ -1117,6 +1117,29 @@ async function runCodecAndEngineTests() {
         makeInvalidSection(['- **100%** — **Check**: 5-Pillars framework.']),
         makeInvalidSection(['- **100%** — **Check**: 20-point scale.']),
         makeInvalidSection(['- **100%** — **Check**: Worth **20** pts.']),
+        [
+          '### PR checklist: 100%',
+          '',
+          '<!-- unclosed comment hides remaining markdown',
+          '<details>',
+          '<summary>PR checklist</summary>',
+          '',
+          '- **100%** — **Check**: Hidden by unclosed comment.',
+          '',
+          '</details>',
+        ].join('\n'),
+        [
+          '### PR checklist: 100%',
+          '',
+          '<!-- closed comment -->',
+          '<!-- unclosed trailing comment',
+          '<details>',
+          '<summary>PR checklist</summary>',
+          '',
+          '- **100%** — **Check**: Hidden by second unclosed comment.',
+          '',
+          '</details>',
+        ].join('\n'),
       ]) {
         assert.throws(() => validatePR checklistChecklist(badText, 'negative fixture'));
       }
@@ -1165,8 +1188,10 @@ async function runCodecAndEngineTests() {
         fs.writeFileSync(path.join(tmpMainSpecDir, 'DEV.md'), '# DEV\nVerify PR checklist 100%.\n', 'utf8');
         fs.writeFileSync(path.join(tmpMainSpecDir, 'TESTING.md'), '# TESTING\nAll checks.\n', 'utf8');
         fs.writeFileSync(path.join(tmpMainSpecDir, 'README.md'), '# README\n100% offline.\n', 'utf8');
-        const mainSpecRes = validatePR checklistSpec(tmpMainSpecDir, { requireProjectMd: false });
-        assert.equal(mainSpecRes.scannedFiles.length, 4);
+        assert.throws(
+          () => validatePR checklistSpec(tmpMainSpecDir, { requireProjectMd: false }),
+          /contributor\.md must specify 100% PR checklist threshold/
+        );
 
         fs.writeFileSync(
           path.join(tmpMainSpecDir, 'project docs'),
@@ -3300,9 +3325,70 @@ async function runBrowserBasicsSuite() {
         (variant) => {
           const overlay = document.querySelector('[data-testid="spotlight-overlay"]');
           if (!overlay || overlay.getAttribute('data-variant') !== variant) return false;
-          const rings = overlay.querySelectorAll('[data-testid="spotlight-ring"]');
+          const rings = Array.from(overlay.querySelectorAll('[data-testid="spotlight-ring"]'));
           const pointer = overlay.querySelector('[data-testid="spotlight-pointer"]');
-          return rings.length > 0 && Boolean(pointer);
+          if (rings.length === 0 || !pointer) return false;
+          const vw = window.innerWidth;
+          const vh = window.innerHeight;
+          const ringRects = rings.map((r) => r.getBoundingClientRect());
+          for (let i = 0; i < ringRects.length; i++) {
+            for (let j = i + 1; j < ringRects.length; j++) {
+              const a = ringRects[i];
+              const b = ringRects[j];
+              const hx = Math.min(a.right, b.right) - Math.max(a.left, b.left);
+              const vy = Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top);
+              if (hx > 0.5 && vy > 0.5) return false;
+            }
+          }
+          const hasRunningTransition = (el) => {
+            let node = el;
+            while (node && node !== document.body && node !== document.documentElement) {
+              if (typeof node.getAnimations === 'function') {
+                const anims = node.getAnimations();
+                for (const a of anims) {
+                  if (
+                    typeof CSSTransition !== 'undefined' &&
+                    a instanceof CSSTransition &&
+                    a.playState === 'running'
+                  ) {
+                    return true;
+                  }
+                }
+              }
+              node = node.parentElement;
+            }
+            return false;
+          };
+          let overlapsTarget = false;
+          const allInView = rings.every((ring, idx) => {
+            const rr = ringRects[idx];
+            if (
+              rr.width <= 0 ||
+              rr.height <= 0 ||
+              rr.left < 0 ||
+              rr.top < 0 ||
+              rr.right > vw + 1 ||
+              rr.bottom > vh + 1
+            ) {
+              return false;
+            }
+            const sel = ring.getAttribute('data-target-selector') || '';
+            const targets = sel ? Array.from(document.querySelectorAll(sel)) : [];
+            for (const targetEl of targets) {
+              if (hasRunningTransition(targetEl)) return false;
+              const tr = targetEl.getBoundingClientRect();
+              if (
+                rr.left <= tr.right + 2 &&
+                rr.right >= tr.left - 2 &&
+                rr.top <= tr.bottom + 2 &&
+                rr.bottom >= tr.top - 2
+              ) {
+                overlapsTarget = true;
+              }
+            }
+            return true;
+          });
+          return allInView && overlapsTarget;
         },
         expectedVariant,
         { timeout: 4000 }
@@ -4272,12 +4358,14 @@ async function runBrowserBasicsSuite() {
     assert.equal(progressAfterCtrlY, 3, 'Expected Ctrl+Y to redo step 3');
 
     // Verify ReplayControls "Next" button (onOpenCreate) opens Create tab (index 3)
-    const undoBoxForNext = await (await page.waitForSelector('[data-testid="undo-btn"]')).boundingBox();
+    const undoBtnForNext = page.getByTestId('undo-btn');
+    await undoBtnForNext.waitFor({ state: 'visible', timeout: 3000 });
+    const undoBoxForNext = await getStableBoundingBox(undoBtnForNext);
+    assert.ok(undoBoxForNext, 'Expected stable boundingBox for undo-btn before Next replay test');
     await page.mouse.move(undoBoxForNext.x + undoBoxForNext.width / 2, undoBoxForNext.y + undoBoxForNext.height / 2);
     await page.mouse.down();
-    await page.waitForTimeout(520);
+    await page.getByTestId('replay-controls-window').waitFor({ state: 'visible', timeout: 3000 });
     await page.mouse.up();
-    await page.waitForSelector('[data-testid="replay-controls-window"]', { timeout: 3000 });
     await page.locator('[data-testid="replay-toggle-minimize-btn"]').click();
     await page.waitForTimeout(120);
     await page.locator('button[title="Pick Next Artwork"]').click();
@@ -5244,7 +5332,11 @@ async function runBrowserBasicsSuite() {
 
     // '+' zooms in above 1.0x (press twice so there is ample horizontal pan headroom)
     await page.keyboard.press('+');
-    await page.waitForTimeout(420);
+    await page.waitForFunction(
+      () => (JSON.parse(localStorage.getItem('capy_active_session_v8') || '{}').zoomScale ?? 1) > 1.0,
+      null,
+      { timeout: 3000 }
+    );
     const zoomAfterFirstPlus = await page.evaluate(() => {
       return JSON.parse(localStorage.getItem('capy_active_session_v8') || '{}').zoomScale ?? 1;
     });
@@ -5253,14 +5345,22 @@ async function runBrowserBasicsSuite() {
       `Expected keyboard "+" to zoom above 1.0x, got '${zoomAfterFirstPlus}'`
     );
     await page.keyboard.press('+');
-    await page.waitForTimeout(420);
+    await page.waitForFunction(
+      (prevZoom) => (JSON.parse(localStorage.getItem('capy_active_session_v8') || '{}').zoomScale ?? 1) > prevZoom,
+      zoomAfterFirstPlus,
+      { timeout: 3000 }
+    );
 
     const panBefore = await page.evaluate(() => {
       return JSON.parse(localStorage.getItem('capy_active_session_v8') || '{}').panOffsetX ?? 0;
     });
 
     await page.keyboard.press('ArrowRight');
-    await page.waitForTimeout(420);
+    await page.waitForFunction(
+      (prevPan) => (JSON.parse(localStorage.getItem('capy_active_session_v8') || '{}').panOffsetX ?? 0) < prevPan,
+      panBefore,
+      { timeout: 3000 }
+    );
     const panAfterRight = await page.evaluate(() => {
       return JSON.parse(localStorage.getItem('capy_active_session_v8') || '{}').panOffsetX ?? 0;
     });
@@ -5270,7 +5370,11 @@ async function runBrowserBasicsSuite() {
     );
 
     await page.keyboard.press('ArrowLeft');
-    await page.waitForTimeout(420);
+    await page.waitForFunction(
+      (prevPan) => (JSON.parse(localStorage.getItem('capy_active_session_v8') || '{}').panOffsetX ?? 0) > prevPan,
+      panAfterRight,
+      { timeout: 3000 }
+    );
     const panAfterLeft = await page.evaluate(() => {
       return JSON.parse(localStorage.getItem('capy_active_session_v8') || '{}').panOffsetX ?? 0;
     });
@@ -5280,7 +5384,11 @@ async function runBrowserBasicsSuite() {
     );
 
     await page.keyboard.press('0');
-    await page.waitForTimeout(420);
+    await page.waitForFunction(
+      () => Math.abs((JSON.parse(localStorage.getItem('capy_active_session_v8') || '{}').zoomScale ?? 1) - 1) < 0.001,
+      null,
+      { timeout: 3000 }
+    );
     const zoomAfterReset = await page.evaluate(() => {
       return JSON.parse(localStorage.getItem('capy_active_session_v8') || '{}').zoomScale ?? 1;
     });
@@ -6543,26 +6651,40 @@ async function runBrowserBasicsSuite() {
     assert.equal(largeOfferOverflow <= 0, true, `Large Text FeatureOfferBanner at 360x780 must have zero overflow (got ${largeOfferOverflow})`);
 
     // Verify 100% progress pill + ALPHA #520 fits cleanly at 360x780 in both Large Text and Normal modes
-    await mobileTopbarPage.evaluate(async () => {
+    const seededComplete = await mobileTopbarPage.evaluate(async () => {
       const snaps = window.capyStorage.loadSnapshots();
       const active = window.capyStorage.loadActiveState();
       const targetId = active?.activeSnapshotId || snaps[0]?.id;
       const puz = targetId ? await window.capyStorage.loadPuzzleData(targetId) : null;
-      if (targetId && puz) {
-        const allIds = puz.regions.map((r) => r.id);
-        window.capyStorage.updateSnapshotProgress(targetId, allIds.length, allIds.length, allIds);
-        window.capyStorage.saveActiveState({
-          ...(active || {}),
-          activeSnapshotId: targetId,
-          filledRegionIds: allIds,
-        });
-      }
+      if (!targetId || !puz || !Array.isArray(puz.regions) || puz.regions.length === 0) return null;
+      const allIds = puz.regions.map((r) => r.id);
+      window.capyStorage.updateSnapshotProgress(targetId, allIds.length, allIds.length, allIds);
+      window.capyStorage.saveActiveState({
+        ...(active || {}),
+        activeSnapshotId: targetId,
+        filledRegionIds: allIds,
+      });
+      const verifiedActive = window.capyStorage.loadActiveState();
+      const verifiedSnap = window.capyStorage.loadSnapshots().find((s) => s.id === targetId);
+      return {
+        targetId,
+        expectedCount: allIds.length,
+        activeCount: verifiedActive?.filledRegionIds?.length ?? 0,
+        snapCount: verifiedSnap?.filledCount ?? 0,
+      };
     });
+    assert.ok(seededComplete && seededComplete.expectedCount > 0, 'Expected non-empty puzzle regions for 100% progress test');
+    assert.equal(seededComplete.activeCount, seededComplete.expectedCount, 'Expected activeState filledRegionIds to persist before reload');
+    assert.equal(seededComplete.snapCount, seededComplete.expectedCount, 'Expected snapshot filledCount to persist before reload');
     await mobileTopbarPage.reload({ waitUntil: 'networkidle' });
     await waitForPuzzleLoaded(mobileTopbarPage);
     if (await mobileTopbarPage.getByTestId('replay-exit-btn').isVisible()) {
       await mobileTopbarPage.getByTestId('replay-exit-btn').click();
     }
+    await mobileTopbarPage.waitForFunction(
+      () => document.querySelector('[data-testid="topbar-saves-btn"]')?.textContent?.includes('100%'),
+      { timeout: 5000 }
+    );
     assert.equal(
       (await mobileTopbarPage.getByTestId('topbar-saves-btn').innerText()).includes('100%'),
       true,
@@ -6601,6 +6723,473 @@ async function runBrowserBasicsSuite() {
 
     await mobileTopbarPage.close();
     await mobileTopbarContext.close();
+
+    // Regression: pending debounced & beforeunload viewport saves must preserve filledRegionIds written externally before flush/reload
+    const viewportRaceContext = await browser.newContext({ viewport: { width: 360, height: 780 }, hasTouch: true });
+    const viewportRacePage = await viewportRaceContext.newPage();
+    attachErrorListeners(viewportRacePage, 'viewportRacePage');
+    await viewportRacePage.goto(`${BASE_URL}/?capy_channel=alpha&skipTutorial=1`, { waitUntil: 'networkidle' });
+    await waitForPuzzleLoaded(viewportRacePage);
+    const raceCanvasBox = await viewportRacePage.getByTestId('puzzle-canvas').boundingBox();
+    assert.ok(raceCanvasBox, 'Expected puzzle-canvas boundingBox for viewport race test');
+    await viewportRacePage.mouse.move(
+      raceCanvasBox.x + raceCanvasBox.width / 2,
+      raceCanvasBox.y + raceCanvasBox.height / 2
+    );
+    await viewportRacePage.mouse.wheel(0, -240);
+    const partialRaceState = await viewportRacePage.evaluate(async () => {
+      const snaps = window.capyStorage.loadSnapshots();
+      const active = window.capyStorage.loadActiveState();
+      const targetId = active?.activeSnapshotId || snaps[0]?.id;
+      const puz = targetId ? await window.capyStorage.loadPuzzleData(targetId) : null;
+      if (!targetId || !puz || puz.regions.length < 2) return null;
+      const partialIds = puz.regions.slice(0, 2).map((r) => r.id);
+      window.capyStorage.updateSnapshotProgress(targetId, partialIds.length, puz.regions.length, partialIds);
+      window.capyStorage.saveActiveState({
+        ...(active || {}),
+        activeSnapshotId: targetId,
+        filledRegionIds: partialIds,
+      });
+      return { targetId, partialCount: partialIds.length, totalCount: puz.regions.length };
+    });
+    assert.ok(partialRaceState && partialRaceState.partialCount === 2, 'Expected partial race state setup');
+    await viewportRacePage.waitForTimeout(450);
+    const afterTimerState = await viewportRacePage.evaluate(() => window.capyStorage.loadActiveState());
+    assert.equal(
+      afterTimerState?.filledRegionIds?.length,
+      partialRaceState.partialCount,
+      'Debounced viewportSaveTimer must preserve activeState filledRegionIds'
+    );
+    assert.equal(
+      (afterTimerState?.zoomScale ?? 1) > 1.05,
+      true,
+      `Debounced viewportSaveTimer must persist zoomed scale (got ${afterTimerState?.zoomScale})`
+    );
+
+    // Trigger second zoom, immediately write 100% completion, and reload immediately so beforeunload flush fires while timer is pending
+    await viewportRacePage.mouse.wheel(0, -240);
+    const fullRaceState = await viewportRacePage.evaluate(async () => {
+      const snaps = window.capyStorage.loadSnapshots();
+      const active = window.capyStorage.loadActiveState();
+      const targetId = active?.activeSnapshotId || snaps[0]?.id;
+      const puz = targetId ? await window.capyStorage.loadPuzzleData(targetId) : null;
+      if (!targetId || !puz || puz.regions.length === 0) return null;
+      const allIds = puz.regions.map((r) => r.id);
+      window.capyStorage.updateSnapshotProgress(targetId, allIds.length, allIds.length, allIds);
+      window.capyStorage.saveActiveState({
+        ...(active || {}),
+        activeSnapshotId: targetId,
+        filledRegionIds: allIds,
+      });
+      return { targetId, totalCount: allIds.length, prevZoom: active?.zoomScale ?? 1 };
+    });
+    assert.ok(fullRaceState && fullRaceState.totalCount > 0, 'Expected full race state setup');
+    await viewportRacePage.reload({ waitUntil: 'networkidle' });
+    await waitForPuzzleLoaded(viewportRacePage);
+    if (await viewportRacePage.getByTestId('replay-exit-btn').isVisible()) {
+      await viewportRacePage.getByTestId('replay-exit-btn').click();
+    }
+    const afterReloadState = await viewportRacePage.evaluate(() => window.capyStorage.loadActiveState());
+    assert.equal(
+      afterReloadState?.filledRegionIds?.length,
+      fullRaceState.totalCount,
+      'beforeunload flushPendingViewportSave must preserve 100% filledRegionIds'
+    );
+    assert.equal(
+      (afterReloadState?.zoomScale ?? 1) > fullRaceState.prevZoom,
+      true,
+      `beforeunload flushPendingViewportSave must persist latest zoomScale (got ${afterReloadState?.zoomScale} vs prev ${fullRaceState.prevZoom})`
+    );
+    await viewportRacePage.waitForFunction(
+      () => document.querySelector('[data-testid="topbar-saves-btn"]')?.textContent?.includes('100%'),
+      { timeout: 5000 }
+    );
+
+    // Defect 3A regression (clearActiveState): zooming & reloading after clearActiveState must NOT resurrect 100% activeState
+    await viewportRacePage.evaluate(() => {
+      window.capyStorage.clearActiveState();
+    });
+    await viewportRacePage.mouse.move(
+      raceCanvasBox.x + raceCanvasBox.width / 2,
+      raceCanvasBox.y + raceCanvasBox.height / 2
+    );
+    await viewportRacePage.mouse.wheel(0, -180);
+    await viewportRacePage.waitForTimeout(450);
+    const activeAfterClearAndZoom = await viewportRacePage.evaluate(() =>
+      window.capyStorage.loadActiveState()
+    );
+    assert.equal(
+      activeAfterClearAndZoom,
+      null,
+      `persistActiveViewportOnly must NOT resurrect cleared activeState after zoom timer (${JSON.stringify(activeAfterClearAndZoom)})`
+    );
+    await viewportRacePage.reload({ waitUntil: 'networkidle' });
+    await waitForPuzzleLoaded(viewportRacePage);
+    if (await viewportRacePage.getByTestId('replay-exit-btn').isVisible()) {
+      await viewportRacePage.getByTestId('replay-exit-btn').click();
+    }
+    const activeAfterClearReload = await viewportRacePage.evaluate(() =>
+      window.capyStorage.loadActiveState()
+    );
+    assert.equal(
+      activeAfterClearReload,
+      null,
+      `Reload after clearActiveState must NOT resurrect 100% activeState (${JSON.stringify(activeAfterClearReload)})`
+    );
+
+    // Defect 3A + 3B regression (deleteSnapshot & rapid puzzle switch): deleting active snapshot while viewport timer is pending must NOT resurrect deleted ID, and switching puzzles must NOT overwrite Puzzle B with Puzzle A viewport/progress
+    const switchSetup = await viewportRacePage.evaluate(() => {
+      const snaps = window.capyStorage.loadSnapshots();
+      if (snaps.length < 2) return null;
+      const snapA = snaps[0];
+      const snapB = snaps[1];
+      window.capyStorage.updateSnapshotProgress(snapB.id, 0, snapB.totalCount || 100, [], 1.0, 0, 0);
+      return { idA: snapA.id, idB: snapB.id };
+    });
+    assert.ok(switchSetup, 'Expected at least 2 prebaked snapshots for switch/delete regression');
+    await viewportRacePage.mouse.move(
+      raceCanvasBox.x + raceCanvasBox.width / 2,
+      raceCanvasBox.y + raceCanvasBox.height / 2
+    );
+    await viewportRacePage.mouse.wheel(0, -180);
+    await viewportRacePage.getByTestId('topbar-saves-btn').click();
+    await viewportRacePage.getByTestId(`save-card-${switchSetup.idA}`).click();
+    await viewportRacePage.getByTestId('save-action-delete').click();
+    await viewportRacePage.getByTestId('save-action-confirm-delete').click();
+    await viewportRacePage.waitForTimeout(450);
+    const stateAfterDeleteActive = await viewportRacePage.evaluate((deletedId) => ({
+      active: window.capyStorage.loadActiveState(),
+      snaps: window.capyStorage.loadSnapshots().map((s) => s.id),
+      deletedId,
+    }), switchSetup.idA);
+    assert.equal(
+      stateAfterDeleteActive.snaps.includes(switchSetup.idA),
+      false,
+      'Deleted snapshot A must stay removed'
+    );
+    assert.notEqual(
+      stateAfterDeleteActive.active?.activeSnapshotId,
+      switchSetup.idA,
+      'Deleted snapshot A must NEVER be resurrected in activeState'
+    );
+
+    // Trigger zoom on currently loaded snapshot, then switch via UI while triggering resize immediately
+    await viewportRacePage.getByTestId('settings-modal-close').click();
+    await waitForPuzzleLoaded(viewportRacePage);
+    if (await viewportRacePage.getByTestId('replay-exit-btn').isVisible()) {
+      await viewportRacePage.getByTestId('replay-exit-btn').click();
+    }
+    const currentBeforeSwitchId = await viewportRacePage.evaluate(
+      () => window.capyStorage.loadActiveState()?.activeSnapshotId || null
+    );
+    const remainingTargetId = await viewportRacePage.evaluate((curId) => {
+      const snaps = window.capyStorage.loadSnapshots();
+      const target = snaps.find((s) => s.id !== curId);
+      if (!target) return null;
+      window.capyStorage.updateSnapshotProgress(target.id, 0, target.totalCount || 100, [], 1.0, 0, 0);
+      return target.id;
+    }, currentBeforeSwitchId);
+    assert.ok(remainingTargetId, 'Expected second snapshot for rapid switch regression');
+    await viewportRacePage.mouse.wheel(0, -240);
+    await viewportRacePage.getByTestId('topbar-saves-btn').click();
+    await viewportRacePage.getByTestId(`save-card-${remainingTargetId}`).click();
+    await viewportRacePage.getByTestId('save-action-load').click();
+    await viewportRacePage.evaluate(() => {
+      window.dispatchEvent(new Event('resize'));
+    });
+    await viewportRacePage.waitForTimeout(450);
+    await waitForPuzzleLoaded(viewportRacePage);
+    const afterSwitchState = await viewportRacePage.evaluate((targetId) => {
+      const active = window.capyStorage.loadActiveState();
+      const targetSnap = window.capyStorage.loadSnapshots().find((s) => s.id === targetId);
+      return { active, targetSnap };
+    }, remainingTargetId);
+    assert.equal(
+      afterSwitchState.active?.activeSnapshotId,
+      remainingTargetId,
+      'Rapid switch + resize must preserve target snapshot ID'
+    );
+    assert.equal(
+      afterSwitchState.active?.filledRegionIds?.length ?? -1,
+      0,
+      'Rapid switch + resize must NOT leak source puzzle filledRegionIds onto target puzzle'
+    );
+    assert.equal(
+      Math.abs((afterSwitchState.targetSnap?.zoomScale ?? 1) - 1.0) < 0.05,
+      true,
+      `Rapid switch + resize must NOT leak source zoomScale onto target puzzle (got ${afterSwitchState.targetSnap?.zoomScale})`
+    );
+
+    // App.tsx regression: rapid custom-blob snapshot switch must revoke stale delayed blob URL cleanly without prematurely revoking winner's blob URL, and async try/finally must unlock snapshotTransitioningRef on loadPuzzleData / deleteSnapshot rejection
+    const blobSetup = await viewportRacePage.evaluate(async (baseSampleId) => {
+      const basePuzzle = await window.capyStorage.loadPuzzleData(baseSampleId);
+      if (!basePuzzle) return null;
+      const canvas = document.createElement('canvas');
+      canvas.width = 16;
+      canvas.height = 16;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#38bdf8';
+      ctx.fillRect(0, 0, 16, 16);
+      const blobA = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
+      ctx.fillStyle = '#f59e0b';
+      ctx.fillRect(0, 0, 16, 16);
+      const blobB = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
+      const idA = 'blob-race-test-a';
+      const idB = 'blob-race-test-b';
+      await window.capyStorage.savePuzzleData(idA, basePuzzle);
+      await window.capyStorage.savePuzzleData(idB, basePuzzle);
+      await window.capyStorage.saveImageBlob(idA, blobA);
+      await window.capyStorage.saveImageBlob(idB, blobB);
+      const now = Date.now();
+      window.capyStorage.addSnapshot({
+        id: idA,
+        title: 'Blob Race A',
+        timestamp: now - 2000,
+        lastOpened: now - 2000,
+        filledCount: 0,
+        totalCount: basePuzzle.regions.length,
+        filledRegionIds: [],
+        zoomScale: 1,
+        panOffsetX: 0,
+        panOffsetY: 0,
+        sourceRef: { kind: 'blob', uri: idA },
+      });
+      window.capyStorage.addSnapshot({
+        id: idB,
+        title: 'Blob Race B',
+        timestamp: now - 1000,
+        lastOpened: now - 1000,
+        filledCount: 0,
+        totalCount: basePuzzle.regions.length,
+        filledRegionIds: [],
+        zoomScale: 1,
+        panOffsetX: 0,
+        panOffsetY: 0,
+        sourceRef: { kind: 'blob', uri: idB },
+      });
+      return { idA, idB, baseSampleId };
+    }, remainingTargetId);
+    assert.ok(blobSetup, 'Expected blob race setup to succeed');
+
+    await viewportRacePage.reload({ waitUntil: 'networkidle' });
+    await waitForPuzzleLoaded(viewportRacePage);
+    if (await viewportRacePage.getByTestId('replay-exit-btn').isVisible()) {
+      await viewportRacePage.getByTestId('replay-exit-btn').click();
+    }
+
+    await viewportRacePage.evaluate((idA) => {
+      window.__blobRaceStats = { created: [], revoked: [] };
+      const origCreate = URL.createObjectURL.bind(URL);
+      const origRevoke = URL.revokeObjectURL.bind(URL);
+      window.__origCreateObjectURL = origCreate;
+      window.__origRevokeObjectURL = origRevoke;
+      URL.createObjectURL = (obj) => {
+        const u = origCreate(obj);
+        window.__blobRaceStats.created.push(u);
+        return u;
+      };
+      URL.revokeObjectURL = (u) => {
+        window.__blobRaceStats.revoked.push(u);
+        return origRevoke(u);
+      };
+
+      const origLoadBlob = window.capyStorage.loadImageBlob.bind(window.capyStorage);
+      window.__origLoadImageBlob = origLoadBlob;
+      window.capyStorage.loadImageBlob = async (id) => {
+        if (id === idA) {
+          await new Promise((r) => setTimeout(r, 600));
+        }
+        return origLoadBlob(id);
+      };
+    }, blobSetup.idA);
+
+    await viewportRacePage.getByTestId('topbar-saves-btn').click();
+    await viewportRacePage.getByTestId(`save-card-${blobSetup.idA}`).waitFor({ state: 'visible', timeout: 3000 });
+    await viewportRacePage.getByTestId(`save-card-${blobSetup.idA}`).click();
+    await viewportRacePage.getByTestId('save-action-load').click();
+    await viewportRacePage.getByTestId('topbar-saves-btn').click();
+    await viewportRacePage.getByTestId(`save-card-${blobSetup.idB}`).waitFor({ state: 'visible', timeout: 3000 });
+    await viewportRacePage.getByTestId(`save-card-${blobSetup.idB}`).click();
+    await viewportRacePage.getByTestId('save-action-load').click();
+
+    await viewportRacePage.waitForTimeout(750);
+    await waitForPuzzleLoaded(viewportRacePage);
+    const blobRaceCheck1 = await viewportRacePage.evaluate((expectedIdB) => {
+      const active = window.capyStorage.loadActiveState();
+      const stats = window.__blobRaceStats;
+      return {
+        activeId: active?.activeSnapshotId || null,
+        createdCount: stats.created.length,
+        revokedCount: stats.revoked.length,
+        created: stats.created,
+        revoked: stats.revoked,
+        expectedIdB,
+      };
+    }, blobSetup.idB);
+    assert.equal(blobRaceCheck1.activeId, blobSetup.idB, 'Rapid switch must converge on Blob Race B');
+    assert.ok(
+      blobRaceCheck1.createdCount >= 2,
+      `Expected both Blob Race B and delayed Blob Race A object URLs created, got ${blobRaceCheck1.createdCount}`
+    );
+    const activeBlobUrlsRemaining = blobRaceCheck1.created.filter(
+      (u) => !blobRaceCheck1.revoked.includes(u)
+    );
+    assert.equal(
+      activeBlobUrlsRemaining.length,
+      1,
+      `Expected exactly 1 active blob URL kept alive (winner B) while stale delayed blob URL A was revoked, remaining=${JSON.stringify(activeBlobUrlsRemaining)}`
+    );
+
+    // Switch back to sample snapshot -> winner B's blob URL must now be revoked too
+    await viewportRacePage.getByTestId('topbar-saves-btn').click();
+    await viewportRacePage.getByTestId(`save-card-${blobSetup.baseSampleId}`).click();
+    await viewportRacePage.getByTestId('save-action-load').click();
+    await waitForPuzzleLoaded(viewportRacePage);
+    const blobRaceCheck2 = await viewportRacePage.evaluate(() => {
+      const stats = window.__blobRaceStats;
+      return {
+        unrevoked: stats.created.filter((u) => !stats.revoked.includes(u)),
+      };
+    });
+    assert.equal(
+      blobRaceCheck2.unrevoked.length,
+      0,
+      `Switching away from Blob Race B to a sample must revoke all created blob URLs, unrevoked=${JSON.stringify(blobRaceCheck2.unrevoked)}`
+    );
+
+    // Async try/finally recovery: failing loadPuzzleData once must NOT permanently lock snapshotTransitioningRef
+    await viewportRacePage.evaluate(() => {
+      URL.createObjectURL = window.__origCreateObjectURL;
+      URL.revokeObjectURL = window.__origRevokeObjectURL;
+      window.capyStorage.loadImageBlob = window.__origLoadImageBlob;
+      const origLoadPuzzle = window.capyStorage.loadPuzzleData.bind(window.capyStorage);
+      window.__origLoadPuzzleData = origLoadPuzzle;
+      let failOnce = true;
+      window.capyStorage.loadPuzzleData = async (id) => {
+        if (failOnce) {
+          failOnce = false;
+          throw new Error('Injected loadPuzzleData failure');
+        }
+        return origLoadPuzzle(id);
+      };
+    });
+    await viewportRacePage.getByTestId('topbar-saves-btn').click();
+    await viewportRacePage.getByTestId(`save-card-${blobSetup.idA}`).click();
+    await viewportRacePage.getByTestId('save-action-load').click();
+    await viewportRacePage.waitForTimeout(250);
+    await viewportRacePage.evaluate(() => {
+      window.capyStorage.loadPuzzleData = window.__origLoadPuzzleData;
+    });
+    // Now load valid sample & zoom -> viewport persistence must still work (snapshotTransitioningRef unlocked!)
+    await viewportRacePage.getByTestId('topbar-saves-btn').click();
+    await viewportRacePage.getByTestId(`save-card-${blobSetup.baseSampleId}`).click();
+    await viewportRacePage.getByTestId('save-action-load').click();
+    await waitForPuzzleLoaded(viewportRacePage);
+    if (await viewportRacePage.getByTestId('replay-exit-btn').isVisible()) {
+      await viewportRacePage.getByTestId('replay-exit-btn').click();
+    }
+    await viewportRacePage.mouse.move(
+      raceCanvasBox.x + raceCanvasBox.width / 2,
+      raceCanvasBox.y + raceCanvasBox.height / 2
+    );
+    await viewportRacePage.mouse.wheel(0, -180);
+    await viewportRacePage.waitForTimeout(450);
+    const zoomAfterLoadRecovery = await viewportRacePage.evaluate(
+      () => window.capyStorage.loadActiveState()?.zoomScale ?? 1
+    );
+    assert.ok(
+      zoomAfterLoadRecovery > 1.0,
+      `Expected snapshotTransitioningRef unlocked after loadPuzzleData rejection so zoom persists (got ${zoomAfterLoadRecovery})`
+    );
+
+    // Async try/finally recovery: failing deleteSnapshot once must NOT permanently lock snapshotTransitioningRef
+    await viewportRacePage.evaluate(() => {
+      const origDelete = window.capyStorage.deleteSnapshot.bind(window.capyStorage);
+      window.__origDeleteSnapshot = origDelete;
+      let failOnce = true;
+      window.capyStorage.deleteSnapshot = async (id) => {
+        if (failOnce) {
+          failOnce = false;
+          throw new Error('Injected deleteSnapshot failure');
+        }
+        return origDelete(id);
+      };
+    });
+    await viewportRacePage.getByTestId('topbar-saves-btn').click();
+    await viewportRacePage.getByTestId(`save-card-${blobSetup.baseSampleId}`).click();
+    await viewportRacePage.getByTestId('save-action-delete').click();
+    await viewportRacePage.getByTestId('save-action-confirm-delete').click();
+    await viewportRacePage.waitForTimeout(200);
+    await viewportRacePage.evaluate(() => {
+      window.capyStorage.deleteSnapshot = window.__origDeleteSnapshot;
+    });
+    await viewportRacePage.getByTestId('settings-modal-close').click();
+    await viewportRacePage.mouse.move(
+      raceCanvasBox.x + raceCanvasBox.width / 2,
+      raceCanvasBox.y + raceCanvasBox.height / 2
+    );
+    await viewportRacePage.mouse.wheel(0, -180);
+    await viewportRacePage.waitForTimeout(450);
+    const zoomAfterDeleteRecovery = await viewportRacePage.evaluate(
+      () => window.capyStorage.loadActiveState()?.zoomScale ?? 1
+    );
+    assert.ok(
+      zoomAfterDeleteRecovery > zoomAfterLoadRecovery,
+      `Expected snapshotTransitioningRef unlocked after deleteSnapshot rejection so zoom persists (${zoomAfterDeleteRecovery} vs ${zoomAfterLoadRecovery})`
+    );
+
+    await viewportRacePage.close();
+    await viewportRaceContext.close();
+
+    // Probe 2g regression: wheel zoom followed by continuous canvas taps (4 taps at 250ms intervals, >1000ms total) must NOT starve viewportSaveTimerRef persistence into capy_active_session_v8
+    const tapStarveContext = await browser.newContext({ viewport: { width: 360, height: 780 }, hasTouch: true });
+    const tapStarvePage = await tapStarveContext.newPage();
+    attachErrorListeners(tapStarvePage, 'tapStarvePage');
+    await tapStarvePage.goto(`${BASE_URL}/?skipTutorial=1`, { waitUntil: 'networkidle' });
+    await waitForPuzzleLoaded(tapStarvePage);
+    const tapStarveBox = await tapStarvePage.getByTestId('puzzle-canvas').boundingBox();
+    assert.ok(tapStarveBox, 'Expected puzzle-canvas boundingBox for tap-starvation regression');
+    const tapX = tapStarveBox.x + tapStarveBox.width / 2;
+    const tapY = tapStarveBox.y + tapStarveBox.height / 2;
+    // Pre-tap center once at zoom=1 so subsequent taps at the same coordinate only trigger tapDot/ResizeObserver without invoking saveActiveState via attemptFillRegion
+    await tapStarvePage.mouse.click(tapX, tapY);
+    await tapStarvePage.waitForTimeout(450);
+    const tapStarveBaseline = await tapStarvePage.evaluate(() => {
+      const active = JSON.parse(localStorage.getItem('capy_active_session_v8') || '{}');
+      return {
+        zoomScale: active.zoomScale ?? 1,
+        filledCount: Array.isArray(active.filledRegionIds) ? active.filledRegionIds.length : 0,
+      };
+    });
+    assert.equal(tapStarveBaseline.zoomScale, 1, 'Expected baseline capy_active_session_v8 zoomScale === 1');
+
+    const tapBurstStartMs = Date.now();
+    await tapStarvePage.mouse.move(tapX, tapY);
+    await tapStarvePage.mouse.wheel(0, -240);
+    for (let i = 0; i < 4; i++) {
+      await tapStarvePage.mouse.click(tapX, tapY);
+      await tapStarvePage.waitForTimeout(250);
+    }
+    const tapBurstElapsedMs = Date.now() - tapBurstStartMs;
+    assert.ok(tapBurstElapsedMs >= 1000, `Expected 4x250ms tap burst >= 1000ms, got ${tapBurstElapsedMs}ms`);
+    const afterTapStarve = await tapStarvePage.evaluate(() => {
+      const active = JSON.parse(localStorage.getItem('capy_active_session_v8') || '{}');
+      return {
+        zoomScale: active.zoomScale ?? 1,
+        filledCount: Array.isArray(active.filledRegionIds) ? active.filledRegionIds.length : 0,
+      };
+    });
+    assert.equal(
+      afterTapStarve.filledCount,
+      tapStarveBaseline.filledCount,
+      'Repeated taps at already-processed coordinate must not write via attemptFillRegion'
+    );
+    assert.ok(
+      afterTapStarve.zoomScale > 1.0,
+      `Wheel zoom followed by 4x250ms canvas taps (>1000ms) must persist zoomScale > 1.0 into capy_active_session_v8 without timer starvation (got ${afterTapStarve.zoomScale})`
+    );
+    await tapStarvePage.close();
+    await tapStarveContext.close();
 
     // Verify BETA (?capy_channel=beta) 360x780 topbar-left-lane fit and badge containment in Normal & Large Text modes
     const mobileBetaContext = await browser.newContext({ viewport: { width: 360, height: 780 }, hasTouch: true });
@@ -6880,8 +7469,14 @@ async function runBrowserBasicsSuite() {
   }
 }
 
+const UNIT_ONLY = process.argv.includes('--unit');
+
 async function main() {
   await runCodecAndEngineTests();
+  if (UNIT_ONLY) {
+    console.log('\nALL UNIT & WORKFLOW CHECKS PASSED (--unit)!');
+    return;
+  }
   await runBrowserBasicsSuite();
 }
 

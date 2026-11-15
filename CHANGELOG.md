@@ -1,8 +1,12 @@
-### 3.0.12 - 2026-11-14 (Beta)
+### 3.0.13 - 2026-11-15 (Beta)
+
+- Preserve active puzzle progress across debounced (`lastSavedViewportRef`) and beforeunload viewport saves, harden async puzzle transition and blob URL cleanup, remove idle polling from `TargetSpotlightOverlay`, speed up CI via async Android/E2E/Pages jobs with headless `--unit` blocking checks and hidden-files artifact preservation, harden PR review workflow Probe 9b clock-skew anchoring and strict `100%` CI auto-merge, tighten `project docs` `100%` sanity check and `stripHtmlComments`, expand Probe 2g/unit/workflow tests, and sync `PROJECT.md` and `TESTING.md` #530
+
+### 3.0.12 - 2026-11-14 (Production)
 
 - Add non-blocking TargetSpotlightOverlay ring and directional arrow across all 14 OnboardingTutorial steps and 9 FeatureOfferBanner tips, auto-dismiss tutorial-opened ReplayControls past Step 6, compact Large Text toggle after Step 1, clarify Step 7 prompt copy, tighten 360px topbar channel pill fit, and update liveCoopRef synchronously #523
 
-### 3.0.11 - 2026-11-14 (Production)
+### 3.0.11 - 2026-11-14
 
 - Upgrade OnboardingTutorial to a 14-step interactive guide with All Topics jump drawer and per-visit auto-advance across all steps, add 9 contextual non-blocking FeatureOfferBanner quick tips with scoped persistence and Jump to Guide, raise PR checklist and CI review workflows to strict 100%, and expand mobile overflow and E2E coverage #519
 

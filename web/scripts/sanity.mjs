@@ -255,10 +255,22 @@ const DETAILS_BLOCK_RE =
 
 function stripHtmlComments(text) {
   const str = String(text || '');
-  const lastCloseIdx = str.lastIndexOf('-->');
-  if (lastCloseIdx === -1) return str;
-  const end = lastCloseIdx + 3;
-  return `${str.slice(0, end).replace(/<!--[\s\S]*?-->/g, '')}${str.slice(end)}`;
+  let out = '';
+  let idx = 0;
+  while (idx < str.length) {
+    const openIdx = str.indexOf('<!--', idx);
+    if (openIdx === -1) {
+      out += str.slice(idx);
+      break;
+    }
+    out += str.slice(idx, openIdx);
+    const closeIdx = str.indexOf('-->', openIdx + 4);
+    if (closeIdx === -1) {
+      break;
+    }
+    idx = closeIdx + 3;
+  }
+  return out;
 }
 
 function extractNonThresholdPercentages(text) {
@@ -420,7 +432,7 @@ export function validatePR checklistSpec(
     if (relFile === 'project docs') {
       assert.match(publicText, /PR checklist/i, 'project docs must document PR checklist format');
       assert.match(publicText, /<details>/i, 'project docs must document <details> PR checklist block');
-      assert.match(publicText, /(?:95|100)%/, 'project docs must specify >= 95% or 100% PR checklist threshold');
+      assert.match(publicText, /100%/, 'project docs must specify 100% PR checklist threshold');
       assert.match(
         publicText,
         /(?:start of each|at the start|%\s*-first)/i,
