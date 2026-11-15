@@ -2679,6 +2679,121 @@ async function runCodecAndEngineTests() {
 
     
 
+    // Verify Android TV Leanback manifest declarations and 320x180 tv_banner.png asset (TC-B1-T1-01..06, TC-B1-T2-01..06)
+    console.log('-> Testing Android TV Leanback AndroidManifest.xml and 320x180 tv_banner.png...');
+    const androidManifestPath = path.resolve(projectRoot, '../app/src/main/AndroidManifest.xml');
+    const tvManifestInfo = JSON.parse(
+      execFileSync(
+        'python3',
+        [
+          '-c',
+          [
+            'import json, sys, xml.etree.ElementTree as ET',
+            'ns = "{http://schemas.android.com/apk/res/android}"',
+            'root = ET.parse(sys.argv[1]).getroot()',
+            'features = {el.attrib.get(ns + "name"): el.attrib.get(ns + "required") for el in root.findall("uses-feature")}',
+            'app = root.find("application")',
+            'main_act = next(a for a in app.findall("activity") if a.attrib.get(ns + "name") == "com.capypaint.capy.MainActivity")',
+            'filters = []',
+            'for flt in main_act.findall("intent-filter"):',
+            '    filters.append({',
+            '        "actions": [e.attrib.get(ns + "name") for e in flt.findall("action")],',
+            '        "categories": [e.attrib.get(ns + "name") for e in flt.findall("category")],',
+            '        "data": [{"scheme": d.attrib.get(ns + "scheme"), "host": d.attrib.get(ns + "host"), "mimeType": d.attrib.get(ns + "mimeType"), "pathPrefix": d.attrib.get(ns + "pathPrefix")} for d in flt.findall("data")],',
+            '    })',
+            'print(json.dumps({',
+            '    "features": features,',
+            '    "banner": app.attrib.get(ns + "banner"),',
+            '    "exported": main_act.attrib.get(ns + "exported"),',
+            '    "launchMode": main_act.attrib.get(ns + "launchMode"),',
+            '    "configChanges": main_act.attrib.get(ns + "configChanges"),',
+            '    "filters": filters,',
+            '}))',
+          ].join('\n'),
+          androidManifestPath,
+        ],
+        { encoding: 'utf8' }
+      )
+    );
+    assert.equal(tvManifestInfo.features['android.hardware.touchscreen'], 'false');
+    assert.equal(tvManifestInfo.features['android.software.leanback'], 'false');
+    assert.equal(tvManifestInfo.banner, '@drawable/tv_banner');
+    assert.equal(tvManifestInfo.exported, 'true');
+    assert.equal(tvManifestInfo.launchMode, 'singleTask');
+    for (const cfgFlag of ['uiMode', 'navigation', 'keyboard', 'keyboardHidden', 'screenSize']) {
+      assert.equal(
+        String(tvManifestInfo.configChanges || '').split('|').includes(cfgFlag),
+        true,
+        `AndroidManifest configChanges must include ${cfgFlag}`
+      );
+    }
+    const mainIntentFilter = tvManifestInfo.filters.find((f) =>
+      f.actions.includes('android.intent.action.MAIN')
+    );
+    assert.ok(mainIntentFilter, 'MainActivity must declare MAIN intent-filter');
+    assert.equal(mainIntentFilter.categories.includes('android.intent.category.LAUNCHER'), true);
+    assert.equal(
+      mainIntentFilter.categories.includes('android.intent.category.LEANBACK_LAUNCHER'),
+      true
+    );
+    const sendIntentFilter = tvManifestInfo.filters.find((f) =>
+      f.actions.includes('android.intent.action.SEND')
+    );
+    assert.ok(sendIntentFilter, 'MainActivity must preserve ACTION_SEND intent-filter');
+    assert.equal(
+      sendIntentFilter.data.some((d) => d.mimeType === 'image/*'),
+      true
+    );
+    const viewIntentFilter = tvManifestInfo.filters.find((f) =>
+      f.actions.includes('android.intent.action.VIEW')
+    );
+    assert.ok(viewIntentFilter, 'MainActivity must preserve ACTION_VIEW App Links intent-filter');
+    assert.equal(
+      viewIntentFilter.data.some((d) => d.scheme === 'https' && d.host === 'capypaint.com'),
+      true
+    );
+    assert.equal(
+      viewIntentFilter.data.some((d) => d.scheme === 'https' && d.host === 'www.capypaint.com'),
+      true
+    );
+    assert.equal(
+      viewIntentFilter.data.some(
+        (d) => d.scheme === 'https' && String(d.host || '').endsWith('.github.io') && d.pathPrefix === '/capy'
+      ),
+      true
+    );
+
+    const parseTvBannerPng = (buf) => {
+      const pngMagic = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+      if (!Buffer.isBuffer(buf) || buf.length < 26) return null;
+      if (!buf.subarray(0, 8).equals(pngMagic)) return null;
+      if (buf.subarray(12, 16).toString('ascii') !== 'IHDR') return null;
+      return {
+        width: buf.readUInt32BE(16),
+        height: buf.readUInt32BE(20),
+        bitDepth: buf[24],
+        colorType: buf[25],
+      };
+    };
+
+    const tvBannerPath = path.resolve(projectRoot, '../app/src/main/res/drawable-xhdpi/tv_banner.png');
+    assert.equal(fs.existsSync(tvBannerPath), true, 'drawable-xhdpi/tv_banner.png must exist');
+    const tvBannerBuf = fs.readFileSync(tvBannerPath);
+    assert.equal(tvBannerBuf.length > 100 && tvBannerBuf.length <= 1024 * 1024, true);
+    const tvBannerHeader = parseTvBannerPng(tvBannerBuf);
+    assert.ok(tvBannerHeader, 'tv_banner.png must have valid PNG magic and IHDR chunk');
+    assert.equal(tvBannerHeader.width, 320);
+    assert.equal(tvBannerHeader.height, 180);
+    assert.equal(tvBannerHeader.bitDepth, 8);
+    assert.equal(tvBannerHeader.colorType === 6 || tvBannerHeader.colorType === 2, true);
+
+    assert.equal(parseTvBannerPng(Buffer.alloc(16)), null);
+    const badBannerBuf = Buffer.from(tvBannerBuf);
+    badBannerBuf.writeUInt32BE(512, 16);
+    badBannerBuf.writeUInt32BE(512, 20);
+    const badBannerHeader = parseTvBannerPng(badBannerBuf);
+    assert.equal(badBannerHeader.width === 320 && badBannerHeader.height === 180, false);
+
     // Verify web/public/404.html redirect logic, .github/scripts/pr-index.html, & generate-pr-manifest.mjs
     console.log('-> Testing 404.html redirect VM behavior, pr-index.html, generate-pr-manifest.mjs & workflow wiring...');
     const notFoundHtmlPath = path.resolve(projectRoot, 'public/404.html');
