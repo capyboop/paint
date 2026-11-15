@@ -65,6 +65,7 @@ flowchart TD
 ### Repository Documentation Index
 
 - **[`README.md`](./README.md)** (*Players & Contributors*): Product showcase, controls cheat sheet, Stable/Beta play links, developer quick start, privacy policy link, and documentation index.
+- **`project docs`** (*Studio Structure & contributor Onboarding*): CapyBoop Games organizational chart, standing contributor chat roles and kickoff prompts for instance recovery, human-only authorities, and cross-chat coordination rules.
 - **[`PROJECT.md`](./PROJECT.md)** (*Project Management & Maintainers*): Canonical Lean Agile triad (EPIC-1--EPIC-5), sprint cadence, Epic triage, PR sync and readiness gates, release promotion, `CHANGELOG.md` channel governance, and continuous improvement retro log.
 - **[`ROADMAP.md`](./ROADMAP.md)** (*Humans & contributors*): Strategic product Epics (EPIC-1--EPIC-5), User Stories (`US-*`), external dependency readiness gates, Platform Icebox (`ICE-*`), and collapsed Shipped Epics & Stories.
 - **[`TODO.md`](./TODO.md)** (*Humans & contributors*): Focused **1-Sprint Execution Queue** containing only active sprint `BUG-*` and `TASK-*` items under the active GitHub Sprint Milestone.
