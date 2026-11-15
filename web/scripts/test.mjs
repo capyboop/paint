@@ -2726,12 +2726,50 @@ async function runCodecAndEngineTests() {
     assert.equal(deployWorkflowYaml.includes('generate-pr-manifest.mjs'), true);
     assert.equal(deployWorkflowYaml.includes('web/public/404.html'), true);
     assert.equal(deployWorkflowYaml.includes('--refresh-404'), true);
+    assert.equal(deployWorkflowYaml.includes('ls -lah "${LIST_PATH}"'), true);
 
     const cleanupWorkflowYaml = fs.readFileSync(
       path.resolve(projectRoot, '../.github/workflows/cleanup-closed-pr.yml'),
       'utf8'
     );
     assert.equal(cleanupWorkflowYaml.includes('generate-pr-manifest.mjs'), true);
+
+    // Parse all .github/workflows/*.yml via yaml.safe_load and verify Upload Pages artifact preserves hidden dotfiles
+    const parsedWorkflows = JSON.parse(
+      execFileSync(
+        'python3',
+        [
+          '-c',
+          [
+            'import glob, json, os, sys, yaml',
+            'wf_dir = sys.argv[1]',
+            'out = {}',
+            'for p in sorted(glob.glob(os.path.join(wf_dir, "*.yml"))):',
+            '    with open(p, encoding="utf-8") as f:',
+            '        out[os.path.basename(p)] = yaml.safe_load(f)',
+            'print(json.dumps(out))',
+          ].join('\n'),
+          path.resolve(projectRoot, '../.github/workflows'),
+        ],
+        { encoding: 'utf8' }
+      )
+    );
+    for (const [wfFile, jobName] of [
+      ['deploy-branch.yml', 'deploy'],
+      ['cleanup-closed-pr.yml', 'cleanup'],
+      ['cleanup-branches.yml', 'cleanup'],
+    ]) {
+      const steps = parsedWorkflows?.[wfFile]?.jobs?.[jobName]?.steps || [];
+      const uploadPagesStep = steps.find(
+        (s) => typeof s?.uses === 'string' && s.uses.startsWith('actions/upload-pages-artifact@')
+      );
+      assert.ok(uploadPagesStep, `Expected actions/upload-pages-artifact step in ${wfFile}`);
+      assert.equal(
+        uploadPagesStep?.with?.['include-hidden-files'],
+        true,
+        `${wfFile} Upload Pages artifact step must set include-hidden-files: true`
+      );
+    }
 
     // Verify .github/scripts/compile-changelog.mjs & release.yml wiring
     console.log('-> Testing compile-changelog.mjs release note extraction & release.yml wiring...');
