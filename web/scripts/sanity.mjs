@@ -335,7 +335,7 @@ export function validatePR checklistChecklist(markdown, label = 'PR checklist') 
     assert.equal(
       beforeDetailsMatches.length > 0,
       true,
-      `${label} must include an overall percentage score (e.g. "98%")`
+      `${label} must include an overall percentage score (e.g. "100%")`
     );
     overallScore = Number(beforeDetailsMatches[beforeDetailsMatches.length - 1][1]);
   }
@@ -435,7 +435,7 @@ export function validatePR checklistSpec(
       assert.match(publicText, /PR checklist/i, 'PROJECT.md must document PR checklist format');
       assert.match(publicText, /checklist/i, 'PROJECT.md must name PR checklist');
       assert.match(publicText, /<details>/i, 'PROJECT.md must document <details> PR checklist block');
-      assert.match(publicText, /95%/, 'PROJECT.md must specify >= 95% PR checklist threshold');
+      assert.match(publicText, /100%/, 'PROJECT.md must specify 100% PR checklist threshold');
       assert.match(
         publicText,
         /(?:start of each|at the start|%\s*-first)/i,
@@ -448,7 +448,7 @@ export function validatePR checklistSpec(
       );
     } else if (relFile === 'DEV.md') {
       assert.match(publicText, /PR checklist/i, 'DEV.md must reference PR checklist');
-      assert.match(publicText, /95%/, 'DEV.md must reference >= 95% PR checklist threshold');
+      assert.match(publicText, /100%/, 'DEV.md must reference 100% PR checklist threshold');
     }
   }
 

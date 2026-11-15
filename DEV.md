@@ -98,7 +98,7 @@ Capy pairs real-time 60--120fps HTML5 Canvas interaction, off-thread computer vi
 2. **Subjective Aesthetic & Tactile Judgment**: Evaluate qualities automated headless assertions cannot judge alone—inertial pan glide feel, pinch-to-zoom responsiveness, palette contrast, procedural audio warmth, confetti pacing, and physical Android LRA haptic crispness on `/capy/alpha/<number>/` and `/capy/beta/`.
 3. **Upfront Ambiguity Resolution (`workflow` & `workflow`)**: Answer focused design trade-off questions and approve `implementation_plan.md` artifacts *before* code generation begins. Five minutes spent aligning on a plan saves tens of thousands of tokens of rework.
 4. **Session & Context Hygiene**: Keep each interactive chat scoped to one PR (or one cohesive Story/Sprint slice under `workflow` or `workflow`), prefix new chat prompts with `#NNN` for clean auto-titling, and pin/unpin threads to match open PR state.
-5. **Final Merge Gatekeeping**: Verify the live preview link and the **PR checklist (`>= 95%`)** with its **`PR checklist`** before approving any merge to `main`.
+5. **Final Merge Gatekeeping**: Verify the live preview link and the **PR checklist (`100%`)** with its **`PR checklist`** before approving any merge to `main`.
 
 ### Optimal Goals for the contributor
 
@@ -273,7 +273,7 @@ npm run generate:samples # Rebuild web/public/assets/sample_saves.capy when buil
 
 ### Step 3: PR Sync-on-Push, Link Standards & Merge Readiness
 
-All PR title/label/Milestone rules, top-of-PR live preview templates, **`PR checklist` & `PR checklist` (`>= 95%`)**, and closed-PR recovery commands live canonically in [`PROJECT.md` Section 4](./PROJECT.md#4-pull-request-lifecycle-and-readiness-gates). Preserve these engineering invariants on every PR:
+All PR title/label/Milestone rules, top-of-PR live preview templates, **`PR checklist` & `PR checklist` (`100%`)**, and closed-PR recovery commands live canonically in [`PROJECT.md` Section 4](./PROJECT.md#4-pull-request-lifecycle-and-readiness-gates). Preserve these engineering invariants on every PR:
 
 - **PR Preview Paths vs. GitHub PR URLs**: Alpha GitHub Pages previews deploy to `https://capyboop.github.io/capy/alpha/<number>/` (and `/alpha/<number>/capy.apk`), whereas GitHub repository diff links (`https://github.com/capyboop/paint/pull/<number>/files#diff-...`) and git recovery refs (`refs/pull/<number>/head`) keep GitHub's native `/pull/` path. Pin code links in PR bodies and comments to exact commit SHAs (`blob/<40-char-sha>/<path>#L<start>-L<end>`).
 - **PR Description Sync-on-Push Rule**: Immediately update PR title, overview bullets, target version, SHA-pinned line links, labels, Milestone, and `gh pr view <num> --json mergeable,mergeStateStatus` (`MERGEABLE` / `CLEAN`) whenever follow-up commits or rebases alter scope or state.
@@ -350,7 +350,7 @@ npm run test:sanity && npm run lint && npm run build && npm test
 
 #### Android Version Catalog (`gradle/libs.versions.toml`)
 1. Update library versions centrally in [`gradle/libs.versions.toml`](./gradle/libs.versions.toml).
-2. Verify `compileSdk` compatibility in [`app/build.gradle.kts`](./app/build.gradle.kts) (currently `compileSdk = 35`). If a newer AndroidX artifact requires `compileSdk 36+`, either bump `compileSdk` alongside the dependency or pin to the latest stable release supporting API 35.
+2. Verify `compileSdk` compatibility in [`app/build.gradle.kts`](./app/build.gradle.kts) (currently `compileSdk = 37`). If a newer AndroidX artifact requires `compileSdk 38+`, either bump `compileSdk` alongside the dependency or pin to the latest stable release supporting API 37.
 3. Run `./gradlew app:testDebugUnitTest && ./gradlew app:assembleDebug` to verify.
 
 ### C. Pre-Baked Samples & Visual Showcase Gallery

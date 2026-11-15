@@ -1,4 +1,20 @@
-### 3.0.8 - 2026-11-13 (Production, Beta)
+### 3.0.12 - 2026-11-14 (Beta)
+
+- Add non-blocking TargetSpotlightOverlay ring and directional arrow across all 14 OnboardingTutorial steps and 9 FeatureOfferBanner tips, auto-dismiss tutorial-opened ReplayControls past Step 6, compact Large Text toggle after Step 1, clarify Step 7 prompt copy, tighten 360px topbar channel pill fit, and update liveCoopRef synchronously #523
+
+### 3.0.11 - 2026-11-14 (Production)
+
+- Upgrade OnboardingTutorial to a 14-step interactive guide with All Topics jump drawer and per-visit auto-advance across all steps, add 9 contextual non-blocking FeatureOfferBanner quick tips with scoped persistence and Jump to Guide, raise PR checklist and CI review workflows to strict 100%, and expand mobile overflow and E2E coverage #519
+
+### 3.0.10 - 2026-11-14
+
+- Add Low-Vision Large Text accessibility mode, keep PaletteDock strictly sorted and centered at 50% when scrollable, enable Undo by default with one-time migration, remove stale 1x zoom badge tutorial copy, and add capyboop review workflow unit tests #518
+
+### 3.0.9 - 2026-11-14
+
+- Keep PaletteDock visible above ReplayControls with swatch auto-dismiss, default Saves tab to Thumbnails list-first without sticky header occlusion, and expand E2E layout guards #517
+
+### 3.0.8 - 2026-11-13
 
 - Add CapyBoop Games company structure and contributor handbook (`project docs`) #521
 - Promote v3.0.8 beta release to Production #501

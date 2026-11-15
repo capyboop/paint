@@ -134,8 +134,8 @@ Capy separates strategic multi-sprint planning from day-to-day execution across 
     1. PR title, labels, and Sprint Milestone (`gh pr edit`).
     2. Top plain-English `## Summary`, clickable **Test Results** links, PR body overview bullets, target version, verification test list, and SHA-pinned line references (never leave stale `MERGEABLE` or old-SHA claims in the body or Development Summary comment).
     3. `gh pr view <num> --json mergeable,mergeStateStatus` confirming `MERGEABLE` / `CLEAN` before requesting review.
-- **End-of-PR checklist & Checklist (`>= 95%`, `%`-First & Flexible Criteria)**:
-  - Score overall readiness strictly as a percentage (`0%--100%`, requiring `>= 95%` before requesting merge approval) without fixed-weight fractions or artificial caps.
+- **End-of-PR checklist & Checklist (`100%`, `%`-First & Flexible Criteria)**:
+  - Score overall readiness strictly as a percentage (`0%--100%`, requiring `100%` before requesting merge approval) without fixed-weight fractions or artificial caps.
   - **No Fixed 5-Item Limit**: Include as many or as few scope-relevant criteria lines as the PR requires (e.g., `3--4` focused criteria for docs-only PRs, or `5--9+` criteria for multi-platform Web, Worker, Cloud, Accessibility, Android, or CI changes).
   - **`%` at the Start of Each Line Item**: Place `%` at the start of each checklist bullet (`- **<N>%** — **<Criterion>**: <Verification summary>`), selecting relevant checks from this baseline + domain catalog (and adding PR-specific criteria whenever warranted):
     - **Functionality & Edge Cases**: Gestures, persistence, modal back-stack, viewport clamping, and fallbacks verified.
