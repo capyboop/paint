@@ -1,4 +1,8 @@
-### 3.0.25 - 2026-11-16 (Beta)
+### 3.0.26 - 2026-11-16 (Beta)
+
+- Enable `.github/workflows/deploy-cloudflare.yml` builds directly from `capyboop/paint` (`10 x 5s` `/api/health` retries; public exported back to `capyboop/paint`), remove the redundant `/* /index.html 200` rule from `web/public/_redirects`, document Cloudflare Workers Builds (`Option 1` zero-token) vs. Actions (`Option 2` `CLOUDFLARE_API_TOKEN` scopes) and direct `capyboop.com` (`capyboop/paintgame`) setup across `CLOUD.md`, `WEB.md`, and `TODO.md` #550
+
+### 3.0.25 - 2026-11-16
 
 - Merge strict `100%` CI-approved PRs directly when GitHub auto-merge sits `blocked` on non-check ruleset requirements (extra approval for unattributed changes) once the latest head `Build & Test` is green, with unit coverage in `web/scripts/test.mjs` for beta/main merge methods, pending or failing checks, Owner holds, and non-blocked states, and sync `project docs` and `PROJECT.md` #560
 
