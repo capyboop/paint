@@ -80,13 +80,13 @@ jobs:
         if: steps.creds.outputs.enabled == 'true'
         run: |
           set -euo pipefail
-          for attempt in 1 2 3 4 5; do
+          for attempt in 1 2 3 4 5 6 7 8 9 10; do
             if BODY="$(curl -fsSL --max-time 10 https://capypaint.com/api/health)" && node -e 'const j = JSON.parse(process.argv[1]); if (j.ok !== true) process.exit(1);' "${BODY}"; then
               echo "Verified https://capypaint.com/api/health: ${BODY}"
               exit 0
             fi
-            echo "Waiting for Cloudflare edge propagation (attempt ${attempt}/5)..."
-            sleep 3
+            echo "Waiting for Cloudflare edge propagation (attempt ${attempt}/10)..."
+            sleep 5
           done
-          echo "ERROR: https://capypaint.com/api/health check failed after 5 attempts." >&2
+          echo "ERROR: https://capypaint.com/api/health check failed after 10 attempts." >&2
           exit 1
