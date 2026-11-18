@@ -2359,6 +2359,7 @@ async function runCodecAndEngineTests() {
     assert.equal(relayProtoMod.isAllowedRelayOrigin('https://capypaint.com'), true);
     assert.equal(relayProtoMod.isAllowedRelayOrigin('https://www.capypaint.com'), true);
     assert.equal(relayProtoMod.isAllowedRelayOrigin('https://capyboop.github.io'), true);
+    
     assert.equal(relayProtoMod.isAllowedRelayOrigin('https://appassets.androidplatform.net'), true);
     assert.equal(relayProtoMod.isAllowedRelayOrigin('http://localhost:5173'), true);
     assert.equal(relayProtoMod.isAllowedRelayOrigin('https://evil.workers.dev'), false);
@@ -3477,6 +3478,10 @@ async function runCodecAndEngineTests() {
     );
     assert.equal(releaseWorkflowYaml.includes('compile-changelog.mjs'), true);
     assert.equal(releaseWorkflowYaml.includes('python3'), false);
+    assert.equal(releaseWorkflowYaml.includes('CAPY_KEYSTORE_BASE64'), true);
+    assert.equal(releaseWorkflowYaml.includes('GITHUB_STEP_SUMMARY'), true);
+    assert.equal(releaseWorkflowYaml.includes("steps.signing.outputs.enabled == 'true'"), true);
+    assert.equal(releaseWorkflowYaml.includes('workflow_dispatch'), true);
 
     // Verify .github/scripts/compile-changelog.mjs stops cleanly at ## headings
     const changelogWithSubheading = `### 3.0.7 - 2026-11-13 (Beta)

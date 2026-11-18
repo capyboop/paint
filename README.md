@@ -7,8 +7,7 @@
 **Capy** is a serene, delightful color-by-number game you can play directly in your web browser or on Android. Transform any photo or artwork into a crisp, playable color puzzle with smart number guides, or relax with Free Colour coloring pages.
 
 - **[Play Capy in Your Browser (`capypaint.com`)](https://capypaint.com/)**
-- **[Download the Android APK (Stable)](https://capypaint.com/capy.apk)**
-- **[Try Upcoming Features on the Beta Channel](https://capyboop.github.io/capy/beta/)** ([Beta Android APK](https://capyboop.github.io/capy/beta/capy.apk) | [Official GitHub Releases](https://github.com/capyboop/paint/releases))
+- **[Download the Android APK (Stable)](https://capypaint.com/capy.apk)** ([Official GitHub Releases](https://github.com/capyboop/paint/releases))
 - **[Public Issue Tracker & Feedback](https://github.com/capyboop/paint/issues)** ([Report a Bug, Request a Feature, or Share a Puzzle Idea](https://github.com/capyboop/paint/issues/new/choose))
 - **[Read the Privacy Policy](https://capypaint.com/privacy-policy.html)**
 

@@ -14,8 +14,8 @@ Zero active contributor dev tasks remain in `TODO.md`—the Play Store complianc
 
 ### #543 — Production capypaint.com DNS, Cloudflare Worker & /env-setup cutover
 
-- **Status**: `In Progress -- Apex & /api/health LIVE; Awaiting www 301 Edge Redirect, HTTPS Toggle & release token`
-- **Live & Target Links**: [capypaint.com](https://capypaint.com/) | [www.capypaint.com](https://www.capypaint.com/) | [capypaint.com/api/health](https://capypaint.com/api/health) | [capyboop/paint Issues](https://github.com/capyboop/paint/issues) | [Capy Production (GitHub Pages)](https://capyboop.github.io/capy/) | [Capy Beta (GitHub Pages)](https://capyboop.github.io/capy/beta/)
+- **Status**: `In Progress -- Apex & /api/health LIVE; Awaiting www 301 Edge Redirect & HTTPS Toggle`
+- **Live & Target Links**: [capypaint.com](https://capypaint.com/) | [www.capypaint.com](https://www.capypaint.com/) | [capypaint.com/api/health](https://capypaint.com/api/health) | [capyboop/paint Issues](https://github.com/capyboop/paint/issues) | [Capy Production (GitHub Pages)](https://capyboop.github.io/capy/)
 - **Action**: [capypaint.com](https://capypaint.com/) (`capy-paint` Worker + `CoopRoomDurableObject`) is now live via [`.github/workflows/deploy-cloudflare.yml`](./.github/workflows/deploy-cloudflare.yml). Remaining Human Ops: add the [www.capypaint.com](https://www.capypaint.com/) to [capypaint.com](https://capypaint.com/) edge `301` Single Redirect rule, enable **Always Use HTTPS** in [Cloudflare Dashboard](https://dash.cloudflare.com/), and promote `beta` -> `main` once ready (`capyboop.com` deferred out of active Sprint 1 scope per project guideline).
 - **Value**: Completes canonical HTTPS routing on [capypaint.com](https://capypaint.com/) and establishes [capyboop/paint](https://github.com/capyboop/paint/issues) as the clean public-facing issue tracker.
 
