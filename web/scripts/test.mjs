@@ -3977,6 +3977,11 @@ async function runBrowserBasicsSuite() {
     const privacyRes = await page.goto(`${BASE_URL}/privacy-policy.html`);
     assert.equal(privacyRes?.status(), 200);
     assert.equal((await page.evaluate(() => document.body.innerText)).includes('Google Play Data Safety'), true);
+    assert.equal(
+      await page.locator('a[href="https://github.com/capyboop/paint/issues"]').count(),
+      1,
+      'privacy-policy.html must link to https://github.com/capyboop/paint/issues'
+    );
 
     let workerRequestedOnBoot = false;
     const onReq = (req) => {
@@ -5026,6 +5031,13 @@ async function runBrowserBasicsSuite() {
     assert.equal(await page.getByTestId('app-version-badge').count(), 1, 'Expected single app-version-badge in About tab');
     assert.equal(await page.getByTestId('about-screen-card').isVisible(), true, 'About tab must render about-screen-card');
     assert.equal(await page.getByTestId('about-replay-tutorial-btn').isVisible(), true, 'About tab must render about-replay-tutorial-btn');
+    assert.equal(await page.getByTestId('about-privacy-policy-link').isVisible(), true, 'About tab must render about-privacy-policy-link');
+    assert.equal(await page.getByTestId('about-report-issue-link').isVisible(), true, 'About tab must render about-report-issue-link');
+    assert.equal(
+      await page.getByTestId('about-report-issue-link').getAttribute('href'),
+      'https://github.com/capyboop/paint/issues/new/choose',
+      'about-report-issue-link must point to public capyboop/paint issue chooser'
+    );
     assert.equal(await page.getByTestId('lifetime-stats-card').isVisible(), true, 'About tab must render lifetime-stats-card');
     assert.equal(await page.getByTestId('release-channel-card').isVisible(), true, 'About tab must render release-channel-card');
     assert.equal(await page.getByText('Highlight Style').count(), 0, 'About tab must not render Hints content');
