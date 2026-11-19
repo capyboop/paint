@@ -219,7 +219,7 @@ export function validateEpicNaming(markdownText, relFile = 'markdown.md') {
   const hint = `Use [EPIC-N](https://github.com/<owner>/capy/issues/<num>) instead of #NNN for Epic issues in ${relFile}`;
   assert.equal(/#47[6-9]\b|#480\b/.test(markdownText), false, hint);
   assert.equal(
-    /\[#\d+\]\(https:\/\/github\.com\/[^/\s]+\/capy\/issues\/\d+/.test(markdownText),
+    /\[#\d+\]\(https:\/\/github\.com\/[^/\s]+\/(?:capy|paint)\/issues\/\d+/.test(markdownText),
     false,
     hint
   );
@@ -613,8 +613,8 @@ export function validateChangelogFragments(root) {
   return count;
 }
 
-const CAPYBOOP_GITHUB_REPO_URL_RE = /^https:\/\/github\.com\/capyboop\/capy(?:$|[/?#])/i;
-const CAPYBOOP_GITHUB_ISSUES_URL_RE = /^https:\/\/github\.com\/capyboop\/capy\/issues(?:$|[/?#])/i;
+const CAPYBOOP_GITHUB_REPO_URL_RE = /^https:\/\/github\.com\/capyboop\/paint(?:$|[/?#])/i;
+const CAPYBOOP_GITHUB_ISSUES_URL_RE = /^https:\/\/github\.com\/capyboop\/paint\/issues(?:$|[/?#])/i;
 
 export function validatePublicTrackerPolicy(repoRoot) {
   const root = path.resolve(repoRoot);
