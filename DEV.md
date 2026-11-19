@@ -1,8 +1,9 @@
 # Development & Maintenance Guide -- Capy Monorepo (`web/`, `app/`, `worker/`)
 
-This guide defines the end-to-end human and AI co-development workflow, shared architectural guardrails, model selection strategy, session hygiene, CI/CD architecture, and ongoing maintenance playbooks for **Capy** ([`https://github.com/capyboop/paint`](https://github.com/capyboop/paint), live at [`https://capypaint.com/`](https://capypaint.com/) and PR previews at [`https://capyboop.github.io/capy/`](https://capyboop.github.io/capy/)).
+This guide defines the end-to-end human and AI co-development workflow, shared architectural guardrails, model selection strategy, session hygiene, CI/CD architecture, and ongoing maintenance playbooks for **Capy** ([`https://github.com/capyboop/paint`](https://github.com/capyboop/paint) public production repository accepting external issues and PRs, live at [`https://capypaint.com/`](https://capypaint.com/)
+).
 
-**Related Guides**: [`README.md`](./README.md) | [`PROJECT.md`](./PROJECT.md) | [`ROADMAP.md`](./ROADMAP.md) | [`TODO.md`](./TODO.md) | [`WEB.md`](./WEB.md) | [`PUZZLE.md`](./PUZZLE.md) | [`APP.md`](./APP.md) | [`CLOUD.md`](./CLOUD.md) | [`TESTING.md`](./TESTING.md) | [`CHANGELOG.md`](./CHANGELOG.md) | [`LICENSE.md`](./LICENSE.md)
+**Related Guides**: [`README.md`](./README.md) | [`CONTRIBUTING.md`](./CONTRIBUTING.md) | [`SUPPORT.md`](./SUPPORT.md) | [`SECURITY.md`](./SECURITY.md) | [`PROJECT.md`](./PROJECT.md) | [`ROADMAP.md`](./ROADMAP.md) | [`TODO.md`](./TODO.md) | [`WEB.md`](./WEB.md) | [`PUZZLE.md`](./PUZZLE.md) | [`APP.md`](./APP.md) | [`CLOUD.md`](./CLOUD.md) | [`TESTING.md`](./TESTING.md) | [`CHANGELOG.md`](./CHANGELOG.md) | [`LICENSE.md`](./LICENSE.md)
 
 **Table of Contents**:
 1. [Documentation Map & Architecture](#1-documentation-map--architecture)
@@ -255,7 +256,7 @@ Run the mandatory checks matching your changed files before pushing:
 cd web
 npm ci                   # Clean dependency install (first run or lockfile change)
 npm run dev              # Local Vite dev server on http://localhost:3000
-npm run lint             # Strict TypeScript check (tsc --noEmit) -- MANDATORY for code PRs
+npm run lint             # Strict TypeScript + oxlint guardrails (tsc + oxlint) -- MANDATORY for code PRs
 npm run build            # Production bundle (tsc && vite build -> web/dist/) -- MANDATORY for code PRs
 npm run test:unit        # Fast Vite SSR engine, codec, version/changelog & workflow unit checks
 npm test                 # Unified engine, codec, version/changelog & Playwright E2E suite
@@ -288,7 +289,7 @@ All PR title/label/Milestone rules, top-of-PR live preview templates, **`PR chec
 Capy runs five core GitHub Actions workflows in [`.github/workflows/`](./.github/workflows):
 
 ### 1. Unified 3-Tier Fast Build Gate, Async E2E/Android & Pages Deployment ([`deploy-branch.yml`](./.github/workflows/deploy-branch.yml))
-- **Fast Blocking Gate + Async Heavy Jobs**: Required branch ruleset checks (`Build & Test` + `capy/review workflow`) complete in `< 30s` using cached `web/node_modules`, `< 2s` sanity checks, TypeScript lint, Web build, and headless `--unit` tests (`node scripts/test.mjs --unit`, zero Chromium). **`Android APK`**, **`Playwright E2E`**, and **`Deploy Pages`** run asynchronously without blocking PR approval or auto-merge (nor holding Pages deploys behind Playwright E2E flakes).
+- **Fast Blocking Gate + Async Heavy Jobs**: Required branch ruleset checks (`Build & Test` + `capy/review workflow`) complete in `< 30s` using cached `web/node_modules`, `< 2s` sanity checks, TypeScript + `oxlint` lint, Web build, and headless `--unit` tests (`node scripts/test.mjs --unit`, zero Chromium). **`Android APK`**, **`Playwright E2E`**, and **`Deploy Pages`** run asynchronously without blocking PR approval or auto-merge (nor holding Pages deploys behind Playwright E2E flakes).
 - **Fast Sanity Paths (`isDocsOnlyPr` & `is_main_sync`)**: Pull requests that exclusively touch `**.md`, `docs/**`, `notes/**`, `.gitignore`, or `LICENSE`, or verified `sync/beta-from-main -> beta` ancestry syncs whose `HEAD` tree is byte-identical to `origin/main`, run the `< 2s` `npm run test:sanity` check in `Build & Test` while skipping redundant Web/Android builds, E2E re-runs, and Alpha Pages deployment.
 - **Job 0 -- `prepare` (`Target`, `contents: read`, `pull-requests: read`)**:
   - Resolves `target_dir` (`/alpha/<number>/`, `/beta/`, or `/`), `checkout_ref`, `is_docs_only`, `is_main_sync`, `is_draft`, and `skip` flags once before downstream fan-out.

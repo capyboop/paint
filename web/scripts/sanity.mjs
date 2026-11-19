@@ -35,6 +35,7 @@ const SKIP_DIRS = new Set([
 
 // M3B strict defaults:
 const DEFAULT_REQUIRE_PROJECT_MD = true;
+let DEFAULT_REQUIRE_AGENTS_MD = false;
 const DEFAULT_ENFORCE_CHANNEL_ORDER = true;
 const DEFAULT_ENFORCE_EPIC_NAMING = true;
 const DEFAULT_ENFORCE_PR checklist_SPEC = true;
@@ -409,6 +410,7 @@ export function validatePR checklistSpec(
   root,
   {
     requireProjectMd = DEFAULT_REQUIRE_PROJECT_MD,
+    requireAgentsMd = DEFAULT_REQUIRE_AGENTS_MD,
     enforcePR checklistSpec = DEFAULT_ENFORCE_PR checklist_SPEC,
   } = {}
 ) {
@@ -420,6 +422,7 @@ export function validatePR checklistSpec(
     const absPath = path.join(resolvedRoot, relFile);
     if (!fs.existsSync(absPath)) {
       if (relFile === 'PROJECT.md' && !requireProjectMd) continue;
+      if (relFile === 'project docs' && !requireAgentsMd) continue;
       assert.fail(`Required governance doc missing: ${relFile}`);
     }
     const raw = fs.readFileSync(absPath, 'utf8');
@@ -473,6 +476,8 @@ export function validatePR checklistSpec(
   return { scannedFiles };
 }
 
+const DEV_ONLY_ROOT_MD_FILES = new Set(['project docs', 'project docs']);
+
 export function validateRootGuideIndex(root, { requireProjectMd = DEFAULT_REQUIRE_PROJECT_MD } = {}) {
   const resolvedRoot = path.resolve(root);
   const rootMdFiles = fs
@@ -494,6 +499,7 @@ export function validateRootGuideIndex(root, { requireProjectMd = DEFAULT_REQUIR
   );
 
   for (const f of rootMdFiles) {
+    if (DEV_ONLY_ROOT_MD_FILES.has(f)) continue;
     if (f !== 'README.md') {
       assert.equal(
         readmeText.includes(`./${f}`),
@@ -515,6 +521,7 @@ export function validateRootGuideIndex(root, { requireProjectMd = DEFAULT_REQUIR
       fs.readFileSync(path.join(resolvedRoot, 'PROJECT.md'), 'utf8')
     );
     for (const f of rootMdFiles) {
+      if (DEV_ONLY_ROOT_MD_FILES.has(f)) continue;
       if (f !== 'LICENSE.md' && f !== 'PROJECT.md') {
         assert.equal(
           projectText.includes(`./${f}`),
