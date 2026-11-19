@@ -3468,6 +3468,56 @@ async function runCodecAndEngineTests() {
         `${wfFile} Upload Pages artifact step must set include-hidden-files: true`
       );
     }
+
+    // Verify asset generation triggers only on workflow_dispatch or path-filtered pushes to beta (no schedule).
+    // Note: asset generation is a dev-only workflow stripped from public capyboop/paint exports.
+    const regenWorkflowPath = path.resolve(projectRoot, '../.github/workflows/asset generation');
+    if (fs.existsSync(regenWorkflowPath)) {
+      const regenWorkflow = parsedWorkflows?.['asset generation'];
+      assert.ok(regenWorkflow, 'Expected parsed asset generation workflow');
+      // PyYAML parses YAML 1.1 `on:` as boolean True -> JSON key "true"
+      const regenOn = regenWorkflow.on ?? regenWorkflow.true;
+      assert.ok(regenOn && typeof regenOn === 'object', 'Expected on: block in asset generation');
+      assert.equal(
+        Object.prototype.hasOwnProperty.call(regenOn, 'schedule'),
+        false,
+        'asset generation must not trigger on a cron schedule'
+      );
+      assert.equal(
+        Object.prototype.hasOwnProperty.call(regenOn, 'workflow_dispatch'),
+        true,
+        'asset generation must retain workflow_dispatch for on-demand runs'
+      );
+      const regenPush = regenOn.push;
+      assert.ok(regenPush && Array.isArray(regenPush.branches), 'asset generation must define push.branches');
+      assert.equal(
+        regenPush.branches.includes('beta'),
+        true,
+        'asset generation push.branches must include beta'
+      );
+      assert.ok(Array.isArray(regenPush.paths), 'asset generation must define push.paths');
+      for (const expectedPath of [
+        'web/public/assets/**',
+        '!web/public/assets/**/*.capy',
+        '!web/public/assets/presets/**',
+        '!web/public/assets/icon-*.png',
+        '!web/public/assets/apple-touch-icon.png',
+        'web/scripts/generate-sample-saves.mjs',
+        'web/src/engine/**',
+        'web/src/services/CapyCodec.ts',
+        'web/src/services/DailyPuzzleService.ts',
+        'web/src/services/PuzzleWorkerService.ts',
+        'web/src/services/StorageService.ts',
+        'web/src/types/index.ts',
+        '.github/workflows/asset generation',
+      ]) {
+        assert.equal(
+          regenPush.paths.includes(expectedPath),
+          true,
+          `asset generation push.paths must include ${expectedPath}`
+        );
+      }
+    }
     logUnitPass('404.html redirect VM, pr-index.html, generate-pr-manifest.mjs & upload-pages-artifact dotfiles verified.');
 
     // Verify .github/scripts/compile-changelog.mjs & release.yml wiring
