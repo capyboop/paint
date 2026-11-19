@@ -489,9 +489,10 @@ Parked native desktop/mobile store wrappers awaiting completion of EPIC-2--EPIC-
 Completed Epics and User Stories archived upon merge to `main` (full granular PR history lives in [`CHANGELOG.md`](./CHANGELOG.md)):
 
 <details>
-<summary>Expand Shipped Epics & Stories (EPIC-1 & Shipped/Staged Slices -- PRs #431--#578)</summary>
+<summary>Expand Shipped Epics & Stories (EPIC-1 & Shipped/Staged Slices -- PRs #431--#579)</summary>
 
-- **Sprint 1 `v3.0.0`--`v3.0.35` Bugfix, Onboarding, Mobile UI, Durability & Play Store Launch Prep Slices (`BUG-1`--`BUG-3`, `BUG-5`, `TASK-2.6`, PR Workflows & Governance)**:
+- **Sprint 1 `v3.0.0`--`v3.0.36` Bugfix, Onboarding, Mobile UI, Durability & Play Store Launch Prep Slices (`BUG-1`--`BUG-3`, `BUG-5`, `TASK-2.6`, PR Workflows & Governance)**:
+  - **`v3.0.36` Release Safety, Cloudflare Worker, Android Bridge & Storage Hardening** -- #579 — Harden release safety, Cloudflare Worker, Android bridge, and storage invariants
   - **`v3.0.35` Release Promotion Prep (`v3.0.30`--`v3.0.35` Staged on `beta` for #574 — Promote Capy Beta release to main)** -- #578 — Sync v3.0.35 release prep, Play Store guide, and CI check titles
   - **`v3.0.35` `StorageService.ts` Local/Backup Recency & Empty-Overwrite Durability** -- #577 — Harden local save backup recency and empty-overwrite protection
   - **`v3.0.34` public Export, Release Signing Guard & Dual-Origin Co-op Hardening** -- #576 — Harden CapyBoop public export, release workflow, and Co-op origins
