@@ -91,10 +91,24 @@ npm run test:sanity && npm run lint && npm run build && npm test
 
 ---
 
+## Contributing, Issues & Support
+
+Contributions, bug reports, feature requests, and puzzle ideas are welcome on [`capyboop/paint`](https://github.com/capyboop/paint):
+
+- **Report a Bug, Request a Feature, or Share a Puzzle Idea**: Use the [GitHub Issue Templates](https://github.com/capyboop/paint/issues/new/choose).
+- **Submit a Pull Request**: Follow [`CONTRIBUTING.md`](./CONTRIBUTING.md) for local setup, required checks (`npm run test:sanity && npm run lint && npm run build && npm test`), and PR guidelines.
+- **Help and Troubleshooting**: See [`SUPPORT.md`](./SUPPORT.md) for player support, download links, and offline/privacy FAQ.
+- **Security Vulnerabilities**: Report security issues privately via [`SECURITY.md`](./SECURITY.md).
+
+---
+
 ## Technical Documentation and Architecture
 
 All detailed architectural guides, computer vision algorithms, and native bridge specifications live in dedicated documentation files:
 
+- **Contributing Guide**: [`CONTRIBUTING.md`](./CONTRIBUTING.md) -- Public contributor setup, required checks, PR guidelines, and license terms.
+- **Support and FAQ**: [`SUPPORT.md`](./SUPPORT.md) -- Player help, official downloads, issue routing, and privacy notes.
+- **Security Policy**: [`SECURITY.md`](./SECURITY.md) -- Supported versions and private vulnerability reporting instructions.
 - **Web Architecture and UI Reference**: [`WEB.md`](./WEB.md) -- React 19, Vite 6, 3-tier offscreen canvas rendering, 6-mode gesture engine, Worker IPC, storage keys, and `UserSettings` dictionary.
 - **Android Native Launcher**: [`APP.md`](./APP.md) -- Kotlin launcher, AndroidX `WebViewAssetLoader`, Google Play Games Services v2 `SnapshotsClient` sync, Pixel API 33+ haptics, and disk backups.
 - **Cloud Sync, Google Account / Play Games and Multiplayer Sharing**: [`CLOUD.md`](./CLOUD.md) -- Google Identity Services OAuth 2.0 (`drive.appdata`), Play Games v2 login, CRDT Cloud Sync, `< 2 KB` shareable URL links, simultaneous Co-op rooms, and Cloudflare Workers edge hosting (`capypaint.com`).
@@ -105,7 +119,5 @@ All detailed architectural guides, computer vision algorithms, and native bridge
 - **Active Sprint Backlog**: [`TODO.md`](./TODO.md) -- Ready-for-dev Sprint 1 bugfixes, `1-PR` engineering slices, `[quick-win]` queue, and GitHub Sprint Milestone links.
 - **Project Management and Release Governance**: [`PROJECT.md`](./PROJECT.md) -- Lean Agile triad, sprint cadence, Epic triage, PR sync and readiness gates, release promotion, `CHANGELOG.md` governance, and continuous improvement retro log.
 - **Development and Maintenance Guide**: [`DEV.md`](./DEV.md) -- Human + AI co-development workflow, CImodel routing, session hygiene, shared technical guardrails, 3-tier CI/CD architecture, SemVer versioning, and troubleshooting.
-- **contributor Operational Playbook**: `project docs` -- Auto-loaded AI guardrails, mobile-first formatting rules, and PR checklist contract for redacted.
-- **Company Structure and contributor Handbook**: `project docs` -- CapyBoop Games organizational chart, standing contributor chat roles, startup kickoff prompts for instance recovery, and cross-chat coordination protocols.
 - **Privacy Policy and Data Safety**: [`web/public/privacy-policy.html`](./web/public/privacy-policy.html) -- Local-first photo processing and optional Google Drive `appDataFolder` / Play Games Cloud Sync disclosures.
 - **License**: [`LICENSE.md`](./LICENSE.md) -- Capybara Chill Preamble and CC BY-NC-SA 4.0 terms.

@@ -2,7 +2,7 @@
 
 Canonical project management manual for **Capy** ([`web/`](./web/), [`app/`](./app/), and [`worker/`](./worker/)). Defines contributor roles, Lean Agile backlog governance across [`ROADMAP.md`](./ROADMAP.md), GitHub Epics, and [`TODO.md`](./TODO.md), sprint execution cadence, pull request lifecycle and description sync, release promotion (`beta -> main`), [`CHANGELOG.md`](./CHANGELOG.md) channel markers, documentation sync, and continuous process improvement.
 
-**Related Guides**: [`README.md`](./README.md) | [`ROADMAP.md`](./ROADMAP.md) | [`TODO.md`](./TODO.md) | [`DEV.md`](./DEV.md) | [`WEB.md`](./WEB.md) | [`PUZZLE.md`](./PUZZLE.md) | [`APP.md`](./APP.md) | [`CLOUD.md`](./CLOUD.md) | [`TESTING.md`](./TESTING.md) | [`CHANGELOG.md`](./CHANGELOG.md) | [`LICENSE.md`](./LICENSE.md)
+**Related Guides**: [`README.md`](./README.md) | [`CONTRIBUTING.md`](./CONTRIBUTING.md) | [`SUPPORT.md`](./SUPPORT.md) | [`SECURITY.md`](./SECURITY.md) | [`ROADMAP.md`](./ROADMAP.md) | [`TODO.md`](./TODO.md) | [`DEV.md`](./DEV.md) | [`WEB.md`](./WEB.md) | [`PUZZLE.md`](./PUZZLE.md) | [`APP.md`](./APP.md) | [`CLOUD.md`](./CLOUD.md) | [`TESTING.md`](./TESTING.md) | [`CHANGELOG.md`](./CHANGELOG.md) | [`LICENSE.md`](./LICENSE.md)
 
 **Table of Contents**:
 1. [Roles, Ownership and Multi-Session Coordination](#1-roles-ownership-and-multi-session-coordination)
@@ -24,6 +24,7 @@ Canonical project management manual for **Capy** ([`web/`](./web/), [`app/`](./a
 ## 1. Roles, Ownership and Multi-Session Coordination
 
 - **Human Project Owner**: Sets product vision and Epic priority in [`ROADMAP.md`](./ROADMAP.md), approves unblocked work entering [`TODO.md`](./TODO.md), resolves architectural and UX trade-offs during `workflow` and `workflow`, validates subjective tactile/visual feel on Alpha `/alpha/<number>/` and Beta `/beta/` previews, and holds sole final merge authority into `beta` and `main`.
+- **External / Public Contributors**: Open bug reports, feature requests, puzzle ideas, and community pull requests on [`capyboop/paint`](https://github.com/capyboop/paint) following [`CONTRIBUTING.md`](./CONTRIBUTING.md), [`SUPPORT.md`](./SUPPORT.md), and [`SECURITY.md`](./SECURITY.md).
 - **contributors & contributor**: Execute approved `TODO.md` slices or non-living-doc changes on clean linear branches off `origin/beta` (while pushing document-owner-approved living-document updates—such as `project docs`, `project docs`, and studio living guides—directly to `main` without PR noise or `EPIC-*` tags per `project docs` Rule 11 and informing the Owner), keep PR titles/bodies/backlog docs synchronized on every push, run full local verification before marking PRs ready, and pause for explicit Owner approval prior to any code merge.
 - **Worktree & Diff Hygiene**: Never share one dirty working tree across concurrent sessions or tasks, never stage untracked local contributor/scratch files via blind `git add -A`, and verify `git status` plus `git show --stat HEAD` before every push.
 
@@ -187,8 +188,9 @@ Capy separates strategic multi-sprint planning from day-to-day execution across 
 
 ## 6. Documentation Sync and Markdown Hygiene Matrix
 
-- **Canonical 14 Root `.md` Files** (indexed in [`README.md`](./README.md), [`DEV.md`](./DEV.md), and this guide):
-  - **Product & Governance**: [`README.md`](./README.md), `project docs`, [`PROJECT.md`](./PROJECT.md), [`DEV.md`](./DEV.md), `project docs`, [`ROADMAP.md`](./ROADMAP.md), [`TODO.md`](./TODO.md), [`CHANGELOG.md`](./CHANGELOG.md), [`LICENSE.md`](./LICENSE.md).
+- **Canonical 17 Root `.md` Files** (indexed in [`README.md`](./README.md), [`DEV.md`](./DEV.md), and this guide):
+  - **Product & Community**: [`README.md`](./README.md), [`CONTRIBUTING.md`](./CONTRIBUTING.md), [`SUPPORT.md`](./SUPPORT.md), [`SECURITY.md`](./SECURITY.md), [`ROADMAP.md`](./ROADMAP.md), [`TODO.md`](./TODO.md), [`CHANGELOG.md`](./CHANGELOG.md), [`LICENSE.md`](./LICENSE.md).
+  - **Governance & Engineering**: `project docs`, [`PROJECT.md`](./PROJECT.md), [`DEV.md`](./DEV.md), `project docs`.
   - **Technical Subsystem Guides**: [`WEB.md`](./WEB.md), [`PUZZLE.md`](./PUZZLE.md), [`APP.md`](./APP.md), [`CLOUD.md`](./CLOUD.md), [`TESTING.md`](./TESTING.md).
   - **Storefront Privacy Policy**: [`web/public/privacy-policy.html`](./web/public/privacy-policy.html).
 - **Automated Hygiene Rules ([`web/scripts/sanity.mjs`](./web/scripts/sanity.mjs))**:
