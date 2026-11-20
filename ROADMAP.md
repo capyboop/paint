@@ -13,13 +13,13 @@ Strategic product horizon for **Capy** ([`web/`](./web/) and [`app/`](./app/)). 
 6. [Shipped Epics & Stories (`EPIC-1` & Completed Stories)](#6-shipped-epics--stories-epic-1--completed-stories)
 
 <details>
-<summary>Roadmap Rollup (`18` Stories + `TASK-2.5` & Active `v3.0.x` Queue across `4` Epics)</summary>
+<summary>Roadmap Rollup (`17` Stories + `TASK-2.5` & Active `v3.0.x` Queue across `4` Epics)</summary>
 
-- EPIC-2 (*`v3.0.x` Stabilization & Live Cutover -- Sprint 1 (`#2`)*): #543 — Production capypaint.com DNS, Cloudflare Worker & /env-setup cutover (`ops` Human Cloudflare & DNS Cutover in [`TODO.md`](./TODO.md)) and #561 — Harden Cloudflare (`ops` / security hardening under EPIC-2); `v3.0.19`--`v3.0.20` (Android TV Leanback manifest/banner + ad-free privacy policy #545, `dev environment config` & cutover tracking #544, and `v3.0.20` Google Play Store launch prep #547) promoted to `main` via #549, `v3.0.21`--`v3.0.24` (stacked merge-async review workflow fallback & Draft checklist gate #553, compact replay scrubber #554, Detail/Hue colour defaults #555, and Preset Style Gallery #557) promoted via #556, `v3.0.25`--`v3.0.29` (Cloudflare Workers deploy #550 and direct blocked-PR merge fallback #560 promoted via #562; E2E/unit log standardization #563, pre-generated Max sample/daily archives #565, `lintVitalRelease` Android Fragment fix #566, and changelog retag #568 promoted via #567) promoted to `main`, and `v3.0.30`--`v3.0.35` (Play Daily E2E fix #569, Max-detail puzzle refreshes #570, #572, `v3.0.31` Play Store remediation #571, `O(R log R)` `maxRegions <= 2000` cap & Network-First SW caching #573, public [capyboop/paint](https://github.com/capyboop/paint/issues) tracker links #575, public export & Co-op origin hardening #576, `StorageService.ts` backup recency & empty-overwrite durability #577, and `v3.0.35` release prep & `(Production, Beta)` changelog retag #578) staged on `beta` for #574 alongside `v3.0.2`--`v3.0.18` (`v3.0.2`--`v3.0.8` via #501; `v3.0.9`--`v3.0.13` via #517--#532; `v3.0.14`--`v3.0.18` via #538)
-- EPIC-3 (*9 Stories + `TASK-2.5` -- Sprint 2 (`#3`), Awaiting Owner Review*): `~314k tokens` (`~149--214 min contributor`)
+- EPIC-2 (*`v3.0.x` Stabilization & Live Cutover -- Sprint 1 (`#2`)*): `US-3.5` (Fat-Finger Mode & Finger Reach Radius, moved from EPIC-3), #543 — Production capypaint.com DNS, Cloudflare Worker & /env-setup cutover (`ops` Human Cloudflare & DNS Cutover in [`TODO.md`](./TODO.md)) and #561 — Harden Cloudflare (`ops` / security hardening under EPIC-2); `v3.0.19`--`v3.0.20` (Android TV Leanback manifest/banner + ad-free privacy policy #545, `dev environment config` & cutover tracking #544, and `v3.0.20` Google Play Store launch prep #547) promoted to `main` via #549, `v3.0.21`--`v3.0.24` (stacked merge-async review workflow fallback & Draft checklist gate #553, compact replay scrubber #554, Detail/Hue colour defaults #555, and Preset Style Gallery #557) promoted via #556, `v3.0.25`--`v3.0.29` (Cloudflare Workers deploy #550 and direct blocked-PR merge fallback #560 promoted via #562; E2E/unit log standardization #563, pre-generated Max sample/daily archives #565, `lintVitalRelease` Android Fragment fix #566, and changelog retag #568 promoted via #567) promoted to `main`, and `v3.0.30`--`v3.0.35` (Play Daily E2E fix #569, Max-detail puzzle refreshes #570, #572, `v3.0.31` Play Store remediation #571, `O(R log R)` `maxRegions <= 2000` cap & Network-First SW caching #573, public [capyboop/paint](https://github.com/capyboop/paint/issues) tracker links #575, public export & Co-op origin hardening #576, `StorageService.ts` backup recency & empty-overwrite durability #577, and `v3.0.35` release prep & `(Production, Beta)` changelog retag #578) staged on `beta` for #574 alongside `v3.0.2`--`v3.0.18` (`v3.0.2`--`v3.0.8` via #501; `v3.0.9`--`v3.0.13` via #517--#532; `v3.0.14`--`v3.0.18` via #538)
+- EPIC-3 (*8 Stories + `TASK-2.5` -- Sprint 2 (`#3`), Awaiting Owner Review*): `~276k tokens` (`~131--189 min contributor`)
 - EPIC-4 (*4 Stories -- Sprint 3 (`#4`), Ready After EPIC-3*): `~113k tokens` (`~52--76 min contributor`)
 - EPIC-5 (*5 Stories -- Blocked on External Infra*): `~245k tokens` (`~113--165 min contributor`)
-- **Total Strategic Horizon**: `~672k tokens` (`~5.2--7.6 hrs contributor` | `~89--129 hrs human`; contributor totals exclude #543 — Production capypaint.com DNS, Cloudflare Worker & /env-setup cutover `ops`)
+- **Total Strategic Horizon**: `~634k tokens` (`~4.9--7.2 hrs contributor` | `~89--129 hrs human`; contributor totals exclude #543 — Production capypaint.com DNS, Cloudflare Worker & /env-setup cutover `ops`)
 
 </details>
 
@@ -29,7 +29,7 @@ Strategic product horizon for **Capy** ([`web/`](./web/) and [`app/`](./app/)). 
 
 **Epic Goal**: Stabilize `v3.0.x` with critical reliability fixes, explicitly Owner-approved UX polish, and [capypaint.com](https://capypaint.com/) live cutover plus [capyboop/paint](https://github.com/capyboop/paint/issues) public issue tracker setup (#543 — Production capypaint.com DNS, Cloudflare Worker & /env-setup cutover). Unapproved feature stories (`US-2.1`, `US-2.3b`, `US-2.4`) and Play Store release ops (`TASK-2.5`) live in EPIC-3; [capyboop.com](https://capyboop.com/) cutover is explicitly deferred out of active Sprint 1 scope. *(Tracking: EPIC-2 | Sprint 1 (`#2`)).*
 
-- **Active Execution Queue**: See [`TODO.md`](./TODO.md) for #543 — Production capypaint.com DNS, Cloudflare Worker & /env-setup cutover ([capypaint.com](https://capypaint.com/) apex is live; remaining Human Ops cover `www` `301` edge redirect and HTTPS enforcement; live Pages channel at [Capy Production](https://capyboop.github.io/capy/)) while #561 — Harden Cloudflare remains open under EPIC-2. `v3.0.2`--`v3.0.29` stabilization, Play Store launch prep, Preset Style Gallery, Detail/Hue colour defaults, compact replay scrubber, `dev environment config`, Leanback manifest/banner, ad-free privacy policy, Cloudflare Worker deployment, pre-generated Max sample/daily archives, and `lintVitalRelease` Android Fragment fix (`v3.0.14`--`v3.0.18` via #538; `v3.0.19`--`v3.0.20` via #549; `v3.0.21`--`v3.0.24` via #556; `v3.0.25`--`v3.0.26` via #562; `v3.0.27`--`v3.0.29` via #567) are promoted to `main` (`beta -> main`), while `v3.0.30`--`v3.0.35` (#569--#573, #575--#578) are staged on `beta` for #574; zero active contributor dev tasks remain in `TODO.md`.
+- **Active Execution Queue**: See [`TODO.md`](./TODO.md) for #543 — Production capypaint.com DNS, Cloudflare Worker & /env-setup cutover ([capypaint.com](https://capypaint.com/) apex is live; remaining Human Ops cover `www` `301` edge redirect and HTTPS enforcement; live Pages channel at [Capy Production](https://capyboop.github.io/capy/)) while #561 — Harden Cloudflare remains open under EPIC-2. **Owner-Approved Sprint 1 Feature**: `US-3.5` (Fat-Finger Mode & Finger Reach Radius -- `fatFingerAssist`, `touchReachRadiusPx` `8px`--`40px` with `Compact 12px` / `Standard 22px` / `Large 34px` presets, and zero-allocation `resolveNearTapRegionId` radial hit-testing, #602 — Add Fat-Finger Mode near-miss tap assist and reach radius) moved from EPIC-3 into EPIC-2. `v3.0.2`--`v3.0.29` stabilization, Play Store launch prep, Preset Style Gallery, Detail/Hue colour defaults, compact replay scrubber, `dev environment config`, Leanback manifest/banner, ad-free privacy policy, Cloudflare Worker deployment, pre-generated Max sample/daily archives, and `lintVitalRelease` Android Fragment fix (`v3.0.14`--`v3.0.18` via #538; `v3.0.19`--`v3.0.20` via #549; `v3.0.21`--`v3.0.24` via #556; `v3.0.25`--`v3.0.26` via #562; `v3.0.27`--`v3.0.29` via #567) are promoted to `main` (`beta -> main`), while `v3.0.30`--`v3.0.35` (#569--#573, #575--#578) are staged on `beta` for #574; zero active contributor dev tasks remain in `TODO.md`.
 - **Shipped & Re-Scoped History**:
   - **Staged on `beta` for `main` promotion (`v3.0.30`--`v3.0.35` via #574)**: `v3.0.35` release prep, Play Store guide & `(Production, Beta)` changelog retag (#578); `StorageService.ts` backup recency & empty-overwrite durability + `[Unit 15]` tests (#577); public export, release workflow signing guard & dual-origin Co-op hardening (#576); public [capyboop/paint](https://github.com/capyboop/paint/issues) issue templates, About **Report Bug / Ideas** button & privacy policy links (#575); `O(R log R)` `maxRegions <= 2000` cap, Network-First `.capy` SW caching (`SW_ASSETS_DIGEST`) & Create tab hints (#573); `v3.0.31` Google Play Store remediation removing Android ad hooks, fake idea votes & startup Play Games sign-in leaks (#571); automated Max-detail sample/daily puzzle refreshes (#570, #572); and `[E2E 12]` Play Daily snapshot race fix (#569).
   - **Promoted to `main` (`v3.0.27`--`v3.0.29` via #567)**: `v3.0.29` release notes retag (#568); `androidx.fragment:fragment-ktx` `1.8.9` pin fixing signed Android `lintVitalRelease` (#566); pre-generated `2048p` Max-settings `sample_saves.capy` & `daily_saves.capy` + scheduled `asset generation` (#565); and standardized sequential `[Unit]`/`[E2E]` test logging & isolated subprocess checks (#563).
@@ -132,29 +132,6 @@ Strategic product horizon for **Capy** ([`web/`](./web/) and [`app/`](./app/)). 
 
 </details>
 
-### US-3.5: Fat-Finger Mode (Near-Miss Tap Assist) & Finger Reach Radius
-
-- **Readiness**: `Awaiting Owner Review & Approval`
-- **Description**: Add an independent **Fat-Finger Tap Assist** toggle (`fatFingerAssist`, enabled by default in `EASY` difficulty and optional in `NORMAL` / Precise difficulty) paired with a configurable **Finger Size / Touch Reach Radius** setting (`touchReachRadiusPx`, `8px`--`40px` screen CSS pixels with `Compact 12px` / `Standard 22px` / `Large 34px` presets) that snaps near-miss mobile taps onto intended tiny micro-regions without requiring pixel-perfect landing.
-- **Value**: Eliminates frustrating dead taps when a fingertip lands `2`--`8px` off a `< 50px` micro-region onto a `borderMap` pixel (`rId <= 0`), an already-filled neighbor, or an adjacent wrong-color region—complementing the planned Precision Loupe (`US-2.1`) for quick one-handed single-tap play.
-- **Why Now**: Currently `PuzzleCanvas.tsx` (`puzzle.regionMap[ly * puzzle.width + lx]` single-tap hit-test) checks only the exact `1x1` pixel under the pointer; adding screen-space radial tolerance makes Easy and mobile play dramatically more forgiving once approved.
-- **Planned Sprint Slices**:
-  - **TASK-3.5a**: Implement zero-allocation radial near-tap hit-testing (`resolveNearTapRegionId` in `PuzzleCanvas.tsx`) scaling `touchReachRadiusPx / totalScreenScale` dynamically across zoom levels, prioritizing the nearest unfilled `activeColorId` region first and falling back in `EASY` mode to the nearest unfilled region of any color when exact `(lx, ly)` hits a filled neighbor or border.
-  - **TASK-3.5b** `[quick-win]`: Add `fatFingerAssist: boolean` and `touchReachRadiusPx: number` (`Compact 12px` / `Standard 22px` / `Large 34px` presets + `8px`--`40px` slider) under `Difficulty (Tap Forgiveness)` in `SettingsModal.tsx` with Playwright E2E near-miss micro-region tap tests.
-
-<details>
-<summary>Engineering Metadata, Estimates, Files & Acceptance Criteria</summary>
-
-- **Type & Priority**: `Story` | EPIC-3 | `priority: high` | `domain: canvas, gestures, ui`
-- **Complexity & Model**: `medium` / `moderate` | **Recommended Model**: `CI` (`3.5a`), `CI` (`3.5b`)
-- **Effort Estimate**: `~38,000 tokens` (`~22k` + `~16k`) | `~18--25 min contributor` (`~5--7 hrs human`)
-- **Target Files**: [`web/src/components/PuzzleCanvas.tsx`](./web/src/components/PuzzleCanvas.tsx), [`web/src/components/SettingsModal.tsx`](./web/src/components/SettingsModal.tsx), [`web/src/services/StorageService.ts`](./web/src/services/StorageService.ts), [`web/src/types/index.ts`](./web/src/types/index.ts), [`web/scripts/test.mjs`](./web/scripts/test.mjs), [`WEB.md`](./WEB.md)
-- **Acceptance Criteria**:
-  - Direct hits on playable unfilled regions remain `O(1)`; radial fallback scans integer offsets inside `Math.min(64, touchReachRadiusPx / totalScreenScale)` using scalar distance registers with zero heap allocations.
-  - In `NORMAL` difficulty with `fatFingerAssist: true`, near-miss taps snap strictly to unfilled `activeColorId` regions; in `EASY` difficulty, near-miss taps on filled/border pixels prefer `activeColorId` first and otherwise snap to the closest unfilled micro-region of any color.
-
-</details>
-
 ### US-2.1: Floating Precision Loupe Magnifier for Micro-Regions *(Moved from EPIC-2)*
 
 - **Readiness**: `Awaiting Owner Review & Approval`
@@ -225,7 +202,7 @@ Strategic product horizon for **Capy** ([`web/`](./web/) and [`app/`](./app/)). 
 
 - **Readiness**: `Ready for Release Ops (Store-Clean v3.0.35 Build, Phone/Tablet Store Listing, Graphics & Privacy Policy Staged; Keystore Secrets Configured, Awaiting Tag & Play Console Upload)`
 - **Description**: Verify release signing secrets (`CAPY_KEYSTORE_BASE64`, `CAPY_KEYSTORE_PASSWORD`, `CAPY_KEY_ALIAS`, `CAPY_KEY_PASSWORD`, already configured in repository Actions secrets), verify `./gradlew app:testDebugUnitTest app:assembleRelease app:bundleRelease` (plus `MainActivity` `onPause`/`onResume` lifecycle & hardware back navigation), tag `v3.0.35` from `main` to trigger [`.github/workflows/release.yml`](./.github/workflows/release.yml), and publish the Play-signed `.aab` to Google Play Console using [`docs/play-store/PLAY_STORE_LISTING.md`](./docs/play-store/PLAY_STORE_LISTING.md) (Phone & Tablet form factors only; Android TV form factor remains unchecked until `US-3.6` ships post-launch).
-- **Value**: Ships the unified Android wrapper (`com.capypaint.capy`) to Google Play Store alongside the web release.
+- **Value**: Ships the unified Android wrapper (`com.capyboop.paint`) to Google Play Store alongside the web release.
 - **Why Pushed to EPIC-3**: Moved out of EPIC-2 (`v3.0.x` bugfixes & stabilization) by the Project Owner so Play Store signing and release operations track alongside Sprint 2 readiness.
 
 <details>
@@ -234,7 +211,7 @@ Strategic product horizon for **Capy** ([`web/`](./web/) and [`app/`](./app/)). 
 - **Type & Priority**: `Task` | EPIC-3 (Milestone #3) | `priority: high` | `domain: android, ci`
 - **Complexity & Model**: `medium` | **Recommended Model**: `CI` + Owner Play Console / Keystore Setup
 - **Effort Estimate**: `~18,000 tokens` | `~10--15 min contributor`
-- **Target Files**: [`app/build.gradle.kts`](./app/build.gradle.kts), [`app/src/main/java/com/capypaint/capy/MainActivity.kt`](./app/src/main/java/com/capypaint/capy/MainActivity.kt), [`.github/workflows/release.yml`](./.github/workflows/release.yml), [`APP.md`](./APP.md), [`docs/play-store/PLAY_STORE_LISTING.md`](./docs/play-store/PLAY_STORE_LISTING.md)
+- **Target Files**: [`app/build.gradle.kts`](./app/build.gradle.kts), [`app/src/main/java/com/capyboop/paint/MainActivity.kt`](./app/src/main/java/com/capyboop/paint/MainActivity.kt), [`.github/workflows/release.yml`](./.github/workflows/release.yml), [`APP.md`](./APP.md), [`docs/play-store/PLAY_STORE_LISTING.md`](./docs/play-store/PLAY_STORE_LISTING.md)
 - **Acceptance Criteria**:
   - `release.yml` builds a Play-signed `.aab` and `.apk` matching [`web/package.json`](./web/package.json) SemVer and `versionCode` cleanly.
   - Release Android build passes on-device smoke QA (launch, coloring, save/resume, lifecycle `onPause`/`onResume`, hardware back navigation) and is uploaded to Google Play Console.
@@ -257,7 +234,7 @@ Strategic product horizon for **Capy** ([`web/`](./web/) and [`app/`](./app/)). 
 - **Type & Priority**: `Story` | EPIC-3 | `priority: medium-high` | `domain: tv, ui, android`
 - **Complexity & Model**: `high` / `moderate` | **Recommended Model**: `CI`
 - **Effort Estimate**: `~40,000 tokens` | `~20--28 min contributor` (`~5--7 hrs human`)
-- **Target Files**: [`web/src/App.tsx`](./web/src/App.tsx), [`web/src/components/PuzzleCanvas.tsx`](./web/src/components/PuzzleCanvas.tsx), [`web/src/index.css`](./web/src/index.css), [`app/src/main/java/com/capypaint/capy/MainActivity.kt`](./app/src/main/java/com/capypaint/capy/MainActivity.kt), [`web/scripts/test.mjs`](./web/scripts/test.mjs), [`APP.md`](./APP.md)
+- **Target Files**: [`web/src/App.tsx`](./web/src/App.tsx), [`web/src/components/PuzzleCanvas.tsx`](./web/src/components/PuzzleCanvas.tsx), [`web/src/index.css`](./web/src/index.css), [`app/src/main/java/com/capyboop/paint/MainActivity.kt`](./app/src/main/java/com/capyboop/paint/MainActivity.kt), [`web/scripts/test.mjs`](./web/scripts/test.mjs), [`APP.md`](./APP.md)
 - **Acceptance Criteria**:
   - Interactive HUD controls stay within `1920x1080` `5%` TV overscan safe bounds without regressing `360x780` mobile layout, and D-pad arrow keys traverse HUD controls and canvas reticle without focus traps.
 
@@ -364,7 +341,7 @@ Strategic product horizon for **Capy** ([`web/`](./web/) and [`app/`](./app/)). 
 
 - **Readiness**: `Blocked -- External Console Credentials & Root Domain Hosting`
 - **Unblock Prerequisite**: Human provisioning of Google Cloud Web OAuth Client ID (`VITE_GOOGLE_CLIENT_ID`), 12-digit Play Games Project ID (`CAPY_PLAY_GAMES_APP_ID`), release keystore SHA-256 fingerprint, and write access to root `https://capyboop.github.io/.well-known/assetlinks.json` (Android `autoVerify="true"` queries domain root rather than `/capy/.well-known/`).
-- **Description**: Configure live Google Cloud OAuth and Play Games repository variables and publish verified Digital Asset Links for `com.capypaint.capy`.
+- **Description**: Configure live Google Cloud OAuth and Play Games repository variables and publish verified Digital Asset Links for `com.capyboop.paint`.
 - **Value**: Unlocks live one-tap Google Drive cross-device save sync on web, native Play Games `SnapshotsClient` sync on Android, and seamless Android App Link opening for `#s=<token>` links.
 - **Why Now**: Client drivers (`GoogleCloudDriver`, `PlayGamesAndroidDriver`, `privacy-policy.html`) are already complete; CI variable wiring from EPIC-2 (`BUG-2`) shipped to `main` in #485.
 
@@ -376,7 +353,7 @@ Strategic product horizon for **Capy** ([`web/`](./web/) and [`app/`](./app/)). 
 - **Effort Estimate**: `~20,000 tokens` | `~10--15 min contributor` (`~2--4 hrs human`)
 - **Target Files**: [`app/build.gradle.kts`](./app/build.gradle.kts), [`app/src/main/AndroidManifest.xml`](./app/src/main/AndroidManifest.xml), [`CLOUD.md`](./CLOUD.md)
 - **Acceptance Criteria**:
-  - `https://capyboop.github.io/.well-known/assetlinks.json` (or custom domain) validates against `pm get-app-links com.capypaint.capy` and Google OAuth sign-in succeeds without sandbox overrides.
+  - `https://capyboop.github.io/.well-known/assetlinks.json` (or custom domain) validates against `pm get-app-links com.capyboop.paint` and Google OAuth sign-in succeeds without sandbox overrides.
 
 </details>
 
