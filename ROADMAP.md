@@ -6,7 +6,7 @@ Strategic product horizon for **Capy** ([`web/`](./web/) and [`app/`](./app/)). 
 
 **Table of Contents**:
 1. [`EPIC-2`: `v3.0.x` Critical Bugfixes & Stabilization (`Active in Sprint 1`)](#1-epic-2-v30x-critical-bugfixes--stabilization-active-in-sprint-1)
-2. [`EPIC-3`: Touch Assist, Sensory Polish, Retention, Accessibility & Replays (`Awaiting Owner Review & Approval`)](#2-epic-3-touch-assist-sensory-polish-retention-accessibility--replays-awaiting-owner-review--approval)
+2. [`EPIC-3`: Touch Assist, Sensory Polish, Retention, Accessibility & Replays (`Awaiting Review & Approval`)](#2-epic-3-touch-assist-sensory-polish-retention-accessibility--replays-awaiting-review--approval)
 3. [`EPIC-4`: Serverless Infinite Zoom, Printable Art & Local Co-op Polish (`Ready After EPIC-3`)](#3-epic-4-serverless-infinite-zoom-printable-art--local-co-op-polish-ready-after-epic-3)
 4. [`EPIC-5`: Production Cloud Auth, Cross-Network Co-op & Optional AI Creation (`Blocked on External Infra`)](#4-epic-5-production-cloud-auth-cross-network-co-op--optional-ai-creation-blocked-on-external-infra)
 5. [Unscheduled Platform Icebox (`ICE-1`--`ICE-3`)](#5-unscheduled-platform-icebox-ice-1--ice-3)
@@ -15,11 +15,10 @@ Strategic product horizon for **Capy** ([`web/`](./web/) and [`app/`](./app/)). 
 <details>
 <summary>Roadmap Rollup (`17` Stories + `TASK-2.5` & Active `v3.0.x` Queue across `4` Epics)</summary>
 
-- EPIC-2 (*`v3.0.x` Stabilization & Live Cutover -- Sprint 1 (`#2`)*): `US-3.5` (Fat-Finger Mode & Finger Reach Radius, moved from EPIC-3), #543 — Production capypaint.com DNS, Cloudflare Worker & /env-setup cutover (`ops` Human Cloudflare & DNS Cutover in [`TODO.md`](./TODO.md)) and #561 — Harden Cloudflare (`ops` / security hardening under EPIC-2); `v3.0.19`--`v3.0.20` (Android TV Leanback manifest/banner + ad-free privacy policy #545, `dev environment config` & cutover tracking #544, and `v3.0.20` Google Play Store launch prep #547) promoted to `main` via #549, `v3.0.21`--`v3.0.24` (stacked merge-async review workflow fallback & Draft checklist gate #553, compact replay scrubber #554, Detail/Hue colour defaults #555, and Preset Style Gallery #557) promoted via #556, `v3.0.25`--`v3.0.29` (Cloudflare Workers deploy #550 and direct blocked-PR merge fallback #560 promoted via #562; E2E/unit log standardization #563, pre-generated Max sample/daily archives #565, `lintVitalRelease` Android Fragment fix #566, and changelog retag #568 promoted via #567) promoted to `main`, and `v3.0.30`--`v3.0.35` (Play Daily E2E fix #569, Max-detail puzzle refreshes #570, #572, `v3.0.31` Play Store remediation #571, `O(R log R)` `maxRegions <= 2000` cap & Network-First SW caching #573, public [capyboop/paint](https://github.com/capyboop/paint/issues) tracker links #575, public export & Co-op origin hardening #576, `StorageService.ts` backup recency & empty-overwrite durability #577, and `v3.0.35` release prep & `(Production, Beta)` changelog retag #578) staged on `beta` for #574 alongside `v3.0.2`--`v3.0.18` (`v3.0.2`--`v3.0.8` via #501; `v3.0.9`--`v3.0.13` via #517--#532; `v3.0.14`--`v3.0.18` via #538)
-- EPIC-3 (*8 Stories + `TASK-2.5` -- Sprint 2 (`#3`), Awaiting Owner Review*): `~276k tokens` (`~131--189 min contributor`)
-- EPIC-4 (*4 Stories -- Sprint 3 (`#4`), Ready After EPIC-3*): `~113k tokens` (`~52--76 min contributor`)
-- EPIC-5 (*5 Stories -- Blocked on External Infra*): `~245k tokens` (`~113--165 min contributor`)
-- **Total Strategic Horizon**: `~634k tokens` (`~4.9--7.2 hrs contributor` | `~89--129 hrs human`; contributor totals exclude #543 — Production capypaint.com DNS, Cloudflare Worker & /env-setup cutover `ops`)
+- EPIC-2 (*`v3.0.x` Stabilization & Live Cutover -- Sprint 1 (`#2`)*): `US-3.5` (Fat-Finger Mode & Finger Reach Radius, shipped in `v3.0.8` via #602, #605), #543 — Production capypaint.com DNS, Cloudflare Worker & /env-setup cutover (`ops` Human Cloudflare & DNS Cutover in [`TODO.md`](./TODO.md)), and #561 — Harden Cloudflare (`ops` / security hardening under EPIC-2); all Sprint 1 stabilization, onboarding, Play Store launch prep, Preset Style Gallery, Cloudflare Workers deploy, pre-generated Max sample/daily archives, public [capyboop/paint](https://github.com/capyboop/paint/issues) tracker/mirror, BYOC Cloud Sync, anonymous feedback, and borderless completed-region slices (`v3.0.2`--`v3.0.8`) are promoted to `main` (see [Section 6](#6-shipped-epics--stories-epic-1--completed-stories) and [`CHANGELOG.md`](./CHANGELOG.md))
+- EPIC-3 (*8 Stories + `TASK-2.5` -- Sprint 2 (`#3`), Awaiting Review*)
+- EPIC-4 (*4 Stories -- Sprint 3 (`#4`), Ready After EPIC-3*)
+- EPIC-5 (*5 Stories -- Blocked on External Infra*)
 
 </details>
 
@@ -27,29 +26,29 @@ Strategic product horizon for **Capy** ([`web/`](./web/) and [`app/`](./app/)). 
 
 ## 1. `EPIC-2`: `v3.0.x` Critical Bugfixes & Stabilization (`Active in Sprint 1`)
 
-**Epic Goal**: Stabilize `v3.0.x` with critical reliability fixes, explicitly Owner-approved UX polish, and [capypaint.com](https://capypaint.com/) live cutover plus [capyboop/paint](https://github.com/capyboop/paint/issues) public issue tracker setup (#543 — Production capypaint.com DNS, Cloudflare Worker & /env-setup cutover). Unapproved feature stories (`US-2.1`, `US-2.3b`, `US-2.4`) and Play Store release ops (`TASK-2.5`) live in EPIC-3; [capyboop.com](https://capyboop.com/) cutover is explicitly deferred out of active Sprint 1 scope. *(Tracking: EPIC-2 | Sprint 1 (`#2`)).*
+**Epic Goal**: Stabilize `v3.0.x` with critical reliability fixes, approved UX polish, and [capypaint.com](https://capypaint.com/) live cutover plus [capyboop/paint](https://github.com/capyboop/paint/issues) public issue tracker setup (#543 — Production capypaint.com DNS, Cloudflare Worker & /env-setup cutover). Unapproved feature stories (`US-2.1`, `US-2.3b`, `US-2.4`) and Play Store release ops (`TASK-2.5`) live in EPIC-3; [capyboop.com](https://capyboop.com/) cutover is explicitly deferred out of active Sprint 1 scope. *(Tracking: EPIC-2 | Sprint 1 (`#2`)).*
 
-- **Active Execution Queue**: See [`TODO.md`](./TODO.md) for #543 — Production capypaint.com DNS, Cloudflare Worker & /env-setup cutover ([capypaint.com](https://capypaint.com/) apex is live; remaining Human Ops cover `www` `301` edge redirect and HTTPS enforcement; live Pages channel at [Capy Production](https://capyboop.github.io/capy/)) while #561 — Harden Cloudflare remains open under EPIC-2. **Owner-Approved Sprint 1 Feature**: `US-3.5` (Fat-Finger Mode & Finger Reach Radius -- `fatFingerAssist`, `touchReachRadiusPx` `8px`--`40px` with `Compact 12px` / `Standard 22px` / `Large 34px` presets, and zero-allocation `resolveNearTapRegionId` radial hit-testing, #602 — Add Fat-Finger Mode near-miss tap assist and reach radius) moved from EPIC-3 into EPIC-2. `v3.0.2`--`v3.0.29` stabilization, Play Store launch prep, Preset Style Gallery, Detail/Hue colour defaults, compact replay scrubber, `dev environment config`, Leanback manifest/banner, ad-free privacy policy, Cloudflare Worker deployment, pre-generated Max sample/daily archives, and `lintVitalRelease` Android Fragment fix (`v3.0.14`--`v3.0.18` via #538; `v3.0.19`--`v3.0.20` via #549; `v3.0.21`--`v3.0.24` via #556; `v3.0.25`--`v3.0.26` via #562; `v3.0.27`--`v3.0.29` via #567) are promoted to `main` (`beta -> main`), while `v3.0.30`--`v3.0.35` (#569--#573, #575--#578) are staged on `beta` for #574; zero active contributor dev tasks remain in `TODO.md`.
+- **Active Execution Queue**: See [`TODO.md`](./TODO.md) for #543 — Production capypaint.com DNS, Cloudflare Worker & /env-setup cutover ([capypaint.com](https://capypaint.com/) apex and [paint.capyboop.com](https://paint.capyboop.com/) are live; remaining Ops cover `www` `301` edge redirect and HTTPS enforcement; live Pages channel at [Capy Production](https://capyboop.github.io/capy/)) while #561 — Harden Cloudflare remains open under EPIC-2. **Sprint 1 Feature**: `US-3.5` (Fat-Finger Mode & Finger Reach Radius -- `fatFingerAssist`, `touchReachRadiusPx` `8px`--`40px` with `Compact 12px` / `Standard 22px` / `Large 34px` presets, and zero-allocation `resolveNearTapRegionId` radial hit-testing, #602 — Add Fat-Finger Mode near-miss tap assist and reach radius, #605) moved from EPIC-3 into EPIC-2 and shipped in `v3.0.8`. All `v3.0.2`--`v3.0.8` stabilization, Play Store launch prep, Preset Style Gallery, Detail/Hue colour defaults, compact replay scrubber, Leanback manifest/banner, ad-free privacy policy, Cloudflare Worker deployment, pre-generated Max sample/daily archives, `lintVitalRelease` Android Fragment fix, BYOC Cloud Sync, anonymous feedback, and borderless completed-region slices are promoted to `main`; zero active dev tasks remain in [`TODO.md`](./TODO.md).
 - **Shipped & Re-Scoped History**:
-  - **Staged on `beta` for `main` promotion (`v3.0.30`--`v3.0.35` via #574)**: `v3.0.35` release prep, Play Store guide & `(Production, Beta)` changelog retag (#578); `StorageService.ts` backup recency & empty-overwrite durability + `[Unit 15]` tests (#577); public export, release workflow signing guard & dual-origin Co-op hardening (#576); public [capyboop/paint](https://github.com/capyboop/paint/issues) issue templates, About **Report Bug / Ideas** button & privacy policy links (#575); `O(R log R)` `maxRegions <= 2000` cap, Network-First `.capy` SW caching (`SW_ASSETS_DIGEST`) & Create tab hints (#573); `v3.0.31` Google Play Store remediation removing Android ad hooks, fake idea votes & startup Play Games sign-in leaks (#571); automated Max-detail sample/daily puzzle refreshes (#570, #572); and `[E2E 12]` Play Daily snapshot race fix (#569).
-  - **Promoted to `main` (`v3.0.27`--`v3.0.29` via #567)**: `v3.0.29` release notes retag (#568); `androidx.fragment:fragment-ktx` `1.8.9` pin fixing signed Android `lintVitalRelease` (#566); pre-generated `2048p` Max-settings `sample_saves.capy` & `daily_saves.capy` + scheduled `asset generation` (#565); and standardized sequential `[Unit]`/`[E2E]` test logging & isolated subprocess checks (#563).
-  - **Promoted to `main` (`v3.0.25`--`v3.0.26` via #562)**: direct merge fallback when `blocked` `100%` CI-approved PRs pass head `Build & Test` (#560) and direct Cloudflare Workers deploy + `_redirects` cleanup (#550).
-  - **Promoted to `main` (`v3.0.21`--`v3.0.24` via #556)**: visual Preset Style Gallery & Puzzle Styles tutorial step (#557); Original Detail colour mode and Rainbow / Hue sort defaults (#555); compact single-row replay scrubber (#554); stacked-PR merge-async fallback and mandatory Draft outstanding-work checklist gate (#553).
-  - **Promoted to `main` (`v3.0.19`--`v3.0.20` via #549)**: Google Play Store launch prep gating unfinished Cloud/Co-op hub UI (`cloud-coop-hub`, `topbar-coop-btn`, and `cloud_coop` tutorial step/offer) behind opt-in `isCloudCoopUiEnabled()` while preserving clean `saves-share-print-bar` (`Share Progress Link` + `Printable SVG`) plus `512x512` icon, `1024x500` feature graphic, Phone/Tablet screenshots, and [`PLAY_STORE_LISTING.md`](./docs/play-store/PLAY_STORE_LISTING.md) (#547); repo-scoped `dev environment config` environment setup & cutover issue tracking (#544); Android TV Leanback manifest declarations (`LEANBACK_LAUNCHER`, `touchscreen`/`leanback` `required="false"`), `320x180` `drawable-xhdpi/tv_banner.png`, `privacy-policy.html` 100% ad-free alignment, `AndroidTvManifestAndBridgeTest.kt` + Node TV static checks, and CI review workflow `CI-3.8-flash`/`CI-4-argon`/`ACTIONS_GITHUB_TOKEN`/`synchronize` unit tests (#545).
-  - **Promoted to `main` (`v3.0.14`--`v3.0.18` via #538)**: Fail-closed non-string PR body guard, human PR body edit review re-evaluation & auto-merge disarming, Pages `include-hidden-files: true` (`.well-known/assetlinks.json`), public repository `GIT_ASKPASS`/`ls-remote`/`SIGPIPE`/tag-reset hardening, and expanded workflow unit tests (#534); web storage durability (`preview_${id}` IndexedDB offload, `flushPendingBackups`, `QuotaExceededError` toast), `PuzzleCanvas` hot-path/throttling optimization, `App.tsx` O(1) lookup, and Co-op Worker SQLite checkpointing (#535); Android API 36 edge-to-edge/IME insets, WebView URL allowlisting, `cacheDir/shared/` 24h cleanup, release signing fail-closed guards, and Play Games cold-start buffering (#537); deterministic Playwright DOM/canvas/IndexedDB/hash-wait E2E hardening (#539); and viewport-save reload race fix (#540).
-  - **Shipped to `main` (`Production`)**: `BUG-1` & `BUG-3` (#484, #485), `BUG-2` (#485), and `BUG-5` mobile `GameTopBar` overlap & `99%` progress cap (#486, promoted to `main` in #488).
-  - **Promoted to `main` (`v3.0.2`--`v3.0.13`, `v3.0.2`--`v3.0.8` via #501; `v3.0.9`--`v3.0.11` via #526; `v3.0.12`--`v3.0.13` via #532)**: Prebaked sample `1x` viewport reset & one-click PR approval workflow (#490), prior `TASK-2.5` Play Store backlog sync (#487, later moved to EPIC-3), CI/CD & governance hardening (#491, #492, #493, #494), `TASK-2.6` post-load replay controls, `Capy Forest` default, interactive first-run tutorial & `About` tab (#489), `v3.0.7` storage sandbox isolation, fractional DPR & settings/import/Play Games fixes + `.changelog/` compiler & Epic tracker sync (#495), cross-chat `status notes` coordination rule (#496), `v3.0.8` zoom pill badge removal & 360px `SettingsModal` tab clipping fix (#497), backlog/roadmap & `%`-first PR checklist governance (#502, #509), `main -> beta` `project docs` syncs (#499, #500, #504, #505, #507, #508), `v3.0.9` `PaletteDock` replay visibility & `Saves` tab `Thumbnails` list-first layout (#517), `v3.0.10` Low-Vision Large Text mode, sorted/centered `PaletteDock` & default Undo (#518), `v3.0.11` 14-step `OnboardingTutorial`, 9 `FeatureOfferBanner` quick tips & 100% PR/review workflows (#519), `100%` PR checklist & `beta` syncs (#520, #522, #524, #526), CapyBoop handbook (#521), `v3.0.12` tutorial target spotlight ring, replay auto-dismissal & mobile badge polish (#523), and `v3.0.13` viewport-save progress preservation, async Android/E2E/Pages CI speedup & strict `100%` CI auto-merge (#528, #530, #531, #532).
-  - **Moved to EPIC-3**: Shipped pre-re-scope touch/audio slices `US-2.2` & `TASK-2.3a` (#472, archived under EPIC-3 in [Section 6](#6-shipped-epics--stories-epic-1--completed-stories)), unapproved feature stories `US-2.1`, `US-2.3b`, and `US-2.4`, and deferred Android Play deployment `TASK-2.5` ([Section 2](#2-epic-3-touch-assist-sensory-polish-retention-accessibility--replays-awaiting-owner-review--approval)).
+  - **Promoted to `main` (`v3.0.8`, 2026-11-20)**: Changelog standardization & project doc sync (#610), borderless completed regions (#608), BYOC OneDrive/CloudKit/Google Drive sync (#604), Large Text scaling & default Fat-Finger assist (#605), anonymous in-game feedback card & Worker relay (#603), `paint.capyboop.com` Worker domain (#595), Android package `com.capyboop.paint` (#601), and Fat-Finger Mode touch reach presets (#602).
+  - **Promoted to `main` (`v3.0.7`, 2026-11-19)**: `capyboop/paint` community docs & repository alignment (#598, #596, #587), top-bar save title pill width (#590), on-demand puzzle regeneration (#589), and `oxlint` guardrails + `<ErrorBoundary>` crash recovery (#588).
+  - **Promoted to `main` (`v3.0.6`, 2026-11-18)**: Release safety, Worker/Android/storage invariants (#579), Production channel retag & Play Store guide sync (#578), `StorageService.ts` backup recency & empty-overwrite durability (#577), release export filtering, release workflow signing guard & dual-origin Co-op hardening (#576), public [capyboop/paint](https://github.com/capyboop/paint/issues) issue templates & About **Report Bug / Ideas** button (#575), `O(R log R)` `maxRegions <= 2000` cap & Network-First `.capy` SW caching (#573), and Google Play Store remediation removing Android ad hooks, fake idea votes & startup Play Games sign-in leaks (#571).
+  - **Promoted to `main` (`v3.0.5`, 2026-11-16)**: Play Daily snapshot race fix (#569), release notes retag (#568), `androidx.fragment:fragment-ktx` `1.8.9` pin fixing signed Android `lintVitalRelease` (#566), pre-generated `2048p` Max-settings `sample_saves.capy` & `daily_saves.capy` (#565), standardized sequential `[Unit]`/`[E2E]` test logging (#563), direct Cloudflare Workers deploy (#550) and direct blocked-PR merge fallback (#560), visual Preset Style Gallery & Puzzle Styles tutorial step (#557), Original Detail colour mode & Rainbow / Hue sort defaults (#555), compact single-row replay scrubber (#554), stacked-PR merge-async fallback & Draft checklist gate (#553), and Google Play Store launch prep gating unfinished Cloud/Co-op hub UI behind opt-in `isCloudCoopUiEnabled()` plus [`PLAY_STORE_LISTING.md`](./docs/play-store/PLAY_STORE_LISTING.md) (#547).
+  - **Promoted to `main` (`v3.0.4`, 2026-11-15)**: Android TV Leanback manifest/banner & ad-free `privacy-policy.html` (#545), environment setup & cutover tracking (#544), viewport-save reload race fix (#540), deterministic Playwright E2E waits (#539), Android API 36 edge-to-edge/IME insets & WebView allowlisting (#537), web storage IndexedDB thumbnail offload & Co-op Worker SQLite checkpointing (#535), CI workflow & release sync hardening (#534), and async Android/E2E/Pages CI speedup (#530).
+  - **Promoted to `main` (`v3.0.3`, 2026-11-14)**: Tutorial target spotlight ring, replay auto-dismissal & mobile badge polish (#523), 14-step `OnboardingTutorial` & 9 `FeatureOfferBanner` quick tips (#519), Low-Vision Large Text mode, sorted/centered `PaletteDock` & default Undo (#518), and `PaletteDock` replay visibility & `Saves` tab `Thumbnails` list-first layout (#517).
+  - **Promoted to `main` (`v3.0.2`, 2026-11-13)**: zoom pill badge removal & 360px `SettingsModal` tab clipping fix (#497), storage sandbox isolation, fractional DPR & `.changelog/` compiler (#495), `TASK-2.6` post-load replay controls, `Capy Forest` default, first-run tutorial & `About` tab (#489), CI/CD & governance hardening (#491--#494), prebaked sample `1x` viewport reset & workflow automation (#490), and prior `TASK-2.5` Play Store backlog sync (#487, later moved to EPIC-3).
+  - **Shipped to `main` (`v3.0.0`--`v3.0.1`, 2026-11-12)**: `BUG-1` & `BUG-3` (#484, #485), `BUG-2` (#485), and `BUG-5` mobile `GameTopBar` overlap & `99%` progress cap (#486, promoted to `main` in #488).
+  - **Moved to EPIC-3**: Shipped pre-re-scope touch/audio slices `US-2.2` & `TASK-2.3a` (#472, archived under EPIC-3 in [Section 6](#6-shipped-epics--stories-epic-1--completed-stories)), unapproved feature stories `US-2.1`, `US-2.3b`, and `US-2.4`, and deferred Android Play deployment `TASK-2.5` ([Section 2](#2-epic-3-touch-assist-sensory-polish-retention-accessibility--replays-awaiting-review--approval)).
 
 ---
 
-## 2. `EPIC-3`: Touch Assist, Sensory Polish, Retention, Accessibility & Replays (`Awaiting Owner Review & Approval`)
+## 2. `EPIC-3`: Touch Assist, Sensory Polish, Retention, Accessibility & Replays (`Awaiting Review & Approval`)
 
-**Epic Goal**: Forgive near-miss mobile taps, deliver owner-approved tactile/audio/loupe polish, build daily return habits, ensure colorblind accessibility, and enable shareable video replays—`100%` client-side with zero backend. *(GitHub Tracking Issue: EPIC-3 | Milestone: Sprint 2 | All unshipped feature stories below await explicit Owner review and approval before entering [`TODO.md`](./TODO.md)).*
+**Epic Goal**: Forgive near-miss mobile taps, deliver owner-approved tactile/audio/loupe polish, build daily return habits, ensure colorblind accessibility, and enable shareable video replays—`100%` client-side with zero backend. *(GitHub Tracking Issue: EPIC-3 | Milestone: Sprint 2 | All unshipped feature stories below await review and approval before entering [`TODO.md`](./TODO.md)).*
 
 ### US-3.1: Daily Featured Puzzle Streak & Completion Medals
 
-- **Readiness**: `Awaiting Owner Review & Approval` *(base UTC `DailyPuzzleService.ts` & **Create** hero card `TASK-3.1a` shipped in #474)*
+- **Readiness**: `Awaiting Review & Approval` *(base UTC `DailyPuzzleService.ts` & **Create** hero card `TASK-3.1a` shipped in #474)*
 - **Description**: Persist daily completion history (`capy_daily_streak_v1`), consecutive-day streak counter, and Relaxed vs. Zero-Hint completion medals on top of `DailyPuzzleService.ts`.
 - **Value**: Turns one-off daily puzzle launches into a rewarding consecutive-day coloring habit completely offline.
 - **Why Now**: `DailyPuzzleService.ts` (#474) already rotates featured artworks deterministically by UTC date; adding streak persistence completes the retention loop once approved.
@@ -57,11 +56,10 @@ Strategic product horizon for **Capy** ([`web/`](./web/) and [`app/`](./app/)). 
   - **TASK-3.1b**: Persist daily completion history (`capy_daily_streak_v1`), consecutive-day streak counter, and Relaxed vs. Zero-Hint medal badges.
 
 <details>
-<summary>Engineering Metadata, Estimates, Files & Acceptance Criteria</summary>
+<summary>Engineering Metadata, Files & Acceptance Criteria</summary>
 
 - **Type & Priority**: `Story` | EPIC-3 | `priority: high` | `domain: ui`
-- **Complexity & Model**: `medium` / `moderate` | **Recommended Model**: `CI`
-- **Effort Estimate**: `~20,000 tokens` | `~9--13 min contributor` (`~2.5--3.5 hrs human`)
+- **Complexity**: `medium` / `moderate`
 - **Target Files**: [`web/src/services/DailyPuzzleService.ts`](./web/src/services/DailyPuzzleService.ts), [`web/src/components/SettingsModal.tsx`](./web/src/components/SettingsModal.tsx), [`web/src/App.tsx`](./web/src/App.tsx), [`web/src/types/index.ts`](./web/src/types/index.ts), [`WEB.md`](./WEB.md)
 - **Acceptance Criteria**:
   - Consecutive UTC-day completions increment streak accurately while preserving Relaxed vs. Zero-Hint medal badges offline, covered by Playwright E2E assertions.
@@ -70,7 +68,7 @@ Strategic product horizon for **Capy** ([`web/`](./web/) and [`app/`](./app/)). 
 
 ### US-3.2: Inclusive Accessibility -- Colorblind Geometric Region Patterns
 
-- **Readiness**: `Awaiting Owner Review & Approval` *(base `reducedMotion` `TASK-3.2a` & desktop keyboard shortcuts `TASK-3.2b` shipped in #474)*
+- **Readiness**: `Awaiting Review & Approval` *(base `reducedMotion` `TASK-3.2a` & desktop keyboard shortcuts `TASK-3.2b` shipped in #474)*
 - **Description**: Add geometric `CanvasPattern` hatch overlays (`colorblindPatternMode`) for active and hinted regions alongside existing `reducedMotion` and desktop keyboard gameplay shortcuts.
 - **Value**: Ensures players with deuteranopia, protanopia, or tritanopia can distinguish similar palette shades comfortably without relying solely on hue contrast.
 - **Why Now**: `reducedMotion` and desktop keyboard shortcuts (`1`--`9`, `+`/`-`, `0`, Arrow/WASD) are live (#474); adding cached `CanvasPattern` textures finishes full visual accessibility once approved.
@@ -78,11 +76,10 @@ Strategic product horizon for **Capy** ([`web/`](./web/) and [`app/`](./app/)). 
   - **TASK-3.2c**: Add `colorblindPatternMode: boolean` rendering cached `CanvasPattern` geometric textures (dots, stripes, crosshatch, checkerboard) over active and hinted regions.
 
 <details>
-<summary>Engineering Metadata, Estimates, Files & Acceptance Criteria</summary>
+<summary>Engineering Metadata, Files & Acceptance Criteria</summary>
 
 - **Type & Priority**: `Story` | EPIC-3 | `priority: high` | `domain: a11y, canvas, ui`
-- **Complexity & Model**: `high` / `hard` | **Recommended Model**: `CI`
-- **Effort Estimate**: `~17,000 tokens` | `~8--12 min contributor` (`~2--3 hrs human`)
+- **Complexity**: `high` / `hard`
 - **Target Files**: [`web/src/components/PuzzleCanvas.tsx`](./web/src/components/PuzzleCanvas.tsx), [`web/src/components/SettingsModal.tsx`](./web/src/components/SettingsModal.tsx), [`web/src/types/index.ts`](./web/src/types/index.ts), [`WEB.md`](./WEB.md)
 - **Acceptance Criteria**:
   - `CanvasPattern` tiles are generated once at setup/theme change—zero per-frame pattern creation inside `requestAnimationFrame`.
@@ -91,7 +88,7 @@ Strategic product horizon for **Capy** ([`web/`](./web/) and [`app/`](./app/)). 
 
 ### US-3.3: Shareable Timelapse Replay Video (`.mp4` / `.webm`) Export
 
-- **Readiness**: `Awaiting Owner Review & Approval`
+- **Readiness**: `Awaiting Review & Approval`
 - **Description**: Add an "Export Timelapse Video" button in `ReplayControls.tsx` recording the puzzle's chronological fill animation via `HTMLCanvasElement.captureStream(60)` + `MediaRecorder` and sharing via `NativeBridge.exportOrShareFile`.
 - **Value**: Turns Capy's YouTube-style replay scrubber into a one-tap shareable timelapse video for friends and social feeds, driving organic word-of-mouth discovery.
 - **Why Now**: Chronological `replaySequence` playback and `NativeBridge.exportOrShareFile` binary sharing already exist; adding `MediaRecorder` export unlocks sharing with zero server encoding cost once approved.
@@ -100,11 +97,10 @@ Strategic product horizon for **Capy** ([`web/`](./web/) and [`app/`](./app/)). 
   - **TASK-3.3b**: Wire an Export Video button in `ReplayControls.tsx` and completion banner to `NativeBridge.exportOrShareFile` with feature-detection fallback.
 
 <details>
-<summary>Engineering Metadata, Estimates, Files & Acceptance Criteria</summary>
+<summary>Engineering Metadata, Files & Acceptance Criteria</summary>
 
 - **Type & Priority**: `Story` | EPIC-3 | `priority: high` | `domain: export, canvas`
-- **Complexity & Model**: `high` / `hard` | **Recommended Model**: `CI`
-- **Effort Estimate**: `~45,000 tokens` | `~22--30 min contributor` (`~6--9 hrs human`)
+- **Complexity**: `high` / `hard`
 - **Target Files**: `web/src/services/ReplayVideoExporter.ts`, [`web/src/components/ReplayControls.tsx`](./web/src/components/ReplayControls.tsx), [`web/src/components/PuzzleCanvas.tsx`](./web/src/components/PuzzleCanvas.tsx), [`web/src/services/NativeBridge.ts`](./web/src/services/NativeBridge.ts), [`WEB.md`](./WEB.md)
 - **Acceptance Criteria**:
   - Prefers `video/mp4;codecs=avc1` where supported with automatic `video/webm;codecs=vp9` fallback, releasing all `MediaStreamTrack` handles on finish or cancel.
@@ -113,7 +109,7 @@ Strategic product horizon for **Capy** ([`web/`](./web/) and [`app/`](./app/)). 
 
 ### US-3.4: Milestone Achievement Toasts & CRDT Lifetime Stats Sync
 
-- **Readiness**: `Awaiting Owner Review & Approval` *(local `PlayerStatsService.ts` & Settings **Lifetime Stats** card `TASK-3.4a` shipped in #474)*
+- **Readiness**: `Awaiting Review & Approval` *(local `PlayerStatsService.ts` & Settings **Lifetime Stats** card `TASK-3.4a` shipped in #474)*
 - **Description**: Layer non-blocking milestone achievement unlock toasts, monotonic CRDT cloud stat sync, and optional Play Games hooks onto `PlayerStatsService.ts` (`capy_player_stats_v1`).
 - **Value**: Rewards long-term mastery across Easy, Hard, Free Colour, and Co-op modes and keeps lifetime totals synced monotonically across devices.
 - **Why Now**: Local `PlayerStatsService.ts` (`mergeLifetimeStats`) and the Settings **Lifetime Stats** card are live (#474); wiring milestone unlock toasts and cloud/Play Games bridges completes cross-device progression once approved.
@@ -121,11 +117,10 @@ Strategic product horizon for **Capy** ([`web/`](./web/) and [`app/`](./app/)). 
   - **TASK-3.4b**: Add milestone achievement unlock toasts, monotonic CRDT stat merging in `ProviderRegistry.ts` / `CloudProviderDrivers.ts`, and defensive no-op `NativeBridge.unlockAchievement` hooks.
 
 <details>
-<summary>Engineering Metadata, Estimates, Files & Acceptance Criteria</summary>
+<summary>Engineering Metadata, Files & Acceptance Criteria</summary>
 
 - **Type & Priority**: `Story` | EPIC-3 | `priority: high` | `domain: ui, cloud, android`
-- **Complexity & Model**: `high` / `moderate` | **Recommended Model**: `CI`
-- **Effort Estimate**: `~32,000 tokens` | `~14--20 min contributor` (`~4--6 hrs human`)
+- **Complexity**: `high` / `moderate`
 - **Target Files**: [`web/src/services/PlayerStatsService.ts`](./web/src/services/PlayerStatsService.ts), [`web/src/components/SettingsModal.tsx`](./web/src/components/SettingsModal.tsx), [`web/src/services/providers/ProviderRegistry.ts`](./web/src/services/providers/ProviderRegistry.ts), [`web/src/services/providers/CloudProviderDrivers.ts`](./web/src/services/providers/CloudProviderDrivers.ts), [`web/src/services/NativeBridge.ts`](./web/src/services/NativeBridge.ts), [`WEB.md`](./WEB.md)
 - **Acceptance Criteria**:
   - Stat counters merge monotonically (`Math.max` / set-count union) across devices so syncing an older offline tab never decrements lifetime totals.
@@ -134,20 +129,19 @@ Strategic product horizon for **Capy** ([`web/`](./web/) and [`app/`](./app/)). 
 
 ### US-2.1: Floating Precision Loupe Magnifier for Micro-Regions *(Moved from EPIC-2)*
 
-- **Readiness**: `Awaiting Owner Review & Approval`
+- **Readiness**: `Awaiting Review & Approval`
 - **Description**: Render an optional floating circular `2.5x` magnifier cutout with center crosshair (`showMagnifierLoupe`) offset `72px` above the active finger during press-and-hold or Paint Mode drags on [`PuzzleCanvas.tsx`](./web/src/components/PuzzleCanvas.tsx), flipping cleanly below near top HUD edges.
 - **Value**: Eliminates mobile thumb occlusion on tiny `< 50px` micro-regions without forcing repeated manual zooming to `12x` and back out.
-- **Why Pushed to EPIC-3**: Held out of `v3.0.1` (bugfixes only) so the Project Owner can review visual cutout styling, crosshair ergonomics, horizontal edge clamping, and hold-vs-pan gesture thresholds prior to implementation.
+- **Why Pushed to EPIC-3**: Held out of `v3.0.1` (bugfixes only) pending review of visual cutout styling, crosshair ergonomics, horizontal edge clamping, and hold-vs-pan gesture thresholds prior to implementation.
 - **Planned Sprint Slices**:
   - **TASK-2.1a**: Render a zero-allocation `2.5x` magnified `baseCanvasRef` cutout + crosshair lens in `PuzzleCanvas.tsx`.
   - **TASK-2.1b** `[quick-win]`: Add `showMagnifierLoupe: boolean` setting toggle in `SettingsModal.tsx` Controls and Playwright E2E touch-hold verification.
 
 <details>
-<summary>Engineering Metadata, Estimates, Files & Acceptance Criteria</summary>
+<summary>Engineering Metadata, Files & Acceptance Criteria</summary>
 
 - **Type & Priority**: `Story` | EPIC-3 | `priority: medium` | `domain: canvas, gestures, ui`
-- **Complexity & Model**: `high` / `hard` | **Recommended Model**: `CI` (`workflow`) + `CI` (`2.1b`)
-- **Effort Estimate**: `~40,000 tokens` | `~18--26 min contributor` (`~5--7 hrs human`)
+- **Complexity**: `high` / `hard`
 - **Target Files**: [`web/src/components/PuzzleCanvas.tsx`](./web/src/components/PuzzleCanvas.tsx), [`web/src/components/SettingsModal.tsx`](./web/src/components/SettingsModal.tsx), [`web/src/services/StorageService.ts`](./web/src/services/StorageService.ts), [`web/src/types/index.ts`](./web/src/types/index.ts), [`WEB.md`](./WEB.md)
 - **Acceptance Criteria**:
   - Reuses existing offscreen `baseCanvasRef` (plus `highlightCanvasRef` / `borderCanvasRef`) via `ctx.drawImage` circular clip with zero per-frame `OffscreenCanvas` or heap allocations inside `requestAnimationFrame`, scaling cleanly for `devicePixelRatio`.
@@ -157,19 +151,18 @@ Strategic product horizon for **Capy** ([`web/`](./web/) and [`app/`](./app/)). 
 
 ### US-2.3: Zero-Asset Procedural ASMR Web Audio Engine -- Melodic Layer *(Moved from EPIC-2)*
 
-- **Readiness**: `Awaiting Owner Review & Approval` *(base woodblock tap synth `TASK-2.3a` shipped in #472)*
+- **Readiness**: `Awaiting Review & Approval` *(base woodblock tap synth `TASK-2.3a` shipped in #472)*
 - **Description**: Extend [`SoundService.ts`](./web/src/services/SoundService.ts) with rising pentatonic Paint Mode streak notes, warm swatch-completion chord arpeggios, and `100%` puzzle-completion chimes.
 - **Value**: Adds zero-KB offline harmonic reward to continuous painting and color completions while pairing cleanly with LRA haptics.
-- **Why Pushed to EPIC-3**: Held out of `v3.0.1` (bugfixes only) for Project Owner review of musical scale, instrument tone, voice-polyphony limits, and completion chime pacing.
+- **Why Pushed to EPIC-3**: Held out of `v3.0.1` (bugfixes only) pending review of musical scale, instrument tone, voice-polyphony limits, and completion chime pacing.
 - **Planned Sprint Slices**:
   - **TASK-2.3b** `[quick-win]`: Layer harmonic pentatonic streak progression during Paint Mode drags, warm swatch-clear arpeggios, and `100%` puzzle completion chimes into `SoundService.ts` and `App.tsx`.
 
 <details>
-<summary>Engineering Metadata, Estimates, Files & Acceptance Criteria</summary>
+<summary>Engineering Metadata, Files & Acceptance Criteria</summary>
 
 - **Type & Priority**: `Story` | EPIC-3 | `priority: medium` | `domain: audio, ui`
-- **Complexity & Model**: `medium` / `moderate` | **Recommended Model**: `CI`
-- **Effort Estimate**: `~22,000 tokens` | `~10--15 min contributor` (`~2.5--3.5 hrs human`)
+- **Complexity**: `medium` / `moderate`
 - **Target Files**: [`web/src/services/SoundService.ts`](./web/src/services/SoundService.ts), [`web/src/App.tsx`](./web/src/App.tsx), [`web/scripts/test.mjs`](./web/scripts/test.mjs), [`WEB.md`](./WEB.md)
 - **Acceptance Criteria**:
   - Zero bundled audio assets (`0 KB`), streak resets cleanly after gesture idle (`> 450ms`), does not advance on `UNFILL` / Undo, caps simultaneous oscillators (max 3--4 voices) during fast drags, and respects `soundEnabled`, `soundVolume`, and `document.hidden` auto-suspend.
@@ -178,20 +171,19 @@ Strategic product horizon for **Capy** ([`web/`](./web/) and [`app/`](./app/)). 
 
 ### US-2.4: Zero-Allocation Region Fill Bloom & Swatch Shimmer *(Moved from EPIC-2)*
 
-- **Readiness**: `Awaiting Owner Review & Approval`
+- **Readiness**: `Awaiting Review & Approval`
 - **Description**: Animate region fills with a `180ms` radial ink-bloom and highlight newly completed palette swatches with a `400ms` shimmer wave across matching regions in [`PuzzleCanvas.tsx`](./web/src/components/PuzzleCanvas.tsx).
 - **Value**: Gives clear, tactile visual feedback on fills and color completions using a zero-allocation typed-array ring buffer.
-- **Why Pushed to EPIC-3**: Held out of `v3.0.1` (bugfixes only) so the Project Owner can review visual subtlety, `reducedMotion` behavior, and battery impact before implementation.
+- **Why Pushed to EPIC-3**: Held out of `v3.0.1` (bugfixes only) pending review of visual subtlety, `reducedMotion` behavior, and battery impact before implementation.
 - **Planned Sprint Slices**:
   - **TASK-2.4a**: Create a pre-allocated typed-array fill-animation ring buffer (mirroring `CoopRippleBuffer.ts`) driving a `180ms` radial clip bloom in `PuzzleCanvas.tsx`.
   - **TASK-2.4b**: Trigger a `400ms` celebratory highlight pulse across completed-swatch centroids when a palette color reaches `0` remaining regions.
 
 <details>
-<summary>Engineering Metadata, Estimates, Files & Acceptance Criteria</summary>
+<summary>Engineering Metadata, Files & Acceptance Criteria</summary>
 
 - **Type & Priority**: `Story` | EPIC-3 | `priority: medium` | `domain: canvas`
-- **Complexity & Model**: `high` / `hard` | **Recommended Model**: `CI` (`2.4a`), `CI` (`2.4b`)
-- **Effort Estimate**: `~42,000 tokens` | `~20--28 min contributor` (`~5--7 hrs human`)
+- **Complexity**: `high` / `hard`
 - **Target Files**: [`web/src/components/PuzzleCanvas.tsx`](./web/src/components/PuzzleCanvas.tsx), [`web/src/engine/CoopRippleBuffer.ts`](./web/src/engine/CoopRippleBuffer.ts), [`web/scripts/test.mjs`](./web/scripts/test.mjs), [`WEB.md`](./WEB.md)
 - **Acceptance Criteria**:
   - Zero heap allocations (`Float32Array` / `Int32Array` fixed ring buffer) during `requestAnimationFrame`, overwriting the oldest slot cleanly on overflow, bypassing bloom/shimmer when `reducedMotion` is enabled, and returning to `0%` CPU idle once the `180ms` / `400ms` window expires.
@@ -200,17 +192,16 @@ Strategic product horizon for **Capy** ([`web/`](./web/) and [`app/`](./app/)). 
 
 ### TASK-2.5: Android App Verification & Google Play Store Deployment *(Moved from EPIC-2)*
 
-- **Readiness**: `Ready for Release Ops (Store-Clean v3.0.35 Build, Phone/Tablet Store Listing, Graphics & Privacy Policy Staged; Keystore Secrets Configured, Awaiting Tag & Play Console Upload)`
-- **Description**: Verify release signing secrets (`CAPY_KEYSTORE_BASE64`, `CAPY_KEYSTORE_PASSWORD`, `CAPY_KEY_ALIAS`, `CAPY_KEY_PASSWORD`, already configured in repository Actions secrets), verify `./gradlew app:testDebugUnitTest app:assembleRelease app:bundleRelease` (plus `MainActivity` `onPause`/`onResume` lifecycle & hardware back navigation), tag `v3.0.35` from `main` to trigger [`.github/workflows/release.yml`](./.github/workflows/release.yml), and publish the Play-signed `.aab` to Google Play Console using [`docs/play-store/PLAY_STORE_LISTING.md`](./docs/play-store/PLAY_STORE_LISTING.md) (Phone & Tablet form factors only; Android TV form factor remains unchecked until `US-3.6` ships post-launch).
+- **Readiness**: `Ready for Release Ops (Store-Clean v3.0.8 Build, Phone/Tablet Store Listing, Graphics & Privacy Policy Staged; Keystore Secrets Configured, Awaiting Tag & Play Console Upload)`
+- **Description**: Verify release signing secrets (`CAPY_KEYSTORE_BASE64`, `CAPY_KEYSTORE_PASSWORD`, `CAPY_KEY_ALIAS`, `CAPY_KEY_PASSWORD`, already configured in repository Actions secrets), verify `./gradlew app:testDebugUnitTest app:assembleRelease app:bundleRelease` (plus `MainActivity` `onPause`/`onResume` lifecycle & hardware back navigation), tag `v3.0.8` (matching [`web/package.json`](./web/package.json)) from `main` to trigger [`.github/workflows/release.yml`](./.github/workflows/release.yml), and publish the Play-signed `.aab` to Google Play Console using [`docs/play-store/PLAY_STORE_LISTING.md`](./docs/play-store/PLAY_STORE_LISTING.md) (Phone & Tablet form factors only; Android TV form factor remains unchecked until `US-3.6` ships post-launch).
 - **Value**: Ships the unified Android wrapper (`com.capyboop.paint`) to Google Play Store alongside the web release.
-- **Why Pushed to EPIC-3**: Moved out of EPIC-2 (`v3.0.x` bugfixes & stabilization) by the Project Owner so Play Store signing and release operations track alongside Sprint 2 readiness.
+- **Why Pushed to EPIC-3**: Moved out of EPIC-2 (`v3.0.x` bugfixes & stabilization) so Play Store signing and release operations track alongside Sprint 2 readiness.
 
 <details>
-<summary>Engineering Metadata, Estimates, Files & Acceptance Criteria</summary>
+<summary>Engineering Metadata, Files & Acceptance Criteria</summary>
 
 - **Type & Priority**: `Task` | EPIC-3 (Milestone #3) | `priority: high` | `domain: android, ci`
-- **Complexity & Model**: `medium` | **Recommended Model**: `CI` + Owner Play Console / Keystore Setup
-- **Effort Estimate**: `~18,000 tokens` | `~10--15 min contributor`
+- **Complexity**: `medium`
 - **Target Files**: [`app/build.gradle.kts`](./app/build.gradle.kts), [`app/src/main/java/com/capyboop/paint/MainActivity.kt`](./app/src/main/java/com/capyboop/paint/MainActivity.kt), [`.github/workflows/release.yml`](./.github/workflows/release.yml), [`APP.md`](./APP.md), [`docs/play-store/PLAY_STORE_LISTING.md`](./docs/play-store/PLAY_STORE_LISTING.md)
 - **Acceptance Criteria**:
   - `release.yml` builds a Play-signed `.aab` and `.apk` matching [`web/package.json`](./web/package.json) SemVer and `versionCode` cleanly.
@@ -220,20 +211,19 @@ Strategic product horizon for **Capy** ([`web/`](./web/) and [`app/`](./app/)). 
 
 ### US-3.6: Android TV `1920x1080` Overscan Layout, D-Pad Focus & Reticle Fill
 
-- **Readiness**: `Deferred Until Post-Play-Store Launch (Per project guideline)` *(Dormant `LEANBACK_LAUNCHER` manifest & `320x180` `tv_banner.png` staged in `v3.0.19`; do NOT opt into Android TV form factor in Play Console yet)*
+- **Readiness**: `Deferred Until Post-Play-Store Launch` *(Dormant `LEANBACK_LAUNCHER` manifest & `320x180` `tv_banner.png` staged in `v3.0.4`; do NOT opt into Android TV form factor in Play Console yet)*
 - **Description**: Add `1920x1080` television `5%` overscan-safe HUD margins, visible `focus-visible` D-pad arrow traversal without canvas focus traps, and a virtual TV canvas reticle supporting `DPAD_CENTER` / `Enter` region fills across Web and Android TV.
 - **Value**: Turns big-screen Android TV and living-room browser play into a comfortable couch-ready experience with a standard TV remote.
-- **Why Deferred**: Deferred by the Project Owner until after the initial Phone & Tablet Google Play Store release (`TASK-2.5` / `v3.0.35`) is live.
+- **Why Deferred**: Deferred until after the initial Phone & Tablet Google Play Store release (`TASK-2.5` / `v3.0.8`) is live.
 - **Planned Sprint Slices**:
   - **TASK-3.6a**: Add `1920x1080` TV overscan-safe inset CSS + additive native safe-area variables and D-pad arrow focus traversal across `GameTopBar`, `PaletteDock`, `FloatingActions`, and `SettingsModal`.
   - **TASK-3.6b**: Add virtual TV canvas reticle (`DPAD_CENTER` / `Enter` / `Space` tap-to-fill) and `MainActivity.kt` D-pad key forwarding with `1920x1080` Playwright E2E coverage.
 
 <details>
-<summary>Engineering Metadata, Estimates, Files & Acceptance Criteria</summary>
+<summary>Engineering Metadata, Files & Acceptance Criteria</summary>
 
 - **Type & Priority**: `Story` | EPIC-3 | `priority: medium-high` | `domain: tv, ui, android`
-- **Complexity & Model**: `high` / `moderate` | **Recommended Model**: `CI`
-- **Effort Estimate**: `~40,000 tokens` | `~20--28 min contributor` (`~5--7 hrs human`)
+- **Complexity**: `high` / `moderate`
 - **Target Files**: [`web/src/App.tsx`](./web/src/App.tsx), [`web/src/components/PuzzleCanvas.tsx`](./web/src/components/PuzzleCanvas.tsx), [`web/src/index.css`](./web/src/index.css), [`app/src/main/java/com/capyboop/paint/MainActivity.kt`](./app/src/main/java/com/capyboop/paint/MainActivity.kt), [`web/scripts/test.mjs`](./web/scripts/test.mjs), [`APP.md`](./APP.md)
 - **Acceptance Criteria**:
   - Interactive HUD controls stay within `1920x1080` `5%` TV overscan safe bounds without regressing `360x780` mobile layout, and D-pad arrow keys traverse HUD controls and canvas reticle without focus traps.
@@ -256,11 +246,10 @@ Strategic product horizon for **Capy** ([`web/`](./web/) and [`app/`](./app/)). 
   - **TASK-4.1b**: Upgrade `handleZoomIntoDetailTile` to crop around the active `(focusX, focusY)` viewport center with persisted `subTileBounds` for multi-depth navigation.
 
 <details>
-<summary>Engineering Metadata, Estimates, Files & Acceptance Criteria</summary>
+<summary>Engineering Metadata, Files & Acceptance Criteria</summary>
 
 - **Type & Priority**: `Story` | EPIC-4 | `priority: medium-high` | `domain: canvas, engine, ui`
-- **Complexity & Model**: `high` / `hard` | **Recommended Model**: `CI` (`4.1b`)
-- **Effort Estimate**: `~26,000 tokens` | `~12--18 min contributor` (`~3.5--5 hrs human`)
+- **Complexity**: `high` / `hard`
 - **Target Files**: [`web/src/App.tsx`](./web/src/App.tsx), [`web/src/components/GameTopBar.tsx`](./web/src/components/GameTopBar.tsx), [`web/src/components/PuzzleCanvas.tsx`](./web/src/components/PuzzleCanvas.tsx), [`web/src/types/index.ts`](./web/src/types/index.ts), [`WEB.md`](./WEB.md)
 - **Acceptance Criteria**:
   - Cropping around arbitrary `(focusX, focusY)` clamps cleanly inside source image bounds across repeated `2x` sub-tile depths while preserving parent breadcrumb restoration.
@@ -277,11 +266,10 @@ Strategic product horizon for **Capy** ([`web/`](./web/) and [`app/`](./app/)). 
   - **TASK-4.2b**: Add print sheet layout options in `SettingsModal.tsx` (A4 vs. Letter aspect framing, line thickness, optional number hiding for freehand coloring, and browser Print/PDF trigger).
 
 <details>
-<summary>Engineering Metadata, Estimates, Files & Acceptance Criteria</summary>
+<summary>Engineering Metadata, Files & Acceptance Criteria</summary>
 
 - **Type & Priority**: `Story` | EPIC-4 | `priority: medium-high` | `domain: export, engine`
-- **Complexity & Model**: `medium` / `moderate` | **Recommended Model**: `CI`
-- **Effort Estimate**: `~22,000 tokens` | `~12--16 min contributor` (`~3.5--5.5 hrs human`)
+- **Complexity**: `medium` / `moderate`
 - **Target Files**: [`web/src/services/SvgPrintExporter.ts`](./web/src/services/SvgPrintExporter.ts), [`web/src/components/SettingsModal.tsx`](./web/src/components/SettingsModal.tsx), [`web/src/services/NativeBridge.ts`](./web/src/services/NativeBridge.ts), [`WEB.md`](./WEB.md)
 - **Acceptance Criteria**:
   - A4 and US Letter aspect framing, configurable stroke widths, and optional number hiding render cleanly in Chrome/Firefox/Safari print preview without dark UI backgrounds.
@@ -298,11 +286,10 @@ Strategic product horizon for **Capy** ([`web/`](./web/) and [`app/`](./app/)). 
   - **TASK-4.3b**: Add `'PING'` wire message to `CoopMessageType` (`web/src/services/providers/types.ts`), relay via `HybridCoopRoomAdapter`, and render expanding dual-ring beacons in `CoopRippleBuffer.ts` and `PuzzleCanvas.tsx`.
 
 <details>
-<summary>Engineering Metadata, Estimates, Files & Acceptance Criteria</summary>
+<summary>Engineering Metadata, Files & Acceptance Criteria</summary>
 
 - **Type & Priority**: `Story` | EPIC-4 | `priority: medium-high` | `domain: multiplayer, canvas`
-- **Complexity & Model**: `medium` / `moderate` | **Recommended Model**: `CI`
-- **Effort Estimate**: `~20,000 tokens` | `~8--12 min contributor` (`~2--3 hrs human`)
+- **Complexity**: `medium` / `moderate`
 - **Target Files**: [`web/src/services/providers/types.ts`](./web/src/services/providers/types.ts), [`web/src/services/providers/ProviderRegistry.ts`](./web/src/services/providers/ProviderRegistry.ts), [`web/src/engine/CoopRippleBuffer.ts`](./web/src/engine/CoopRippleBuffer.ts), [`web/src/components/PuzzleCanvas.tsx`](./web/src/components/PuzzleCanvas.tsx), [`CLOUD.md`](./CLOUD.md)
 - **Acceptance Criteria**:
   - Zero per-frame heap allocations in `CoopRippleBuffer.ts`, verified by a 2-peer Playwright `BroadcastChannel` ping E2E test.
@@ -312,19 +299,18 @@ Strategic product horizon for **Capy** ([`web/`](./web/) and [`app/`](./app/)). 
 ### US-4.4: TV Screen + Phone/Remote Co-op Companion (QR Pairing & Touchpad)
 
 - **Readiness**: `Deferred Until Post-Play-Store Launch (Depends on US-3.6 & EPIC-3/EPIC-5 Cloud/Co-op Hub Promotion)`
-- **Description**: Add `REMOTE_CURSOR` and `REMOTE_ACTION` frames in `worker/coopRoomProtocol.ts`, zero-dependency inline SVG QR pairing (`#room=<CODE>&ctrl=1`) alongside 6-char room codes, and a mobile touchpad/palette controller view driving the TV canvas in real time once TV support ships after Google Play Store deployment (`cloud-coop-hub` remains gated behind `isCloudCoopUiEnabled()` in `v3.0.35`).
+- **Description**: Add `REMOTE_CURSOR` and `REMOTE_ACTION` frames in `worker/coopRoomProtocol.ts`, zero-dependency inline SVG QR pairing (`#room=<CODE>&ctrl=1`) alongside 6-char room codes, and a mobile touchpad/palette controller view driving the TV canvas in real time once TV support ships after Google Play Store deployment (`cloud-coop-hub` remains gated behind `isCloudCoopUiEnabled()` in `v3.0.8`).
 - **Value**: Lets family and friends turn any smartphone into a responsive wireless painting controller for a living-room TV without installing a separate companion app.
-- **Why Deferred**: Deferred by project guideline until after Google Play Store launch (`TASK-2.5` / `v3.0.35`); `CoopRoomDurableObject` (`worker/`) and `HybridCoopRoomAdapter` stay ready underneath `isCloudCoopUiEnabled()` (`?coop=1` / `?room=...`).
+- **Why Deferred**: Deferred until after Google Play Store launch (`TASK-2.5` / `v3.0.8`); `CoopRoomDurableObject` (`worker/`) and `HybridCoopRoomAdapter` stay ready underneath `isCloudCoopUiEnabled()` (`?coop=1` / `?room=...`).
 - **Planned Sprint Slices**:
   - **TASK-4.4a**: Extend `worker/coopRoomProtocol.ts` and `worker/index.ts` with validated `REMOTE_CURSOR` / `REMOTE_ACTION` frames and rate limits, and clean up unconfigured OAuth clutter in `SettingsModal.tsx` `Saves`.
   - **TASK-4.4b**: Add inline SVG QR pairing (`#room=<CODE>&ctrl=1`) and dedicated phone touchpad controller UI with 2-context Playwright E2E cursor, paint, and undo verification.
 
 <details>
-<summary>Engineering Metadata, Estimates, Files & Acceptance Criteria</summary>
+<summary>Engineering Metadata, Files & Acceptance Criteria</summary>
 
 - **Type & Priority**: `Story` | EPIC-4 | `priority: medium-high` | `domain: multiplayer, tv, ui`
-- **Complexity & Model**: `high` / `hard` | **Recommended Model**: `CI` (`workflow`) + `CI`
-- **Effort Estimate**: `~45,000 tokens` | `~20--30 min contributor` (`~6--8 hrs human`)
+- **Complexity**: `high` / `hard`
 - **Target Files**: [`worker/coopRoomProtocol.ts`](./worker/coopRoomProtocol.ts), [`worker/index.ts`](./worker/index.ts), [`web/src/services/ShareLinkService.ts`](./web/src/services/ShareLinkService.ts), [`web/src/components/SettingsModal.tsx`](./web/src/components/SettingsModal.tsx), [`web/src/App.tsx`](./web/src/App.tsx), [`CLOUD.md`](./CLOUD.md)
 - **Acceptance Criteria**:
   - Ephemeral `REMOTE_CURSOR` moves broadcast cleanly without overwriting SQLite `room_state` or starving `PAINT_EVENT` / `UNFILL_EVENT` frames, and `#room=<CODE>&ctrl=1` pairs from phone to `1920x1080` TV with `0px` mobile horizontal overflow.
@@ -346,11 +332,10 @@ Strategic product horizon for **Capy** ([`web/`](./web/) and [`app/`](./app/)). 
 - **Why Now**: Client drivers (`GoogleCloudDriver`, `PlayGamesAndroidDriver`, `privacy-policy.html`) are already complete; CI variable wiring from EPIC-2 (`BUG-2`) shipped to `main` in #485.
 
 <details>
-<summary>Engineering Metadata, Estimates, Files & Acceptance Criteria</summary>
+<summary>Engineering Metadata, Files & Acceptance Criteria</summary>
 
 - **Type & Priority**: `Story` | EPIC-5 | `priority: medium` | `domain: android, cloud`
-- **Complexity & Model**: `low` / `easy` | **Recommended Model**: `CI` + Human Console Setup
-- **Effort Estimate**: `~20,000 tokens` | `~10--15 min contributor` (`~2--4 hrs human`)
+- **Complexity**: `low` / `easy`
 - **Target Files**: [`app/build.gradle.kts`](./app/build.gradle.kts), [`app/src/main/AndroidManifest.xml`](./app/src/main/AndroidManifest.xml), [`CLOUD.md`](./CLOUD.md)
 - **Acceptance Criteria**:
   - `https://capyboop.github.io/.well-known/assetlinks.json` (or custom domain) validates against `pm get-app-links com.capyboop.paint` and Google OAuth sign-in succeeds without sandbox overrides.
@@ -366,11 +351,10 @@ Strategic product horizon for **Capy** ([`web/`](./web/) and [`app/`](./app/)). 
 - **Why Now**: `HybridCoopRoomAdapter` already implements the full WebSocket room protocol (`HELLO`, `WELCOME_STATE`, `PAINT_EVENT`, `HEARTBEAT`, `LEAVE`).
 
 <details>
-<summary>Engineering Metadata, Estimates, Files & Acceptance Criteria</summary>
+<summary>Engineering Metadata, Files & Acceptance Criteria</summary>
 
 - **Type & Priority**: `Story` | EPIC-5 | `priority: medium` | `domain: multiplayer, cloud`
-- **Complexity & Model**: `high` / `hard` | **Recommended Model**: `CI` (`workflow`) + `CI`
-- **Effort Estimate**: `~50,000 tokens` | `~25--35 min contributor` (`~8--12 hrs human`)
+- **Complexity**: `high` / `hard`
 - **Target Files**: [`worker/index.ts`](./worker/index.ts), [`worker/coopRoomProtocol.ts`](./worker/coopRoomProtocol.ts), [`wrangler.jsonc`](./wrangler.jsonc), [`web/src/services/providers/ProviderRegistry.ts`](./web/src/services/providers/ProviderRegistry.ts), [`CLOUD.md`](./CLOUD.md)
 - **Acceptance Criteria**:
   - Hibernates between strokes (`0` billable CPU ms while idle via C++ `PING`/`PONG`), enforces `<= 6 KB` frame caps, strict `Origin` validation, `40 frames / 5s` rate limiting, and write-once initial `seed_token` persistence, and automatically falls back to `BroadcastChannel` when offline or on `localhost`/`github.io`.
@@ -386,11 +370,10 @@ Strategic product horizon for **Capy** ([`web/`](./web/) and [`app/`](./app/)). 
 - **Why Now**: Custom photo puzzles (`45--95 KB` `.capy` v2) exceed `< 2 KB` URL hash limits; an encrypted ephemeral relay completes universal link sharing privately.
 
 <details>
-<summary>Engineering Metadata, Estimates, Files & Acceptance Criteria</summary>
+<summary>Engineering Metadata, Files & Acceptance Criteria</summary>
 
 - **Type & Priority**: `Story` | EPIC-5 | `priority: medium` | `domain: cloud, security`
-- **Complexity & Model**: `medium` / `hard` | **Recommended Model**: `CI`
-- **Effort Estimate**: `~40,000 tokens` | `~18--26 min contributor` (`~6--8 hrs human`)
+- **Complexity**: `medium` / `hard`
 - **Target Files**: [`web/src/services/ShareLinkService.ts`](./web/src/services/ShareLinkService.ts), [`web/public/privacy-policy.html`](./web/public/privacy-policy.html), [`CLOUD.md`](./CLOUD.md)
 - **Acceptance Criteria**:
   - Decryption key stays strictly inside `#s=...` (never transmitted in HTTP requests), and built-in Gallery `#s=` links continue using zero network calls.
@@ -406,11 +389,10 @@ Strategic product horizon for **Capy** ([`web/`](./web/) and [`app/`](./app/)). 
 - **Why Now**: Sequenced behind zero-cost client features because live image synthesis incurs per-request API cost (`AiCreditLedger`).
 
 <details>
-<summary>Engineering Metadata, Estimates, Files & Acceptance Criteria</summary>
+<summary>Engineering Metadata, Files & Acceptance Criteria</summary>
 
 - **Type & Priority**: `Story` | EPIC-5 | `priority: medium-low` | `domain: ai, engine, ui`
-- **Complexity & Model**: `high` / `hard` | **Recommended Model**: `CI` (`workflow`) + `CI`
-- **Effort Estimate**: `~90,000 tokens` (`~42k` + `~48k`) | `~40--60 min contributor` (`~12--18 hrs human`)
+- **Complexity**: `high` / `hard`
 - **Target Files**: [`web/src/services/providers/ProviderRegistry.ts`](./web/src/services/providers/ProviderRegistry.ts), [`web/src/components/SettingsModal.tsx`](./web/src/components/SettingsModal.tsx), [`web/src/App.tsx`](./web/src/App.tsx), [`CLOUD.md`](./CLOUD.md)
 - **Acceptance Criteria**:
   - Enforces family-friendly prompt moderation prior to API dispatch and degrades cleanly when offline or unconfigured.
@@ -426,11 +408,10 @@ Strategic product horizon for **Capy** ([`web/`](./web/) and [`app/`](./app/)). 
 - **Why Now**: Sequenced last in EPIC-5 because automated pack publishing builds directly on `US-5.4`.
 
 <details>
-<summary>Engineering Metadata, Estimates, Files & Acceptance Criteria</summary>
+<summary>Engineering Metadata, Files & Acceptance Criteria</summary>
 
 - **Type & Priority**: `Story` | EPIC-5 | `priority: medium-low` | `domain: cloud, engine`
-- **Complexity & Model**: `high` / `hard` | **Recommended Model**: `CI`
-- **Effort Estimate**: `~45,000 tokens` | `~20--30 min contributor` (`~6--8 hrs human`)
+- **Complexity**: `high` / `hard`
 - **Target Files**: [`web/src/services/providers/ProviderRegistry.ts`](./web/src/services/providers/ProviderRegistry.ts), `.github/workflows/`, [`CLOUD.md`](./CLOUD.md)
 - **Acceptance Criteria**:
   - Client continues working 100% offline with bundled + cached catalog entries if the community API is unreachable.
@@ -448,13 +429,13 @@ Parked native desktop/mobile store wrappers awaiting completion of EPIC-2--EPIC-
 
 - **`ICE-1`: Steam Desktop Wrapper (`desktop/` Tauri v2) & `SteamCloudDriver` Bindings**:
   - *Value*: Packages `web/dist/` for Windows/macOS/Linux Steam Deck & desktop players with `ISteamRemoteStorage` Cloud Saves, Steam Achievements, and Steam Overlay (`SteamCloudDriver` in [`CloudProviderDrivers.ts`](./web/src/services/providers/CloudProviderDrivers.ts) is already modularly stubbed).
-  - *Activation Trigger*: Promote to an active Epic after EPIC-2--EPIC-4 desktop keyboard, audio, and achievement contracts stabilize (`~60k tokens`, `CI`).
+  - *Activation Trigger*: Promote to an active Epic after EPIC-2--EPIC-4 desktop keyboard, audio, and achievement contracts stabilize.
 - **`ICE-2`: iOS & iPadOS Native Wrapper (`ios/` Swift `WKWebView`) & `AppleCloudDriver` Bindings**:
   - *Value*: Delivers App Store distribution with Apple Pencil hover/tilt ergonomics, CoreHaptics, GameKit (`GKLocalPlayer`), and CloudKit save sync (`window.webkit.messageHandlers.CapyIOS` + `AppleCloudDriver`).
-  - *Activation Trigger*: Promote when Apple Developer Storefront distribution and macOS Xcode signing are scheduled (`~65k tokens`, `CI`).
+  - *Activation Trigger*: Promote when Apple Developer Storefront distribution and macOS Xcode signing are scheduled.
 - **`ICE-3`: Microsoft Store / Xbox Wrapper & `MicrosoftCloudDriver` Bindings**:
   - *Value*: Connects `MicrosoftCloudDriver` to live Entra ID / MSA OAuth 2.0 PKCE credentials for OneDrive `special/approot` and Xbox Connected Storage sync.
-  - *Activation Trigger*: Promote alongside desktop/console storefront packaging (`~45k tokens`, `CI`).
+  - *Activation Trigger*: Promote alongside desktop/console storefront packaging.
 
 </details>
 
@@ -466,57 +447,19 @@ Parked native desktop/mobile store wrappers awaiting completion of EPIC-2--EPIC-
 Completed Epics and User Stories archived upon merge to `main` (full granular PR history lives in [`CHANGELOG.md`](./CHANGELOG.md)):
 
 <details>
-<summary>Expand Shipped Epics & Stories (EPIC-1 & Shipped/Staged Slices -- PRs #431--#579)</summary>
+<summary>Expand Shipped Epics & Stories (EPIC-1 & Shipped/Staged Slices -- PRs #431--#610)</summary>
 
-- **Sprint 1 `v3.0.0`--`v3.0.36` Bugfix, Onboarding, Mobile UI, Durability & Play Store Launch Prep Slices (`BUG-1`--`BUG-3`, `BUG-5`, `TASK-2.6`, PR Workflows & Governance)**:
-  - **`v3.0.36` Release Safety, Cloudflare Worker, Android Bridge & Storage Hardening** -- #579 — Harden release safety, Cloudflare Worker, Android bridge, and storage invariants
-  - **`v3.0.35` Release Promotion Prep (`v3.0.30`--`v3.0.35` Staged on `beta` for #574 — Promote Capy Beta release to main)** -- #578 — Sync v3.0.35 release prep, Play Store guide, and CI check titles
-  - **`v3.0.35` `StorageService.ts` Local/Backup Recency & Empty-Overwrite Durability** -- #577 — Harden local save backup recency and empty-overwrite protection
-  - **`v3.0.34` public Export, Release Signing Guard & Dual-Origin Co-op Hardening** -- #576 — Harden CapyBoop public export, release workflow, and Co-op origins
-  - **`v3.0.33` Public `capyboop/paint` Issue Tracker, Templates & About-Tab Link** -- #575 — Wire capypaint.com and templates to public capyboop/paint issue tracker
-  - **`v3.0.32` `O(R log R)` `maxRegions <= 2000` Cap, Network-First `.capy` SW Caching & Create Hints** -- #573 — Fix Max-detail region limits and offline caching with clearer Create hints
-  - **`v3.0.31` Google Play Store Remediation (Ad-Free UI, Private Puzzle Idea Notebook & Deferred Play Games Sign-In)** -- #571 — Remove Android ad hooks, fake idea votes, and default Co-op/login leaks for Play Store
-  - **`v3.0.30` Play Daily Snapshot Race Fix & Max-Detail Sample/Daily Refreshes** -- #569 — Fix intermittent Play Daily end-to-end test failure, #570 — Regenerate Max-settings sample and daily puzzles, #572 — Regenerate Max-settings sample and daily puzzles
-  - **`v3.0.29` Production Promotion (`v3.0.27`--`v3.0.29` E2E/Unit Logs, Pre-Baked Max Dailies & `lintVitalRelease` Fix Bundle)** -- #567 — Promote v3.0.29 beta release to main, #568 — Retag release notes for v3.0.29 Production promotion
-  - **`v3.0.29` Signed Android Release `lintVitalRelease` Fragment Pin** -- #566 — Fix signed Android release build lint failure
-  - **`v3.0.28` Pre-Generated Max-Detail Sample/Daily Archives & `asset generation`** -- #565 — Pre-generate Max-settings daily/sample puzzles and surface Create tab hints
-  - **`v3.0.27` Standardized `[Unit]`/`[E2E]` Logs & Isolated Subprocess Test Checks** -- #563 — Standardize E2E and unit test logs and guard temp screenshot writes
-  - **`v3.0.26` Production Promotion (`v3.0.25`--`v3.0.26` Cloudflare Workers & Direct Blocked-PR Merge Bundle)** -- #562 — Beta, #550 — Prepare Cloudflare Worker cutover, redirects, and token docs, #560 — Merge approved PRs directly when auto-merge is stuck blocked
-  - **`v3.0.24` Production Promotion (`v3.0.21`--`v3.0.24` Preset Gallery, Colour Defaults, Replay Scrubber & review workflow Bundle)** -- #556 — Beta, #559 — Prepare v3.0.24 release changelog and roadmap for main promotion
-  - **`v3.0.24` Visual Preset Style Gallery & Puzzle Styles Tutorial Step** -- #557 — Add visual Preset Style Gallery, sync Detail/Colour controls, and add Puzzle Styles tutorial step
-  - **`v3.0.23` Original Detail Colour Mode & Hue Sort Defaults** -- #555 — Set default colour mode to detail and colour sort order to hue
-  - **`v3.0.22` Compact Replay Scrubber** -- #554 — Remove expandable replay window and keep compact scrubber bar
-  - **`v3.0.21` Stacked Merge-Async Fallback & Draft Checklist Gate** -- #553 — Add stacked merge-async fallback and Draft PR checklist gate
-  - **`v3.0.20` Production Promotion (`v3.0.19`--`v3.0.20` Play Store Prep, Leanback Manifest/Banner & Ad-Free Privacy Bundle)** -- #549 — Promote v3.0.20 beta release to main, #548 — Prepare v3.0.20 release changelog and roadmap for main promotion
-  - **`v3.0.20` Google Play Store Launch Prep (`Saves` Q1 Cleanup + `docs/play-store/` Graphics, Screenshots & Listing Guide)** -- #547 — Prepare v3.0.20 Play Store Saves cleanup, store graphics, and listing guide
-  - **`v3.0.19` Android TV Leanback Manifest/Banner, Ad-Free Privacy Policy & review workflow Tests** -- #545 — Add Android TV launcher banner, ad-free privacy policy, and review workflow tests (v3.0.19)
-  - **`dev environment config` Setup & `capypaint.com` / `capyboop.com` Cutover Tracking** -- #544 — Add repo-scoped environment setup and link capypaint.com and capyboop.com cutovers
-  - **`v3.0.18` Production Promotion (`v3.0.14`--`v3.0.18` Stabilization & CI Bundle)** -- #538 — Promote v3.0.18 beta release to main
-  - **`v3.0.18` Viewport-Save Reload Race Fix** -- #540 — Fix beforeunload viewport save race in Playwright E2E suite
-  - **`v3.0.17` Deterministic Playwright E2E Wait Hardening** -- #539 — Harden E2E waits in test suite and sync beta docs
-  - **`v3.0.16` Android API 36 Edge-to-Edge, WebView Allowlisting, Release Signing & Bridge Parity** -- #537 — Harden Android API 36 WebView security, release signing, and bridge parity
-  - **`v3.0.15` Web Storage Durability, `PuzzleCanvas` Optimization & Co-op Worker SQLite Checkpoints** -- #535 — Harden web storage durability, canvas performance, and Co-op Worker state
-  - **`v3.0.14` Fail-Closed review workflow, Pages Hidden Dotfiles & release sync Hardening** -- #534 — Harden PR review workflow, Pages dotfiles, and release sync
-  - **`v3.0.13` Viewport-Save Progress Preservation, Async Android/E2E/Pages CI Speedup & Strict `100%` CI auto-merge** -- #528, #530, #531, #532
-  - **`v3.0.12` Non-Blocking Tutorial Target Spotlight, Replay Auto-Dismissal & Mobile Badge Polish** -- #523
-  - **`v3.0.11` Production Promotion (`v3.0.9`--`v3.0.11` Bundle & `beta` Syncs)** -- #521, #522, #524, #526
-  - **Enforce `100%` PR checklist Gate & Harden GitHub Actions Workflows** -- #520
-  - **`v3.0.11` 14-Step Interactive `OnboardingTutorial`, 9 `FeatureOfferBanner` Quick Tips & `100%` PR/review workflows** -- #519
-  - **`v3.0.10` Low-Vision Large Text Mode, Sorted/Centered `PaletteDock` & Default Undo** -- #518
-  - **`v3.0.9` `PaletteDock` Replay Visibility & `Saves` Tab `Thumbnails` List-First Layout** -- #517
-  - **`v3.0.8` Production Promotion (`v3.0.2`--`v3.0.8` Stabilization, Governance & CI/CD Bundle)** -- #501
-  - **PR checklist `%`-First Checklist Format, `sanity.mjs` Validation & `ROADMAP.md` / `TODO.md` Governance Sync** -- #502, #509
-  - **Main-to-Beta `project docs` Sync (status notes/Checks, Line-1 Summary, `%`-First Checklist, Testing/Approval & Clickable Links)** -- #499, #500, #504, #505, #507, #508
-  - **Remove Topbar Zoom Pill Badge, Fix 360px Mobile `SettingsModal` Tab Clipping & E2E Overflow Guard (`v3.0.8`)** -- #497
-  - **Cross-Chat `status notes` Coordination Rule in `project docs`** -- #496
-  - **Channel Storage Sandbox Isolation (`StorageNamespace`), Fractional DPR & Settings/Import/Play Games Fixes, `.changelog/` Compiler & Automated Epic Tracker Sync (`v3.0.7`)** -- #495
-  - **`TASK-2.6`: Post-Load Replay Controls, `Capy Forest` Default, Interactive 5-Step Onboarding Tutorial & `About` Tab (`v3.0.6`)** -- #489
-  - **Preview Index Manifest, Lowercase `/capy/alpha/<num>/` Routing, CI/CD Hardening & `PROJECT.md` Charter (`v3.0.2`--`v3.0.5`)** -- #491, #492, #493, #494
-  - **1-Click GitHub PR Approval Workflow via Bot-Opened PRs, Native review workflow Tests & Prebaked Sample `1x` Viewport Reset (`v3.0.2`)** -- #490
-  - **`v3.0.1` Production Promotion (`BUG-5` Mobile `GameTopBar` Two-Lane Layout & `99%` Incomplete Progress Cap)** -- #486, #488
-  - **Android Play Store Release Scope (`TASK-2.5`, later moved to EPIC-3) & Shipped Bugfix Queue Prune** -- #487
+- **Sprint 1 `v3.0.0`--`v3.0.8` Bugfix, Onboarding, Mobile UI, Durability, BYOC Sync & Play Store Launch Prep Slices (`BUG-1`--`BUG-3`, `BUG-5`, `TASK-2.6`, `US-3.5`, PR Workflows & Governance)**:
+  - **`v3.0.8` (2026-11-20) Changelog Standardization, Borderless Completed Regions, BYOC Cloud Sync, Large Text / Fat-Finger Mode, Anonymous Feedback & `paint.capyboop.com`** -- #610 — Standardize changelog formatting, daily releases, and project docs, #608 — Omit region boundary lines on completed regions, #604 — Add BYOC OneDrive, CloudKit, and Google Drive sync, #605 — Scale Large Text UI and enable Fat-Finger assist by default, #603 — Add anonymous in-game feedback card and Worker relay, #595 — Bind paint.capyboop.com custom domain on Cloudflare Workers, #601 — Rename Android package to com.capyboop.paint, #602 — Add Fat-Finger Mode touch reach presets
+  - **`v3.0.7` (2026-11-19) `capyboop/paint` Community Docs, `oxlint` Guardrails, `<ErrorBoundary>` & On-Demand Puzzle Regeneration** -- #598 — Align root README heading with capyboop/paint, #596 — Retarget public repository to capyboop/paint, #590 — Expand top-bar puzzle save title pill width, #589 — Switch puzzle regeneration to on-demand and path-filtered triggers, #588 — Add oxlint guardrails and crash-safe ErrorBoundary recovery, #587 — Add public community docs and templates
+  - **`v3.0.6` (2026-11-18) Release Safety, Backup Durability, Public Issue Tracker, `O(R log R)` `maxRegions` Cap & Play Store Remediation** -- #579 — Harden release safety, Cloudflare Worker, Android bridge, and storage invariants, #578 — Promote Production channel markers and sync Play Store guide, #577 — Harden local save backup recency and empty-overwrite protection, #576 — Harden release export, release workflow, and Co-op origins, #575 — Wire public capyboop/paint issue tracker and templates, #573 — Fix Max-detail region limits and offline caching, #571 — Remove Android ad hooks, fake idea votes, and default login leaks
+  - **`v3.0.5` (2026-11-16) Cloudflare Workers CI, Pre-Baked Max Dailies, Preset Style Gallery, Compact Replay & Play Store Listing Prep** -- #569, #568, #566, #565, #563, #550, #560, #559, #557, #555, #554, #553, #548, #547
+  - **`v3.0.4` (2026-11-15) Android TV Leanback Banner, API 36 Security, Deterministic E2E Waits, IndexedDB Thumbnails & Async CI** -- #546, #545, #544, #540, #539, #537, #535, #534, #530
+  - **`v3.0.3` (2026-11-14) 14-Step Interactive `OnboardingTutorial`, `TargetSpotlightOverlay`, Low-Vision Large Text & Thumbnail-First Saves** -- #523, #519, #518, #517
+  - **`v3.0.2` (2026-11-13) Channel Storage Sandbox, `.changelog/` Compiler, `TASK-2.6` Onboarding & `PROJECT.md` Charter** -- #521, #501, #497, #495, #489, #491, #492, #494, #493, #490, #487
+  - **`v3.0.1` (2026-11-12) Production Promotion (`BUG-5` Mobile `GameTopBar` Two-Lane Layout & `99%` Incomplete Progress Cap)** -- #486, #488
   - **`v3.0.0` Production Promotion (`BUG-2` CI Cloud Variable Injection & `< 2s` `sanity.mjs` Gate + Sprint 1 Bundle)** -- #485
-  - **Co-op `WELCOME_STATE` Reload Persistence, Replay Scrubber `Resume Here` & `Reset Progress` `'UNFILL_EVENT'` Sync, Compact Mobile `ReplayControls` Pill Fit & Save-Load `replayLoop` Auto-Disable/Auto-Resume, Monotonic CRDT `resetEpoch`, `> 180 KB` Chunked Play Games Binary Sync, and Android `MainActivity` `onPause` / `onResume` WebView Lifecycle Guard** -- #484
+  - **Co-op `WELCOME_STATE` Reload Persistence, Replay Scrubber `Resume Here` & `Reset Progress` `'UNFILL_EVENT'` Sync, Compact Mobile `ReplayControls` Pill Fit, Monotonic CRDT `resetEpoch`, `> 180 KB` Chunked Play Games Binary Sync, and Android `MainActivity` WebView Lifecycle Guard** -- #484
 - **Shipped Slices from EPIC-5 (*Production Cloud Auth, Cross-Network Co-op & Optional AI Creation*)**:
   - **`capypaint.com` Cloudflare Workers Static Assets, Hibernating `CoopRoomDurableObject` Relay (`US-5.2`) & Root `assetlinks.json` App Links (`US-5.1`)** -- #482
 - **Shipped Slices from EPIC-4 (*Serverless Infinite Zoom, Printable Art & Local Co-op Polish*)**:

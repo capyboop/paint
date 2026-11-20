@@ -1,4 +1,4 @@
-name: Cleanup stale feature branches
+name: Cleanup stale branches
 
 on:
   schedule:

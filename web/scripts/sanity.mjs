@@ -19,7 +19,7 @@ const DEFAULT_REPO_ROOT = path.resolve(__dirname, '../..');
 
 const SKIP_DIRS = new Set([
   '.git',
-  'dev environment config',
+  
   '.kotlin',
   '.artifacts',
   '.idea',
@@ -35,10 +35,8 @@ const SKIP_DIRS = new Set([
 
 // M3B strict defaults:
 const DEFAULT_REQUIRE_PROJECT_MD = true;
-let DEFAULT_REQUIRE_AGENTS_MD = false;
 const DEFAULT_ENFORCE_CHANNEL_ORDER = true;
 const DEFAULT_ENFORCE_EPIC_NAMING = true;
-const DEFAULT_ENFORCE_PR checklist_SPEC = true;
 
 function collectMarkdownFiles(dir, out = []) {
   const entries = fs.readdirSync(dir, { withFileTypes: true });
@@ -216,10 +214,10 @@ export function validateChangelogChannelOrder(
 }
 
 export function validateEpicNaming(markdownText, relFile = 'markdown.md') {
-  const hint = `Use [EPIC-N](https://github.com/<owner>/capy/issues/<num>) instead of #NNN for Epic issues in ${relFile}`;
+  const hint = `Use [EPIC-N](../../issues/<num>) instead of #NNN for Epic issues in ${relFile}`;
   assert.equal(/#47[6-9]\b|#480\b/.test(markdownText), false, hint);
   assert.equal(
-    /\[#\d+\]\(https:\/\/github\.com\/[^/\s]+\/(?:capy|paint)\/issues\/\d+/.test(markdownText),
+    /\[#\d+\]\((?:https:\/\/github\.com\/[^/\s]+\/(?:capy|paint)\/|(?:\.\.\/){2,})issues\/\d+/.test(markdownText),
     false,
     hint
   );
@@ -282,201 +280,10 @@ function extractNonThresholdPercentages(text) {
   ];
 }
 
-export function validateNoLegacyPrRubric(text, relFile = 'document.md') {
-  const withoutUrls = String(text || '')
-    .replace(/\r\n/g, '\n')
-    .replace(URL_STRIP_RE, 'URL');
-  for (const rule of LEGACY_PR_RUBRIC_RULES) {
-    const target = rule.preprocess ? rule.preprocess(withoutUrls) : withoutUrls;
-    const match = rule.re.exec(target);
-    assert.equal(
-      match,
-      null,
-      `Forbidden ${rule.label} ("${match ? match[0] : ''}") in ${relFile}; use %-first PR checklist format`
-    );
-  }
-}
 
-export function validatePR checklistChecklist(markdown, label = 'PR checklist') {
-  const normalized = String(markdown || '').replace(/\r\n/g, '\n');
-  const headingMatches = [
-    ...normalized.matchAll(/^(?:#{1,6}\s+[^\n]*\bPR checklist\b|\*{2}PR checklist\b)[^\n]*$/gim),
-  ];
-  assert.equal(
-    headingMatches.length > 0,
-    true,
-    `${label} must include a PR checklist section heading`
-  );
-
-  let selectedHeading = headingMatches[headingMatches.length - 1];
-  let sectionText = normalized.slice(selectedHeading.index);
-  let visibleSection = stripHtmlComments(sectionText);
-  let detailsMatch = DETAILS_BLOCK_RE.exec(visibleSection);
-  if (!detailsMatch && /<details/i.test(normalized.slice(headingMatches[0].index))) {
-    for (let i = headingMatches.length - 2; i >= 0; i--) {
-      const candidateText = normalized.slice(headingMatches[i].index);
-      const candidateVisible = stripHtmlComments(candidateText);
-      const candidateDetails = DETAILS_BLOCK_RE.exec(candidateVisible);
-      if (candidateDetails) {
-        selectedHeading = headingMatches[i];
-        sectionText = candidateText;
-        visibleSection = candidateVisible;
-        detailsMatch = candidateDetails;
-        break;
-      }
-    }
-  }
-
-  validateNoLegacyPrRubric(sectionText, label);
-
-  assert.ok(
-    detailsMatch,
-    `${label} must include a <details><summary>...</summary>...</details> checklist block`
-  );
-
-  const beforeDetails = visibleSection.slice(0, detailsMatch.index);
-  const headingLine = beforeDetails.split('\n')[0];
-  const summaryText = detailsMatch[1].trim();
-  assert.equal(summaryText.length > 0, true, `${label} <summary> must not be empty`);
-
-  const headingOverallMatches = extractNonThresholdPercentages(headingLine);
-  let overallScore;
-  if (headingOverallMatches.length > 0) {
-    overallScore = Number(headingOverallMatches[0][1]);
-  } else {
-    const beforeDetailsMatches = extractNonThresholdPercentages(beforeDetails);
-    assert.equal(
-      beforeDetailsMatches.length > 0,
-      true,
-      `${label} must include an overall percentage score (e.g. "100%")`
-    );
-    overallScore = Number(beforeDetailsMatches[beforeDetailsMatches.length - 1][1]);
-  }
-  assert.equal(
-    Number.isFinite(overallScore) && overallScore >= 0 && overallScore <= 100,
-    true,
-    `${label} overall percentage score out of [0..100]: ${overallScore}%`
-  );
-
-  const itemLines = detailsMatch[2]
-    .split('\n')
-    .map((line) => line.trim())
-    .filter((line) => line.length > 0);
-  assert.equal(
-    itemLines.length >= 1,
-    true,
-    `${label} <details> checklist must contain at least 1 item`
-  );
-
-  const itemScores = [];
-  for (const line of itemLines) {
-    const match = CHECKLIST_PERCENT_LINE_RE.exec(line);
-    assert.ok(
-      match,
-      `${label} checklist line must start with % (e.g. "- **100%** ..."): "${line}"`
-    );
-    const pct = Number(match[1]);
-    assert.equal(
-      Number.isFinite(pct) && pct >= 0 && pct <= 100,
-      true,
-      `${label} checklist item percentage out of [0..100]: ${pct}%`
-    );
-    itemScores.push(pct);
-  }
-
-  return {
-    overallScore,
-    itemCount: itemScores.length,
-    itemScores,
-    summary: summaryText,
-  };
-}
-
-function collectGithubTextFiles(dir, out = []) {
-  if (!fs.existsSync(dir)) return out;
-  const entries = fs.readdirSync(dir, { withFileTypes: true });
-  for (const entry of entries) {
-    const fullPath = path.join(dir, entry.name);
-    if (entry.isDirectory()) {
-      collectGithubTextFiles(fullPath, out);
-    } else if (entry.isFile() && /\.(?:ya?ml|md)$/i.test(entry.name)) {
-      out.push(fullPath);
-    }
-  }
-  return out;
-}
-
-export function validatePR checklistSpec(
-  root,
-  {
-    requireProjectMd = DEFAULT_REQUIRE_PROJECT_MD,
-    requireAgentsMd = DEFAULT_REQUIRE_AGENTS_MD,
-    enforcePR checklistSpec = DEFAULT_ENFORCE_PR checklist_SPEC,
-  } = {}
-) {
-  const resolvedRoot = path.resolve(root);
-  const governanceRelFiles = ['project docs', 'PROJECT.md', 'DEV.md', 'TESTING.md', 'README.md'];
-  const scannedFiles = [];
-
-  for (const relFile of governanceRelFiles) {
-    const absPath = path.join(resolvedRoot, relFile);
-    if (!fs.existsSync(absPath)) {
-      if (relFile === 'PROJECT.md' && !requireProjectMd) continue;
-      if (relFile === 'project docs' && !requireAgentsMd) continue;
-      assert.fail(`Required governance doc missing: ${relFile}`);
-    }
-    const raw = fs.readFileSync(absPath, 'utf8');
-    validateNoLegacyPrRubric(raw, relFile);
-    scannedFiles.push(relFile);
-
-    if (!enforcePR checklistSpec) continue;
-    const publicText = stripHtmlDevOnlyForSanity(raw);
-
-    if (relFile === 'project docs') {
-      assert.match(publicText, /PR checklist/i, 'project docs must document PR checklist format');
-      assert.match(publicText, /<details>/i, 'project docs must document <details> PR checklist block');
-      assert.match(publicText, /100%/, 'project docs must specify 100% PR checklist threshold');
-      assert.match(
-        publicText,
-        /(?:start of each|at the start|%\s*-first)/i,
-        'project docs must specify putting % at the start of each checklist line'
-      );
-      assert.match(
-        publicText,
-        /(?:as many|flexible|variable|not (?:capped|limited|fixed)|any number|scope-relevant)/i,
-        'project docs must allow variable PR checklist item counts'
-      );
-    } else if (relFile === 'PROJECT.md') {
-      assert.match(publicText, /PR checklist/i, 'PROJECT.md must document PR checklist format');
-      assert.match(publicText, /checklist/i, 'PROJECT.md must name PR checklist');
-      assert.match(publicText, /<details>/i, 'PROJECT.md must document <details> PR checklist block');
-      assert.match(publicText, /100%/, 'PROJECT.md must specify 100% PR checklist threshold');
-      assert.match(
-        publicText,
-        /(?:start of each|at the start|%\s*-first)/i,
-        'PROJECT.md must specify putting % at the start of each checklist line'
-      );
-      assert.match(
-        publicText,
-        /(?:as many|flexible|variable|not (?:capped|limited|fixed)|any number|scope-relevant)/i,
-        'PROJECT.md must allow variable PR checklist item counts'
-      );
-    } else if (relFile === 'DEV.md') {
-      assert.match(publicText, /PR checklist/i, 'DEV.md must reference PR checklist');
-      assert.match(publicText, /100%/, 'DEV.md must reference 100% PR checklist threshold');
-    }
-  }
-
-  for (const absPath of collectGithubTextFiles(path.join(resolvedRoot, '.github'))) {
-    const relFile = path.relative(resolvedRoot, absPath).replace(/\\/g, '/');
-    validateNoLegacyPrRubric(fs.readFileSync(absPath, 'utf8'), relFile);
-    scannedFiles.push(relFile);
-  }
-
-  return { scannedFiles };
-}
-
-const DEV_ONLY_ROOT_MD_FILES = new Set(['project docs', 'project docs']);
+const DEV_ONLY_ROOT_MD_FILES = new Set([
+  
+]);
 
 export function validateRootGuideIndex(root, { requireProjectMd = DEFAULT_REQUIRE_PROJECT_MD } = {}) {
   const resolvedRoot = path.resolve(root);
@@ -535,6 +342,8 @@ export function validateRootGuideIndex(root, { requireProjectMd = DEFAULT_REQUIR
   return { rootMdFiles, hasProjectMd };
 }
 
+export const MAX_CHANGELOG_FRAGMENT_LENGTH = 320;
+
 export function parseChangelogFragment(rawContent, relFile = '.changelog/fragment.md') {
   const normalized = String(rawContent || '').replace(/\r\n/g, '\n');
   const fmMatch = /^---\n([\s\S]*?)\n---\n([\s\S]*)$/.exec(normalized);
@@ -580,6 +389,11 @@ export function parseChangelogFragment(rawContent, relFile = '.changelog/fragmen
     /^#{1,6}\s|^-\s/.test(body),
     false,
     `Changelog fragment ${relFile} summary must be plain text without headings or list prefixes`
+  );
+  assert.equal(
+    body.length <= MAX_CHANGELOG_FRAGMENT_LENGTH,
+    true,
+    `Changelog fragment ${relFile} summary is too long (${body.length} chars > ${MAX_CHANGELOG_FRAGMENT_LENGTH} max); keep each bullet to 1--2 concise sentences`
   );
 
   return {
@@ -692,7 +506,7 @@ export function runSanityChecks({
   requireProjectMd = DEFAULT_REQUIRE_PROJECT_MD,
   enforceChannelOrder = DEFAULT_ENFORCE_CHANNEL_ORDER,
   enforceEpicNaming = DEFAULT_ENFORCE_EPIC_NAMING,
-  enforcePR checklistSpec = DEFAULT_ENFORCE_PR checklist_SPEC,
+  
 } = {}) {
   const t0 = performance.now();
   const root = path.resolve(repoRoot);
@@ -791,15 +605,15 @@ export function runSanityChecks({
 
   const bulletLines = changelogText.split('\n').filter((line) => line.startsWith('- '));
   assert.equal(bulletLines.length >= 398, true, `Expected >= 398 bullets, got ${bulletLines.length}`);
-  let bulletRe = /\s(?:\[#\d+\]\(https:\/\/github\.com\/[^/\s]+\/capy\/pull\/\d+\)|#\d+)$/;
+  let bulletRe = /^- (?:\[#\d+\]\(\.\.\/\.\.\/pull\/\d+\)|#\d+)\s+\S/;
   
   for (const b of bulletLines) {
-    assert.match(b, bulletRe, `Invalid CHANGELOG bullet suffix: ${b}`);
+    assert.match(b, bulletRe, `Invalid CHANGELOG bullet prefix: ${b}`);
   }
 
   // 3. Markdown hygiene & portable relative links across all .md files
   validateRootGuideIndex(root, { requireProjectMd });
-  validatePR checklistSpec(root, { requireProjectMd, enforcePR checklistSpec });
+  
 
   const mdFiles = collectMarkdownFiles(root);
   assert.equal(mdFiles.length >= 10, true, 'Expected >= 10 repository .md files');
@@ -865,7 +679,8 @@ export function runSanityChecks({
         cleanTarget.startsWith('mailto:') ||
         cleanTarget.startsWith('tel:') ||
         cleanTarget.startsWith('data:') ||
-        cleanTarget.startsWith('#')
+        cleanTarget.startsWith('#') ||
+        /^(?:\.\.\/){2,}(?:pull|issues|milestone)\/\d+(?:[/?#].*)?$/.test(cleanTarget)
       ) {
         continue;
       }

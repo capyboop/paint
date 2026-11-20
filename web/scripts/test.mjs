@@ -12,9 +12,7 @@ import {
   runSanityChecks,
   validateChangelogChannelOrder,
   validateEpicNaming,
-  validateNoLegacyPrRubric,
-  validatePR checklistChecklist,
-  validatePR checklistSpec,
+  
   validateRootGuideIndex,
 } from './sanity.mjs';
 import { runReleaseSafetyHardeningTests } from './release-safety-hardening.test.mjs';
@@ -631,13 +629,13 @@ async function runCodecAndEngineTests() {
       true,
       `Expected >= 398 single-line PR bullets in CHANGELOG.md, got ${changelogBullets.length}`
     );
-    let changelogBulletRe = /\s(?:\[#\d+\]\(https:\/\/github\.com\/[^/\s]+\/capy\/pull\/\d+\)|#\d+)$/;
+    let changelogBulletRe = /^- (?:\[#\d+\]\(\.\.\/\.\.\/pull\/\d+\)|#\d+)\s+\S/;
     
     for (const bullet of changelogBullets) {
       assert.equal(
         changelogBulletRe.test(bullet),
         true,
-        `Each CHANGELOG.md bullet must end with a valid PR reference: ${bullet}`
+        `Each CHANGELOG.md bullet must start with a valid PR reference: ${bullet}`
       );
     }
 
@@ -826,8 +824,13 @@ async function runCodecAndEngineTests() {
     }
     const badIssueLink = '[' + '#481](' + 'https://github.com/' + 'capyboop/paint/issues/481)';
     assert.throws(() => validateEpicNaming(`Link ${badIssueLink}`, 'ROADMAP.md'), /EPIC-N/);
+    const badRelIssueLink = '[' + '#500](' + '../../' + 'issues/500)';
+    assert.throws(
+      () => validateEpicNaming(badRelIssueLink, 'test.md'),
+      /\[EPIC-N\]\(\.\.\/\.\.\/issues\/<num>\)/
+    );
     const badCombinedEpic = '[EPIC-2 (' + '#477)](' + validEpicUrl + ')';
-    assert.throws(() => validateEpicNaming(`Combined ${badCombinedEpic}`, 'project docs'), /EPIC-N/);
+    assert.throws(() => validateEpicNaming(`Combined ${badCombinedEpic}`, 'GUIDE.md'), /EPIC-N/);
     const badUnlinkedCombinedEpic = '[EPIC-6 (#' + '481)]';
     assert.throws(() => validateEpicNaming(`Unlinked ${badUnlinkedCombinedEpic}`, 'ROADMAP.md'), /EPIC-N/);
 
@@ -837,7 +840,6 @@ async function runCodecAndEngineTests() {
         'README.md',
         'PROJECT.md',
         'DEV.md',
-        'project docs',
         'ROADMAP.md',
         'TODO.md',
         'WEB.md',
@@ -857,7 +859,7 @@ async function runCodecAndEngineTests() {
       fs.writeFileSync(path.join(tmpGuideDir, 'PROJECT.md'), `# PROJECT\n${allLinks}\n`, 'utf8');
       const guideRes = validateRootGuideIndex(tmpGuideDir, { requireProjectMd: true });
       assert.equal(guideRes.hasProjectMd, true);
-      assert.equal(guideRes.rootMdFiles.length, 13);
+      assert.equal(guideRes.rootMdFiles.length, rootMdNames.length);
 
       fs.writeFileSync(
         path.join(tmpGuideDir, 'README.md'),
@@ -890,429 +892,8 @@ async function runCodecAndEngineTests() {
       fs.rmSync(tmpGuideDir, { recursive: true, force: true });
     }
 
-    // Standalone %-first PR checklist & legacy rubric guards (runs in public export too)
-    {
-      const oneItem = validatePR checklistChecklist(
-        [
-          '### PR checklist: 100%',
-          '',
-          '<details>',
-          '<summary>PR checklist</summary>',
-          '',
-          '- **100%** **Docs Sync**: Verified.',
-          '',
-          '</details>',
-        ].join('\n'),
-        '1-item test'
-      );
-      assert.equal(oneItem.overallScore, 100);
-      assert.equal(oneItem.itemCount, 1);
-      assert.deepEqual(oneItem.itemScores, [100]);
-      assert.equal(oneItem.summary, 'PR checklist');
-
-      const threeItems = validatePR checklistChecklist(
-        [
-          '### PR checklist: 95.5%',
-          '',
-          '<details>',
-          '<summary>PR checklist</summary>',
-          '',
-          '- [x] **100%** — **Functionality**: Verified.',
-          '- **95.5%** — **Tests**: Verified.',
-          '- 91% — **Docs**: Remaining follow-up noted.',
-          '',
-          '</details>',
-        ].join('\n'),
-        '3-item test'
-      );
-      assert.equal(threeItems.overallScore, 95.5);
-      assert.equal(threeItems.itemCount, 3);
-      assert.deepEqual(threeItems.itemScores, [100, 95.5, 91]);
-
-      const sixItems = validatePR checklistChecklist(
-        [
-          '### PR checklist: 100%',
-          '',
-          '<details>',
-          '<summary>PR checklist</summary>',
-          '',
-          '- **100% Check 1**: Functionality verified.',
-          '- **100% Check 2**: Automated tests passed.',
-          '- **100% Check 3**: Zero-allocation invariants preserved.',
-          '- **100% Check 4**: Mobile viewport verified.',
-          '- **100% Check 5**: Docs synced.',
-          '- **100% Check 6**: CI green.',
-          '',
-          '</details>',
-        ].join('\n'),
-        '6-item test'
-      );
-      assert.equal(sixItems.overallScore, 100);
-      assert.equal(sixItems.itemCount, 6);
-
-      const eightItemsFullPr = validatePR checklistChecklist(
-        [
-          '## Summary',
-          '',
-          '- Improved color layout with Tailwind bg-amber-400/20 accents and clean checks.',
-          '',
-          '- **Beta**: https://capypaint.com/beta/',
-          '- **Related PRs**: #20 #100',
-          '',
-          '### PR checklist: 99% (threshold >= 95%)',
-          '',
-          '<details>',
-          '<summary>PR checklist</summary>',
-          '',
-          '- **100%** — **Functionality & Edge Cases**: Verified.',
-          '- **100%** — **Automated Tests**: Verified.',
-          '- **100%** — **Performance & Golden Invariants**: Verified.',
-          '- **100%** — **Accessibility & Mobile Layout**: Verified.',
-          '- **100%** — **Android / Bridge Parity**: Verified.',
-          '- **100%** — **Cloud Sync / Worker Safety**: Verified.',
-          '- **95%** — **Docs & Changelog Sync**: Minor wording follow-up (-1%).',
-          '- **100%** — **CI, Mergeability & Preview Verification**: Verified.',
-          '',
-          '</details>',
-          '',
-          'Ready with -1% docs polish follow-up.',
-          '- [ ] Polish final release note wording in TODO follow-up.',
-        ].join('\n'),
-        '8-item PR body'
-      );
-      assert.equal(eightItemsFullPr.overallScore, 99);
-      assert.equal(eightItemsFullPr.itemCount, 8);
-
-      const prosePercentRes = validatePR checklistChecklist(
-        [
-          '### PR checklist: 97.5%',
-          'All 100% of unit tests pass.',
-          '',
-          '<details>',
-          '<summary>PR checklist</summary>',
-          '',
-          '- **100%** — **Tests**: All unit checks pass.',
-          '',
-          '</details>',
-        ].join('\n'),
-        'prose 100% before details'
-      );
-      assert.equal(prosePercentRes.overallScore, 97.5);
-      assert.equal(prosePercentRes.itemCount, 1);
-      assert.deepEqual(prosePercentRes.itemScores, [100]);
-
-      const thresholdProseRes = validatePR checklistChecklist(
-        [
-          '### PR checklist: 97.5%',
-          'Threshold: 95% minimum; dropped 2.5% for docs follow-up.',
-          '',
-          '<details>',
-          '<summary>PR checklist</summary>',
-          '',
-          '- **97.5%** — **Docs**: Follow-up noted.',
-          '',
-          '</details>',
-        ].join('\n'),
-        'threshold prose before details'
-      );
-      assert.equal(thresholdProseRes.overallScore, 97.5);
-      assert.equal(thresholdProseRes.itemCount, 1);
-      assert.deepEqual(thresholdProseRes.itemScores, [97.5]);
-
-      const fallbackProseRes = validatePR checklistChecklist(
-        [
-          '### PR checklist',
-          'Overall: 96%',
-          '',
-          '<details>',
-          '<summary>PR checklist</summary>',
-          '',
-          '- **96%** — **Tests**: Verified.',
-          '',
-          '</details>',
-        ].join('\n'),
-        'fallback overall score below heading'
-      );
-      assert.equal(fallbackProseRes.overallScore, 96);
-      assert.equal(fallbackProseRes.itemCount, 1);
-
-      const minParenRes = validatePR checklistChecklist(
-        [
-          '### PR checklist: 97.5% (min 95%)',
-          '',
-          '<details>',
-          '<summary>PR checklist</summary>',
-          '',
-          '- **100%** — **Checks**: Passed.',
-          '',
-          '</details>',
-        ].join('\n'),
-        'min 95% parenthetical on heading'
-      );
-      assert.equal(minParenRes.overallScore, 97.5);
-
-      const unicodeGteRes = validatePR checklistChecklist(
-        [
-          '### PR checklist: 97.5% (≥ 95%)',
-          '',
-          '<details>',
-          '<summary>PR checklist</summary>',
-          '',
-          '- **100%** — **Checks**: Passed.',
-          '',
-          '</details>',
-        ].join('\n'),
-        'unicode >= 95% threshold after heading score'
-      );
-      assert.equal(unicodeGteRes.overallScore, 97.5);
-
-      const unicodeGteBeforeRes = validatePR checklistChecklist(
-        [
-          '### PR checklist (≥ 95%): 97.5%',
-          '',
-          '<details>',
-          '<summary>PR checklist</summary>',
-          '',
-          '- **100%** — **Checks**: Passed.',
-          '',
-          '</details>',
-        ].join('\n'),
-        'unicode >= 95% threshold before heading score'
-      );
-      assert.equal(unicodeGteBeforeRes.overallScore, 97.5);
-
-      const trailingBoldNoteRes = validatePR checklistChecklist(
-        [
-          '### PR checklist: 99%',
-          '',
-          '<details>',
-          '<summary>PR checklist</summary>',
-          '',
-          '- **99%** — **Verification**: Passed.',
-          '',
-          '</details>',
-          '',
-          '**PR checklist Note**: All done.',
-        ].join('\n'),
-        'trailing bold PR checklist note'
-      );
-      assert.equal(trailingBoldNoteRes.overallScore, 99);
-      assert.equal(trailingBoldNoteRes.itemCount, 1);
-      assert.deepEqual(trailingBoldNoteRes.itemScores, [99]);
-
-      const trailingHeadingRes = validatePR checklistChecklist(
-        [
-          '### PR checklist: 98%',
-          '',
-          '<details>',
-          '<summary>PR checklist</summary>',
-          '',
-          '- **98%** — **Checks**: Passed.',
-          '',
-          '</details>',
-          '',
-          '### PR checklist Follow-Up',
-          'None.',
-        ].join('\n'),
-        'trailing PR checklist heading'
-      );
-      assert.equal(trailingHeadingRes.overallScore, 98);
-      assert.equal(trailingHeadingRes.itemCount, 1);
-
-      const multilineCommentRes = validatePR checklistChecklist(
-        [
-          '### PR checklist: 100%',
-          '',
-          '<details>',
-          '<summary>PR checklist</summary>',
-          '',
-          '<!--',
-          '  note',
-          '-->',
-          '- **100%** — **Checks**: Passed.',
-          '',
-          '</details>',
-        ].join('\n'),
-        'multiline HTML comment inside details'
-      );
-      assert.equal(multilineCommentRes.overallScore, 100);
-      assert.equal(multilineCommentRes.itemCount, 1);
-      assert.deepEqual(multilineCommentRes.itemScores, [100]);
-
-      const detailsOpenRes = validatePR checklistChecklist(
-        [
-          '### PR checklist: 100%',
-          '',
-          '<details open><summary>PR checklist</summary>',
-          '',
-          '- **100%** — **Checks**: Passed.',
-          '',
-          '</details>',
-        ].join('\n'),
-        'details open attribute'
-      );
-      assert.equal(detailsOpenRes.overallScore, 100);
-      assert.equal(detailsOpenRes.itemCount, 1);
-      assert.equal(detailsOpenRes.summary, 'PR checklist');
-
-      const nestedBoldBacktickRes = validatePR checklistChecklist(
-        [
-          '### PR checklist: 100%',
-          '',
-          '<details>',
-          '<summary>PR checklist</summary>',
-          '',
-          '- **`100%`** — **Tests**: Passed.',
-          '',
-          '</details>',
-        ].join('\n'),
-        'nested bold and backtick percentage'
-      );
-      assert.equal(nestedBoldBacktickRes.overallScore, 100);
-      assert.equal(nestedBoldBacktickRes.itemCount, 1);
-      assert.deepEqual(nestedBoldBacktickRes.itemScores, [100]);
-
-      const sectionBulletRes = validatePR checklistChecklist(
-        [
-          '### PR checklist: 100%',
-          '',
-          '- 5 points to note in this release:',
-          '',
-          '<details>',
-          '<summary>PR checklist</summary>',
-          '',
-          '- **100%** — **Checks**: Passed.',
-          '',
-          '</details>',
-        ].join('\n'),
-        'unordered bullet inside PR checklist section'
-      );
-      assert.equal(sectionBulletRes.overallScore, 100);
-      assert.equal(sectionBulletRes.itemCount, 1);
-
-      const makeInvalidSection = (bodyLines) =>
-        ['### PR checklist: 98%', '', '<details>', '<summary>PR checklist</summary>', '', ...bodyLines, '', '</details>'].join('\n');
-
-      for (const badText of [
-        '### 5-Pillar PR checklist: 100%\n\n<details>\n<summary>Checklist</summary>\n\n- **100%** — **Check**: Ok.\n\n</details>',
-        '### 5 Pillar PR checklist: 100%\n\n<details>\n<summary>Checklist</summary>\n\n- **100%** — **Check**: Ok.\n\n</details>',
-        makeInvalidSection(['- **95/100** — **Check**: Legacy fraction.']),
-        makeInvalidSection(['- **95 / 100** — **Check**: Legacy spaced fraction.']),
-        makeInvalidSection(['- **20/20** — **Check**: Legacy category fraction.']),
-        makeInvalidSection(['- **20 / 20** — **Check**: Legacy spaced category fraction.']),
-        makeInvalidSection(['- **100%** — **Check (20 pts)**: Legacy pts.']),
-        makeInvalidSection(['- **100%** — **Check (5 x 20)**: Legacy math.']),
-        makeInvalidSection(['- **100%** — **Pillar 1**: Legacy pillar number.']),
-        makeInvalidSection(['- **100%** — **Readiness Rubric**: Legacy rubric word.']),
-        makeInvalidSection(['- **Functionality**: 100%']),
-        makeInvalidSection(['1. Tests: 100%']),
-        makeInvalidSection([]),
-        makeInvalidSection(['- **105%** — **Bounds**: Out of range.']),
-        '### PR checklist: 105%\n\n<details>\n<summary>Checklist</summary>\n\n- **100%** — **Check**: Ok.\n\n</details>',
-        '### PR checklist: 100%\n\n- **100%** — **Check**: Missing details block.',
-        '### 5-Pillars PR checklist: 100%\n\n<details>\n<summary>Checklist</summary>\n\n- **100%** — **Check**: Ok.\n\n</details>',
-        '### PR checklist: >= 95%\n\n<details>\n<summary>Checklist</summary>\n\n- **100%** — **Check**: Ok.\n\n</details>',
-        '### PR checklist: ≥ 95%\n\n<details>\n<summary>Checklist</summary>\n\n- **100%** — **Check**: Ok.\n\n</details>',
-        makeInvalidSection(['<!--', '  comment only', '-->']),
-        makeInvalidSection(['- **100%**']),
-        makeInvalidSection(['- 100%']),
-        makeInvalidSection(['- [x] **100%**']),
-        makeInvalidSection(['- **100%**:']),
-        makeInvalidSection(['- **95%** — **Docs**: -5 points deduction.']),
-        makeInvalidSection(['- **95%** — **Docs**: Deduction (- 5 points).']),
-        makeInvalidSection(['- **95%** — **Docs**: Explain `-N point` delta.']),
-        makeInvalidSection(['- **100%** — **Check**: 5-Pillars framework.']),
-        makeInvalidSection(['- **100%** — **Check**: 20-point scale.']),
-        makeInvalidSection(['- **100%** — **Check**: Worth **20** pts.']),
-        [
-          '### PR checklist: 100%',
-          '',
-          '<!-- unclosed comment hides remaining markdown',
-          '<details>',
-          '<summary>PR checklist</summary>',
-          '',
-          '- **100%** — **Check**: Hidden by unclosed comment.',
-          '',
-          '</details>',
-        ].join('\n'),
-        [
-          '### PR checklist: 100%',
-          '',
-          '<!-- closed comment -->',
-          '<!-- unclosed trailing comment',
-          '<details>',
-          '<summary>PR checklist</summary>',
-          '',
-          '- **100%** — **Check**: Hidden by second unclosed comment.',
-          '',
-          '</details>',
-        ].join('\n'),
-      ]) {
-        assert.throws(() => validatePR checklistChecklist(badText, 'negative fixture'));
-      }
-
-      // False-positive guards for legitimate URLs, Tailwind classes, dates, percentages, and Markdown bullets
-      validateNoLegacyPrRubric(
-        [
-          '### Overview',
-          '- 5 points to note in this release:',
-          '  - 3 points on readability and accessibility.',
-          '* 2 points for rollout timing.',
-          'Review these 5 points before merging.',
-          'Score: 98% (-2% docs, -5% follow-up).',
-          'See https://github.com/capyboop/paint/pull/20 and https://github.com/capyboop/paint/pull/100',
-          'Classes bg-amber-400/20 width="100%" ~15--20% 0.5x--20x 1/20th date 2026/01/20 100% offline per_page: 100',
-        ].join('\n'),
-        'false-positive-guard.md'
-      );
-
-      for (const badLegacyText of [
-        'Deduction: -5 points for docs.',
-        '- -5 points deducted for docs.',
-        '* -5 points deducted for docs.',
-        'Penalty (- 5 points) applied.',
-        'Score adjusted by - 5 points after review.',
-        'Describe gaps using `-N point` delta syntax.',
-        'Use 5-Pillars scoring.',
-        'Maximum 20-point scale.',
-        'Worth **20** pts per category.',
-        'Award `20` points per check.',
-      ]) {
-        assert.throws(
-          () => validateNoLegacyPrRubric(badLegacyText, 'legacy-negative.md'),
-          /Forbidden legacy/
-        );
-      }
-
-      // Spec validation with requireProjectMd: false (main-branch mode)
-      const tmpMainSpecDir = fs.mkdtempSync(path.join(os.tmpdir(), 'capy-readiness-main-'));
-      try {
-        fs.writeFileSync(
-          path.join(tmpMainSpecDir, 'project docs'),
-          '# contributor\nReport >= 95% PR checklist in <details> with % at the start of each line and as many or as few scope-relevant items as needed.\n',
-          'utf8'
-        );
-        fs.writeFileSync(path.join(tmpMainSpecDir, 'DEV.md'), '# DEV\nVerify PR checklist 100%.\n', 'utf8');
-        fs.writeFileSync(path.join(tmpMainSpecDir, 'TESTING.md'), '# TESTING\nAll checks.\n', 'utf8');
-        fs.writeFileSync(path.join(tmpMainSpecDir, 'README.md'), '# README\n100% offline.\n', 'utf8');
-        assert.throws(
-          () => validatePR checklistSpec(tmpMainSpecDir, { requireProjectMd: false }),
-          /contributor\.md must specify 100% PR checklist threshold/
-        );
-
-        fs.writeFileSync(
-          path.join(tmpMainSpecDir, 'project docs'),
-          '# contributor\nReport 100% PR checklist in <details> with % at the start of each line and as many or as few scope-relevant items as needed.\n',
-          'utf8'
-        );
-        assert.equal(validatePR checklistSpec(tmpMainSpecDir, { requireProjectMd: false }).scannedFiles.length, 4);
-      } finally {
-        fs.rmSync(tmpMainSpecDir, { recursive: true, force: true });
-      }
-    }
-
     
-    logUnitPass('SemVer parity, <2s sanity.mjs gate, CHANGELOG contract, Epic naming & PR checklist checks verified.');
+    logUnitPass('SemVer parity, <2s sanity.mjs gate, CHANGELOG contract, and Epic naming checks verified.');
 
     // Unit-test .github/scripts/cleanup-gh-pages-previews.mjs and .github/scripts/cleanup-branches.mjs
     logUnitStart('Testing .github/scripts cleanup-gh-pages-previews.mjs & cleanup-branches.mjs...');
@@ -4098,55 +3679,7 @@ async function runCodecAndEngineTests() {
       );
     }
 
-    // Verify asset generation triggers only on workflow_dispatch or path-filtered pushes to beta (no schedule).
-    // Note: asset generation is a dev-only workflow stripped from public capyboop/paint exports.
-    const regenWorkflowPath = path.resolve(projectRoot, '../.github/workflows/asset generation');
-    if (fs.existsSync(regenWorkflowPath)) {
-      const regenWorkflow = parsedWorkflows?.['asset generation'];
-      assert.ok(regenWorkflow, 'Expected parsed asset generation workflow');
-      // PyYAML parses YAML 1.1 `on:` as boolean True -> JSON key "true"
-      const regenOn = regenWorkflow.on ?? regenWorkflow.true;
-      assert.ok(regenOn && typeof regenOn === 'object', 'Expected on: block in asset generation');
-      assert.equal(
-        Object.prototype.hasOwnProperty.call(regenOn, 'schedule'),
-        false,
-        'asset generation must not trigger on a cron schedule'
-      );
-      assert.equal(
-        Object.prototype.hasOwnProperty.call(regenOn, 'workflow_dispatch'),
-        true,
-        'asset generation must retain workflow_dispatch for on-demand runs'
-      );
-      const regenPush = regenOn.push;
-      assert.ok(regenPush && Array.isArray(regenPush.branches), 'asset generation must define push.branches');
-      assert.equal(
-        regenPush.branches.includes('beta'),
-        true,
-        'asset generation push.branches must include beta'
-      );
-      assert.ok(Array.isArray(regenPush.paths), 'asset generation must define push.paths');
-      for (const expectedPath of [
-        'web/public/assets/**',
-        '!web/public/assets/**/*.capy',
-        '!web/public/assets/presets/**',
-        '!web/public/assets/icon-*.png',
-        '!web/public/assets/apple-touch-icon.png',
-        'web/scripts/generate-sample-saves.mjs',
-        'web/src/engine/**',
-        'web/src/services/CapyCodec.ts',
-        'web/src/services/DailyPuzzleService.ts',
-        'web/src/services/PuzzleWorkerService.ts',
-        'web/src/services/StorageService.ts',
-        'web/src/types/index.ts',
-        '.github/workflows/asset generation',
-      ]) {
-        assert.equal(
-          regenPush.paths.includes(expectedPath),
-          true,
-          `asset generation push.paths must include ${expectedPath}`
-        );
-      }
-    }
+    
     logUnitPass('404.html redirect VM, pr-index.html, generate-pr-manifest.mjs & upload-pages-artifact dotfiles verified.');
 
     // Verify .github/scripts/compile-changelog.mjs & release.yml wiring
@@ -4156,32 +3689,32 @@ async function runCodecAndEngineTests() {
     );
     const sampleChangelog = `### 3.0.7 - 2026-11-13 (Beta)
 
-- Fix Play Games fallback and DPR canvas scaling #495
+- #495 Fix Play Games fallback and DPR canvas scaling
 
 ### 3.0.6 - 2026-11-13
 
-- Prior release note #489
+- #489 Prior release note
 
 ### 2.9 - 2026-11-10
 
-- Minor rollup note #470`;
+- #470 Minor rollup note`;
     assert.equal(
       extractReleaseNotes(sampleChangelog, 'v3.0.7'),
-      '- Fix Play Games fallback and DPR canvas scaling #495'
+      '- #495 Fix Play Games fallback and DPR canvas scaling'
     );
     assert.equal(
       extractReleaseNotes(sampleChangelog.replace(/\n/g, '\r\n'), 'v3.0.7-beta.1'),
-      '- Fix Play Games fallback and DPR canvas scaling #495'
+      '- #495 Fix Play Games fallback and DPR canvas scaling'
     );
     assert.equal(
       extractReleaseNotes(sampleChangelog, 'v2.9.4'),
-      '- Minor rollup note #470'
+      '- #470 Minor rollup note'
     );
     assert.equal(extractReleaseNotes(sampleChangelog, 'v9.9.9'), '- Release v9.9.9');
     assert.throws(() => extractReleaseNotes(sampleChangelog, 'invalid-tag'));
     assert.equal(
       formatReleaseNotesMarkdown(sampleChangelog, 'v3.0.6'),
-      '### What\'s New in `v3.0.6`\n\n- Prior release note #489\n'
+      '### What\'s New in `v3.0.6`\n\n- #489 Prior release note\n'
     );
     const tmpReleaseNotesOut = path.join(os.tmpdir(), 'capy-release-notes-test.md');
     try {
@@ -4213,14 +3746,14 @@ async function runCodecAndEngineTests() {
     // Verify .github/scripts/compile-changelog.mjs stops cleanly at ## headings
     const changelogWithSubheading = `### 3.0.7 - 2026-11-13 (Beta)
 
-- Top bullet [#495](https://example.invalid/pull/495)
+- #495 Top bullet
 
 ## Archive Section
 
 - Should never bleed into v3.0.7 release notes`;
     assert.equal(
       extractReleaseNotes(changelogWithSubheading, 'v3.0.7'),
-      '- Top bullet [#495](https://example.invalid/pull/495)'
+      '- #495 Top bullet'
     );
     logUnitPass('.github/scripts/compile-changelog.mjs & release.yml extraction verified.');
 
@@ -4237,6 +3770,20 @@ async function runCodecAndEngineTests() {
     assert.equal(validFrag.task, 'TASK-2.5');
     assert.throws(() => sanityMod.parseChangelogFragment('---\nbump: invalid\n---\nBad bump\n'));
     assert.throws(() => sanityMod.parseChangelogFragment('---\nbump: patch\n---\nLine 1\nLine 2\n'));
+    const maxLenSummary = 'x'.repeat(sanityMod.MAX_CHANGELOG_FRAGMENT_LENGTH);
+    assert.equal(
+      sanityMod.parseChangelogFragment(`---\nbump: patch\n---\n${maxLenSummary}\n`, '.changelog/max-ok.md').summary
+        .length,
+      sanityMod.MAX_CHANGELOG_FRAGMENT_LENGTH
+    );
+    assert.throws(
+      () =>
+        sanityMod.parseChangelogFragment(
+          `---\nbump: patch\n---\n${maxLenSummary}y\n`,
+          '.changelog/too-long.md'
+        ),
+      /summary is too long/i
+    );
 
     assert.equal(compileMod.computeNextSemVer('3.0.7', 'patch').version, '3.0.8');
     assert.equal(compileMod.computeNextSemVer('3.0.7', 'minor').version, '3.1.0');
@@ -4250,6 +3797,20 @@ async function runCodecAndEngineTests() {
       fs.writeFileSync(
         path.join(tmpCompileRepo, 'web/package.json'),
         JSON.stringify({ name: 'capy-paint', version: '3.0.7' }, null, 2),
+        'utf8'
+      );
+      fs.writeFileSync(
+        path.join(tmpCompileRepo, 'web/package-lock.json'),
+        JSON.stringify(
+          {
+            name: 'capy-paint',
+            version: '3.0.7',
+            lockfileVersion: 3,
+            packages: { '': { name: 'capy-paint', version: '3.0.7' } },
+          },
+          null,
+          2
+        ),
         'utf8'
       );
       fs.writeFileSync(
@@ -4269,7 +3830,7 @@ async function runCodecAndEngineTests() {
       );
       fs.writeFileSync(
         path.join(tmpCompileRepo, 'CHANGELOG.md'),
-        `### 3.0.7 - 2026-11-12 (Beta)\n\n- Beta item #495\n\n### 3.0.1 - 2026-11-10 (Production)\n\n- Prod item #488\n`,
+        `### 3.0.7 - 2026-11-12 (Beta)\n\n- #495 Beta item\n\n### 3.0.1 - 2026-11-10 (Production)\n\n- #488 Prod item\n`,
         'utf8'
       );
       fs.writeFileSync(path.join(tmpCompileRepo, '.changelog/README.md'), '# Fragments\n', 'utf8');
@@ -4292,7 +3853,13 @@ async function runCodecAndEngineTests() {
       });
       assert.equal(betaCompileRes.version, '3.1.0');
       assert.equal(betaCompileRes.compiledCount, 2);
+      assert.equal(betaCompileRes.appendedSameDay, false);
       assert.equal(JSON.parse(fs.readFileSync(path.join(tmpCompileRepo, 'web/package.json'), 'utf8')).version, '3.1.0');
+      const lockAfterBump = JSON.parse(
+        fs.readFileSync(path.join(tmpCompileRepo, 'web/package-lock.json'), 'utf8')
+      );
+      assert.equal(lockAfterBump.version, '3.1.0');
+      assert.equal(lockAfterBump.packages[''].version, '3.1.0');
       assert.equal(fs.readFileSync(path.join(tmpCompileRepo, 'web/src/version.ts'), 'utf8').includes("'3.1.0'"), true);
       assert.equal(fs.readFileSync(path.join(tmpCompileRepo, 'app/build.gradle.kts'), 'utf8').includes('versionCode = 30100'), true);
       assert.equal(fs.readFileSync(path.join(tmpCompileRepo, 'app/build.gradle.kts'), 'utf8').includes('versionName = "3.1.0"'), true);
@@ -4303,20 +3870,103 @@ async function runCodecAndEngineTests() {
       assert.equal(fs.existsSync(path.join(tmpCompileRepo, '.changelog/README.md')), true);
       const compiledCl = fs.readFileSync(path.join(tmpCompileRepo, 'CHANGELOG.md'), 'utf8');
       assert.equal(compiledCl.startsWith('### 3.1.0 - 2026-11-13 (Beta)\n'), true);
+      assert.match(compiledCl, /\n- \[#496\]\(\.\.\/\.\.\/pull\/496\) Fix edge zoom jitter\n/);
+      assert.match(compiledCl, /\n- \[#497\]\(\.\.\/\.\.\/pull\/497\) Add loupe magnifier\n/);
       assert.equal(compiledCl.includes('### 3.0.7 - 2026-11-12\n'), true);
       assert.equal(compiledCl.includes('### 3.0.1 - 2026-11-10 (Production)\n'), true);
+
+      // Same-day Beta re-compile appends into existing heading without double-bumping version
+      fs.writeFileSync(
+        path.join(tmpCompileRepo, '.changelog/03-same-day.md'),
+        '---\nbump: patch\npr: 499\n---\nPolish palette swatch contrast\n',
+        'utf8'
+      );
+      const sameDayRes = compileMod.compileChangelog({
+        repoRoot: tmpCompileRepo,
+        dateStr: '2026-11-13',
+      });
+      assert.equal(sameDayRes.version, '3.1.0');
+      assert.equal(sameDayRes.compiledCount, 1);
+      assert.equal(sameDayRes.appendedSameDay, true);
+      assert.equal(JSON.parse(fs.readFileSync(path.join(tmpCompileRepo, 'web/package.json'), 'utf8')).version, '3.1.0');
+      const sameDayCl = fs.readFileSync(path.join(tmpCompileRepo, 'CHANGELOG.md'), 'utf8');
+      assert.equal(sameDayCl.startsWith('### 3.1.0 - 2026-11-13 (Beta)\n'), true);
+      assert.equal((sameDayCl.match(/^### 3\.1\.0 - 2026-11-13 \(Beta\)$/gm) || []).length, 1);
+      assert.match(
+        sameDayCl,
+        /\n- \[#499\]\(\.\.\/\.\.\/pull\/499\) Polish palette swatch contrast\n- \[#496\]\(\.\.\/\.\.\/pull\/496\)/
+      );
+
+      // Same-day Beta compile with minor bump cuts a new version instead of appending into existing (Beta)
+      fs.writeFileSync(
+        path.join(tmpCompileRepo, '.changelog/04-same-day-minor.md'),
+        '---\nbump: minor\npr: 500\n---\nAdd custom brush presets\n',
+        'utf8'
+      );
+      const sameDayMinorRes = compileMod.compileChangelog({
+        repoRoot: tmpCompileRepo,
+        dateStr: '2026-11-13',
+      });
+      assert.equal(sameDayMinorRes.version, '3.2.0');
+      assert.equal(sameDayMinorRes.compiledCount, 1);
+      assert.equal(sameDayMinorRes.appendedSameDay, false);
+      assert.equal(JSON.parse(fs.readFileSync(path.join(tmpCompileRepo, 'web/package.json'), 'utf8')).version, '3.2.0');
+      const sameDayMinorCl = fs.readFileSync(path.join(tmpCompileRepo, 'CHANGELOG.md'), 'utf8');
+      assert.equal(sameDayMinorCl.startsWith('### 3.2.0 - 2026-11-13 (Beta)\n'), true);
+      assert.equal(sameDayMinorCl.includes('### 3.1.0 - 2026-11-13\n'), true);
 
       // Promote to Production, Beta
       const promoRes = compileMod.compileChangelog({ repoRoot: tmpCompileRepo, promote: true });
       assert.equal(promoRes.promoted, true);
       const promotedCl = fs.readFileSync(path.join(tmpCompileRepo, 'CHANGELOG.md'), 'utf8');
-      assert.equal(promotedCl.startsWith('### 3.1.0 - 2026-11-13 (Production, Beta)\n'), true);
+      assert.equal(promotedCl.startsWith('### 3.2.0 - 2026-11-13 (Production, Beta)\n'), true);
       assert.equal(promotedCl.includes('### 3.0.1 - 2026-11-10\n'), true);
+
+      // Same-day compile after --promote must cut a new (Beta) version and leave (Production) untouched
+      fs.writeFileSync(
+        path.join(tmpCompileRepo, '.changelog/05-post-promote.md'),
+        '---\nbump: patch\npr: 501\n---\nFix post-release tooltip alignment\n',
+        'utf8'
+      );
+      const postPromoteRes = compileMod.compileChangelog({
+        repoRoot: tmpCompileRepo,
+        dateStr: '2026-11-13',
+      });
+      assert.equal(postPromoteRes.version, '3.2.1');
+      assert.equal(postPromoteRes.compiledCount, 1);
+      assert.equal(postPromoteRes.appendedSameDay, false);
+      assert.equal(JSON.parse(fs.readFileSync(path.join(tmpCompileRepo, 'web/package.json'), 'utf8')).version, '3.2.1');
+      const postPromoteCl = fs.readFileSync(path.join(tmpCompileRepo, 'CHANGELOG.md'), 'utf8');
+      assert.equal(postPromoteCl.startsWith('### 3.2.1 - 2026-11-13 (Beta)\n'), true);
+      assert.equal(postPromoteCl.includes('### 3.2.0 - 2026-11-13 (Production)\n'), true);
+
+      // Malformed web/package-lock.json must fail cleanly before mutating web/package.json
+      fs.writeFileSync(path.join(tmpCompileRepo, 'web/package-lock.json'), '{ broken json', 'utf8');
+      fs.writeFileSync(
+        path.join(tmpCompileRepo, '.changelog/06-bad-lock.md'),
+        '---\nbump: patch\npr: 502\n---\nGuard lockfile write order\n',
+        'utf8'
+      );
+      assert.throws(
+        () => compileMod.compileChangelog({ repoRoot: tmpCompileRepo, dateStr: '2026-11-14' }),
+        SyntaxError
+      );
+      assert.equal(
+        JSON.parse(fs.readFileSync(path.join(tmpCompileRepo, 'web/package.json'), 'utf8')).version,
+        '3.2.1',
+        'web/package.json must remain unmodified when web/package-lock.json fails to parse'
+      );
+      fs.rmSync(path.join(tmpCompileRepo, '.changelog/06-bad-lock.md'), { force: true });
+      fs.writeFileSync(
+        path.join(tmpCompileRepo, 'web/package-lock.json'),
+        `${JSON.stringify({ name: 'capy-web', version: '3.2.1', lockfileVersion: 3, packages: { '': { version: '3.2.1' } } }, null, 2)}\n`,
+        'utf8'
+      );
 
       // Refuse promoting an (Alpha) top heading
       fs.writeFileSync(
         path.join(tmpCompileRepo, 'CHANGELOG.md'),
-        `### 3.1.0 - 2026-11-13 (Alpha)\n\n- Alpha preview #498\n\n### 3.0.1 - 2026-11-10 (Production)\n\n- Prod #488\n`,
+        `### 3.2.1 - 2026-11-13 (Alpha)\n\n- #498 Alpha preview\n\n### 3.2.0 - 2026-11-13 (Production)\n\n- #488 Prod\n`,
         'utf8'
       );
       assert.throws(() => compileMod.compileChangelog({ repoRoot: tmpCompileRepo, promote: true }));
