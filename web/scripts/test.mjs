@@ -631,13 +631,13 @@ async function runCodecAndEngineTests() {
       true,
       `Expected >= 398 single-line PR bullets in CHANGELOG.md, got ${changelogBullets.length}`
     );
-    let changelogBulletRe = /\s(?:\[#\d+\]\(https:\/\/github\.com\/[^/\s]+\/capy\/pull\/\d+\)|#\d+)$/;
+    let changelogBulletRe = /^- (?:\[#\d+\]\(\.\.\/\.\.\/pull\/\d+\)|#\d+)\s+\S/;
     
     for (const bullet of changelogBullets) {
       assert.equal(
         changelogBulletRe.test(bullet),
         true,
-        `Each CHANGELOG.md bullet must end with a valid PR reference: ${bullet}`
+        `Each CHANGELOG.md bullet must start with a valid PR reference: ${bullet}`
       );
     }
 
@@ -826,6 +826,11 @@ async function runCodecAndEngineTests() {
     }
     const badIssueLink = '[' + '#481](' + 'https://github.com/' + 'capyboop/paint/issues/481)';
     assert.throws(() => validateEpicNaming(`Link ${badIssueLink}`, 'ROADMAP.md'), /EPIC-N/);
+    const badRelIssueLink = '[' + '#500](' + '../../' + 'issues/500)';
+    assert.throws(
+      () => validateEpicNaming(badRelIssueLink, 'test.md'),
+      /\[EPIC-N\]\(\.\.\/\.\.\/issues\/<num>\)/
+    );
     const badCombinedEpic = '[EPIC-2 (' + '#477)](' + validEpicUrl + ')';
     assert.throws(() => validateEpicNaming(`Combined ${badCombinedEpic}`, 'project docs'), /EPIC-N/);
     const badUnlinkedCombinedEpic = '[EPIC-6 (#' + '481)]';
@@ -4156,32 +4161,32 @@ async function runCodecAndEngineTests() {
     );
     const sampleChangelog = `### 3.0.7 - 2026-11-13 (Beta)
 
-- Fix Play Games fallback and DPR canvas scaling #495
+- #495 Fix Play Games fallback and DPR canvas scaling
 
 ### 3.0.6 - 2026-11-13
 
-- Prior release note #489
+- #489 Prior release note
 
 ### 2.9 - 2026-11-10
 
-- Minor rollup note #470`;
+- #470 Minor rollup note`;
     assert.equal(
       extractReleaseNotes(sampleChangelog, 'v3.0.7'),
-      '- Fix Play Games fallback and DPR canvas scaling #495'
+      '- #495 Fix Play Games fallback and DPR canvas scaling'
     );
     assert.equal(
       extractReleaseNotes(sampleChangelog.replace(/\n/g, '\r\n'), 'v3.0.7-beta.1'),
-      '- Fix Play Games fallback and DPR canvas scaling #495'
+      '- #495 Fix Play Games fallback and DPR canvas scaling'
     );
     assert.equal(
       extractReleaseNotes(sampleChangelog, 'v2.9.4'),
-      '- Minor rollup note #470'
+      '- #470 Minor rollup note'
     );
     assert.equal(extractReleaseNotes(sampleChangelog, 'v9.9.9'), '- Release v9.9.9');
     assert.throws(() => extractReleaseNotes(sampleChangelog, 'invalid-tag'));
     assert.equal(
       formatReleaseNotesMarkdown(sampleChangelog, 'v3.0.6'),
-      '### What\'s New in `v3.0.6`\n\n- Prior release note #489\n'
+      '### What\'s New in `v3.0.6`\n\n- #489 Prior release note\n'
     );
     const tmpReleaseNotesOut = path.join(os.tmpdir(), 'capy-release-notes-test.md');
     try {
@@ -4213,14 +4218,14 @@ async function runCodecAndEngineTests() {
     // Verify .github/scripts/compile-changelog.mjs stops cleanly at ## headings
     const changelogWithSubheading = `### 3.0.7 - 2026-11-13 (Beta)
 
-- Top bullet [#495](https://example.invalid/pull/495)
+- #495 Top bullet
 
 ## Archive Section
 
 - Should never bleed into v3.0.7 release notes`;
     assert.equal(
       extractReleaseNotes(changelogWithSubheading, 'v3.0.7'),
-      '- Top bullet [#495](https://example.invalid/pull/495)'
+      '- #495 Top bullet'
     );
     logUnitPass('.github/scripts/compile-changelog.mjs & release.yml extraction verified.');
 
@@ -4237,6 +4242,20 @@ async function runCodecAndEngineTests() {
     assert.equal(validFrag.task, 'TASK-2.5');
     assert.throws(() => sanityMod.parseChangelogFragment('---\nbump: invalid\n---\nBad bump\n'));
     assert.throws(() => sanityMod.parseChangelogFragment('---\nbump: patch\n---\nLine 1\nLine 2\n'));
+    const maxLenSummary = 'x'.repeat(sanityMod.MAX_CHANGELOG_FRAGMENT_LENGTH);
+    assert.equal(
+      sanityMod.parseChangelogFragment(`---\nbump: patch\n---\n${maxLenSummary}\n`, '.changelog/max-ok.md').summary
+        .length,
+      sanityMod.MAX_CHANGELOG_FRAGMENT_LENGTH
+    );
+    assert.throws(
+      () =>
+        sanityMod.parseChangelogFragment(
+          `---\nbump: patch\n---\n${maxLenSummary}y\n`,
+          '.changelog/too-long.md'
+        ),
+      /summary is too long/i
+    );
 
     assert.equal(compileMod.computeNextSemVer('3.0.7', 'patch').version, '3.0.8');
     assert.equal(compileMod.computeNextSemVer('3.0.7', 'minor').version, '3.1.0');
@@ -4250,6 +4269,20 @@ async function runCodecAndEngineTests() {
       fs.writeFileSync(
         path.join(tmpCompileRepo, 'web/package.json'),
         JSON.stringify({ name: 'capy-paint', version: '3.0.7' }, null, 2),
+        'utf8'
+      );
+      fs.writeFileSync(
+        path.join(tmpCompileRepo, 'web/package-lock.json'),
+        JSON.stringify(
+          {
+            name: 'capy-paint',
+            version: '3.0.7',
+            lockfileVersion: 3,
+            packages: { '': { name: 'capy-paint', version: '3.0.7' } },
+          },
+          null,
+          2
+        ),
         'utf8'
       );
       fs.writeFileSync(
@@ -4269,7 +4302,7 @@ async function runCodecAndEngineTests() {
       );
       fs.writeFileSync(
         path.join(tmpCompileRepo, 'CHANGELOG.md'),
-        `### 3.0.7 - 2026-11-12 (Beta)\n\n- Beta item #495\n\n### 3.0.1 - 2026-11-10 (Production)\n\n- Prod item #488\n`,
+        `### 3.0.7 - 2026-11-12 (Beta)\n\n- #495 Beta item\n\n### 3.0.1 - 2026-11-10 (Production)\n\n- #488 Prod item\n`,
         'utf8'
       );
       fs.writeFileSync(path.join(tmpCompileRepo, '.changelog/README.md'), '# Fragments\n', 'utf8');
@@ -4292,7 +4325,13 @@ async function runCodecAndEngineTests() {
       });
       assert.equal(betaCompileRes.version, '3.1.0');
       assert.equal(betaCompileRes.compiledCount, 2);
+      assert.equal(betaCompileRes.appendedSameDay, false);
       assert.equal(JSON.parse(fs.readFileSync(path.join(tmpCompileRepo, 'web/package.json'), 'utf8')).version, '3.1.0');
+      const lockAfterBump = JSON.parse(
+        fs.readFileSync(path.join(tmpCompileRepo, 'web/package-lock.json'), 'utf8')
+      );
+      assert.equal(lockAfterBump.version, '3.1.0');
+      assert.equal(lockAfterBump.packages[''].version, '3.1.0');
       assert.equal(fs.readFileSync(path.join(tmpCompileRepo, 'web/src/version.ts'), 'utf8').includes("'3.1.0'"), true);
       assert.equal(fs.readFileSync(path.join(tmpCompileRepo, 'app/build.gradle.kts'), 'utf8').includes('versionCode = 30100'), true);
       assert.equal(fs.readFileSync(path.join(tmpCompileRepo, 'app/build.gradle.kts'), 'utf8').includes('versionName = "3.1.0"'), true);
@@ -4303,20 +4342,103 @@ async function runCodecAndEngineTests() {
       assert.equal(fs.existsSync(path.join(tmpCompileRepo, '.changelog/README.md')), true);
       const compiledCl = fs.readFileSync(path.join(tmpCompileRepo, 'CHANGELOG.md'), 'utf8');
       assert.equal(compiledCl.startsWith('### 3.1.0 - 2026-11-13 (Beta)\n'), true);
+      assert.match(compiledCl, /\n- \[#496\]\(\.\.\/\.\.\/pull\/496\) Fix edge zoom jitter\n/);
+      assert.match(compiledCl, /\n- \[#497\]\(\.\.\/\.\.\/pull\/497\) Add loupe magnifier\n/);
       assert.equal(compiledCl.includes('### 3.0.7 - 2026-11-12\n'), true);
       assert.equal(compiledCl.includes('### 3.0.1 - 2026-11-10 (Production)\n'), true);
+
+      // Same-day Beta re-compile appends into existing heading without double-bumping version
+      fs.writeFileSync(
+        path.join(tmpCompileRepo, '.changelog/03-same-day.md'),
+        '---\nbump: patch\npr: 499\n---\nPolish palette swatch contrast\n',
+        'utf8'
+      );
+      const sameDayRes = compileMod.compileChangelog({
+        repoRoot: tmpCompileRepo,
+        dateStr: '2026-11-13',
+      });
+      assert.equal(sameDayRes.version, '3.1.0');
+      assert.equal(sameDayRes.compiledCount, 1);
+      assert.equal(sameDayRes.appendedSameDay, true);
+      assert.equal(JSON.parse(fs.readFileSync(path.join(tmpCompileRepo, 'web/package.json'), 'utf8')).version, '3.1.0');
+      const sameDayCl = fs.readFileSync(path.join(tmpCompileRepo, 'CHANGELOG.md'), 'utf8');
+      assert.equal(sameDayCl.startsWith('### 3.1.0 - 2026-11-13 (Beta)\n'), true);
+      assert.equal((sameDayCl.match(/^### 3\.1\.0 - 2026-11-13 \(Beta\)$/gm) || []).length, 1);
+      assert.match(
+        sameDayCl,
+        /\n- \[#499\]\(\.\.\/\.\.\/pull\/499\) Polish palette swatch contrast\n- \[#496\]\(\.\.\/\.\.\/pull\/496\)/
+      );
+
+      // Same-day Beta compile with minor bump cuts a new version instead of appending into existing (Beta)
+      fs.writeFileSync(
+        path.join(tmpCompileRepo, '.changelog/04-same-day-minor.md'),
+        '---\nbump: minor\npr: 500\n---\nAdd custom brush presets\n',
+        'utf8'
+      );
+      const sameDayMinorRes = compileMod.compileChangelog({
+        repoRoot: tmpCompileRepo,
+        dateStr: '2026-11-13',
+      });
+      assert.equal(sameDayMinorRes.version, '3.2.0');
+      assert.equal(sameDayMinorRes.compiledCount, 1);
+      assert.equal(sameDayMinorRes.appendedSameDay, false);
+      assert.equal(JSON.parse(fs.readFileSync(path.join(tmpCompileRepo, 'web/package.json'), 'utf8')).version, '3.2.0');
+      const sameDayMinorCl = fs.readFileSync(path.join(tmpCompileRepo, 'CHANGELOG.md'), 'utf8');
+      assert.equal(sameDayMinorCl.startsWith('### 3.2.0 - 2026-11-13 (Beta)\n'), true);
+      assert.equal(sameDayMinorCl.includes('### 3.1.0 - 2026-11-13\n'), true);
 
       // Promote to Production, Beta
       const promoRes = compileMod.compileChangelog({ repoRoot: tmpCompileRepo, promote: true });
       assert.equal(promoRes.promoted, true);
       const promotedCl = fs.readFileSync(path.join(tmpCompileRepo, 'CHANGELOG.md'), 'utf8');
-      assert.equal(promotedCl.startsWith('### 3.1.0 - 2026-11-13 (Production, Beta)\n'), true);
+      assert.equal(promotedCl.startsWith('### 3.2.0 - 2026-11-13 (Production, Beta)\n'), true);
       assert.equal(promotedCl.includes('### 3.0.1 - 2026-11-10\n'), true);
+
+      // Same-day compile after --promote must cut a new (Beta) version and leave (Production) untouched
+      fs.writeFileSync(
+        path.join(tmpCompileRepo, '.changelog/05-post-promote.md'),
+        '---\nbump: patch\npr: 501\n---\nFix post-release tooltip alignment\n',
+        'utf8'
+      );
+      const postPromoteRes = compileMod.compileChangelog({
+        repoRoot: tmpCompileRepo,
+        dateStr: '2026-11-13',
+      });
+      assert.equal(postPromoteRes.version, '3.2.1');
+      assert.equal(postPromoteRes.compiledCount, 1);
+      assert.equal(postPromoteRes.appendedSameDay, false);
+      assert.equal(JSON.parse(fs.readFileSync(path.join(tmpCompileRepo, 'web/package.json'), 'utf8')).version, '3.2.1');
+      const postPromoteCl = fs.readFileSync(path.join(tmpCompileRepo, 'CHANGELOG.md'), 'utf8');
+      assert.equal(postPromoteCl.startsWith('### 3.2.1 - 2026-11-13 (Beta)\n'), true);
+      assert.equal(postPromoteCl.includes('### 3.2.0 - 2026-11-13 (Production)\n'), true);
+
+      // Malformed web/package-lock.json must fail cleanly before mutating web/package.json
+      fs.writeFileSync(path.join(tmpCompileRepo, 'web/package-lock.json'), '{ broken json', 'utf8');
+      fs.writeFileSync(
+        path.join(tmpCompileRepo, '.changelog/06-bad-lock.md'),
+        '---\nbump: patch\npr: 502\n---\nGuard lockfile write order\n',
+        'utf8'
+      );
+      assert.throws(
+        () => compileMod.compileChangelog({ repoRoot: tmpCompileRepo, dateStr: '2026-11-14' }),
+        SyntaxError
+      );
+      assert.equal(
+        JSON.parse(fs.readFileSync(path.join(tmpCompileRepo, 'web/package.json'), 'utf8')).version,
+        '3.2.1',
+        'web/package.json must remain unmodified when web/package-lock.json fails to parse'
+      );
+      fs.rmSync(path.join(tmpCompileRepo, '.changelog/06-bad-lock.md'), { force: true });
+      fs.writeFileSync(
+        path.join(tmpCompileRepo, 'web/package-lock.json'),
+        `${JSON.stringify({ name: 'capy-web', version: '3.2.1', lockfileVersion: 3, packages: { '': { version: '3.2.1' } } }, null, 2)}\n`,
+        'utf8'
+      );
 
       // Refuse promoting an (Alpha) top heading
       fs.writeFileSync(
         path.join(tmpCompileRepo, 'CHANGELOG.md'),
-        `### 3.1.0 - 2026-11-13 (Alpha)\n\n- Alpha preview #498\n\n### 3.0.1 - 2026-11-10 (Production)\n\n- Prod #488\n`,
+        `### 3.2.1 - 2026-11-13 (Alpha)\n\n- #498 Alpha preview\n\n### 3.2.0 - 2026-11-13 (Production)\n\n- #488 Prod\n`,
         'utf8'
       );
       assert.throws(() => compileMod.compileChangelog({ repoRoot: tmpCompileRepo, promote: true }));

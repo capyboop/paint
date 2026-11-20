@@ -1,760 +1,641 @@
-### 3.0.48 - 2026-11-20 (Alpha)
-
-- Omit region boundary lines on completed (filled) regions across both full base-canvas rebuilds and incremental region fills (`writeBaseCanvasPixels` / `writeRegionPixelsToImageData` in `PuzzleCanvas.tsx`) so finished artwork renders seamlessly while unpainted regions retain 1px slate borders in standard Paint-by-Number mode, add unit coverage in `web/scripts/test.mjs`, and sync `WEB.md` #608
-
-### 3.0.47 - 2026-11-20 (Beta)
-
-- Implement `$0` Bring-Your-Own-Cloud (BYOC) Account Login & automatic cross-device Cloud Sync: add shared WebCrypto `S256` OAuth 2.0 PKCE helper (`web/src/services/providers/OAuthPkceHelper.ts`), client-direct `MicrosoftCloudDriver` (`MicrosoftCloudSyncClient.ts` + OneDrive `special/approot` REST API with per-file write mutex & traversal validation), modular `AppleCloudDriver` (`AppleCloudSyncClient.ts` + Sign in with Apple JS / CloudKit JS / iOS `CapyIOS` bridge), Android external-browser OAuth PKCE bridge (`openExternalOAuth` in `CapyAndroidBridge.kt` and `NativeBridge.ts`, `capypaint://oauth/callback` in `AndroidManifest.xml` and `MainActivity.kt`, and JUnit4 allowlist tests in `CapyAndroidBridgeTest.kt`), `createAutoCloudSyncScheduler` (`15s` debounced post-paint push, `30s` stale `visibilitychange` pull+merge, and `online` reconnect sync wired in `App.tsx`), mobile-first `CloudAccountCard.tsx` extracted from `SettingsModal.tsx` (auto-hiding unconfigured providers to preserve Play Store compliance and accountless `#s=`/`.capy` fallback), optional `VITE_MICROSOFT_CLIENT_ID` and `VITE_APPLE_*` CI workflow variables, unit + Playwright E2E tests in `web/scripts/test.mjs`, and synced `CLOUD.md`, `APP.md`, and `WEB.md` #604
-
-### 3.0.46 - 2026-11-20
-
-- Enlarge all interactive UI buttons, icons, switches, sliders, color dots, popovers, and palette swatches under Large Text & Buttons mode (`data-large-text="true"` in `web/src/index.css`, `GameTopBar.tsx`, `FloatingActions.tsx`, `ReplayControls.tsx`, `PaletteDock.tsx`, `SettingsModal.tsx`, `ColorPickerPopover.tsx`, `FeatureOfferBanner.tsx`, and `App.tsx`) with responsive `360px`/`400px`/`640px` scaling, mobile 2-row `ReplayControls` wrapping, and synchronized `PaletteDock` centering; enable `fatFingerAssist: true` by default across both `EASY` and `NORMAL` upgrades (`StorageService.ts`, `PuzzleCanvas.tsx`) while preserving explicit `false` opt-outs, couple Large Text ON toggles (Settings and Onboarding) to `fatFingerAssist: true` plus a non-destructive `>= 34px` effective reach boost, polish `SettingsModal.tsx` reach-radius dimming and preset auto-enable, fix both `#602` `PuzzleCanvas.tsx` regressions (Paint Mode single-tap double-paint via `paintedInGestureRef` and Free Colour Mode direct-hit repaint in `resolveNearTapRegionId`), expand unit (`[Unit 04/15]`, `[Unit 15/15]`) and Playwright E2E (`[E2E 22/22]`) coverage in `web/scripts/test.mjs`, and sync `WEB.md` and `TESTING.md` #605
-
-### 3.0.45 - 2026-11-20
-
-- Implement anonymous in-game feedback (`capyboop/paint#3`): add `FEEDBACK_RATE_LIMITER` (`5` req / `60s`) in `wrangler.jsonc`, pure-TS `worker/feedbackProtocol.ts` validation/sanitization/CORS/GitHub issue formatting, rate-limited `POST` / `OPTIONS /api/feedback` relay in `worker/index.ts` with `CAPYBOOP_FEEDBACK_TOKEN` and graceful `503` prefilled fallback, `web/src/services/FeedbackService.ts`, a collapsible mobile-first Anonymous Feedback card in `SettingsModal.tsx` Tab 0 (preserving `about-report-issue-link`), unit and Playwright E2E tests in `web/scripts/test.mjs`, and docs in `CLOUD.md` and `WEB.md` #603
-
-### 3.0.44 - 2026-11-20
-
-- Bind `paint.capyboop.com` (`custom_domain: true`) on `capy-paint` in `wrangler.jsonc`, allow `paint.capyboop.com` in `worker/coopRoomProtocol.ts` (`ALLOWED_EXACT_RELAY_HOSTS`), `ProviderRegistry.ts` (`resolveCoopRoomWsUrl`), `web/src/version.ts` (`resolveReleaseChannel`), and `web/public/_headers` (`connect-src`), and add unit tests in `web/scripts/test.mjs` #595
-
-### 3.0.43 - 2026-11-20
-
-- Rename Android `applicationId`, `namespace`, Kotlin source/test packages (`app/src/main/java/com/capyboop/paint/`), `FileProvider` authority, ProGuard keep rules, Digital Asset Links (`assetlinks.json`), `privacy-policy.html`, and store/architecture docs from `com.capypaint.capy` to `com.capyboop.paint` #601
-
-### 3.0.42 - 2026-11-20
-
-- Add Fat-Finger Mode (`fatFingerAssist`) and configurable Finger Reach Radius (`touchReachRadiusPx` `8px`--`40px` with `Compact 12px` / `Standard 22px` / `Large 34px` presets) under `Difficulty (Tap Forgiveness)` in `SettingsModal.tsx` and `StorageService.ts`, implement zero-allocation radial near-miss hit-testing (`resolveNearTapRegionId` in `PuzzleCanvas.tsx`, wired through `App.tsx`) scaling dynamically with zoom, add unit and Playwright E2E micro-region tap tests in `web/scripts/test.mjs`, move `US-3.5` from EPIC-3 into EPIC-2, and sync `WEB.md`, `ROADMAP.md`, and `TODO.md` #602
-
-### 3.0.41 - 2026-11-19 (Production)
-
-- Retarget the public public repository workflow, in-app **Report Bug / Ideas** link (`SettingsModal.tsx`), `privacy-policy.html`, `sanity.mjs` / `test.mjs` guards, and studio documentation from `capyboop/paint` to the standalone `capyboop/paint` repository #595
-- Align the root `README.md` heading (`# Capy Paint`) with the standalone `capyboop/paint` repository #598
-
-### 3.0.40 - 2026-11-19
-
-- Allow the `GameTopBar` puzzle save title pill (`topbar-saves-btn` / `topbar-saves-title`) to expand across available left-lane width on mobile and desktop instead of truncating at fixed `38px`/`74px`/`200px` caps, and add a `360x780` Playwright overflow assertion in `web/scripts/test.mjs` #590
-
-### 3.0.39 - 2026-11-19
-
-- Replace the daily cron `schedule` in `.github/workflows/asset generation` with on-demand `workflow_dispatch` and path-filtered `push` triggers on `beta` (covering puzzle source assets, `web/src/engine/**`, `generate-sample-saves.mjs`, codec/storage/worker/daily-service files, `web/src/types/index.ts`, and the workflow file while excluding `.capy` archives, `presets/**`, and app icons), add `yaml.safe_load` trigger assertions in `web/scripts/test.mjs`, and document the trigger behavior in `DEV.md` and `TESTING.md` #589
-
-### 3.0.38 - 2026-11-19
-
-- Add `oxlint` hooks/catch/complexity guardrails alongside `tsc` in `npm run lint`, introduce bounded non-PII `reportSwallowed` telemetry (`web/src/services/telemetry.ts`) and crash-safe `<ErrorBoundary>` recovery with `.capy` and JSON emergency backup export (`web/src/components/ErrorBoundary.tsx`, `web/src/main.tsx`), consolidate duplicated `base64`, `debugEnvironment`, `snapshotPaths`, and `cloudSyncCoordinator` helpers (`CapyCodec.ts`, `NativeBridge.ts`, `ProviderRegistry.ts`, `StorageService.ts`, `GoogleCloudSyncClient.ts`, `SettingsModal.tsx`, `App.tsx`), migrate brittle JSX/TS source-string assertions in `web/scripts/release-safety-hardening.test.mjs` and `web/scripts/test.mjs` to behavioral SSR and Playwright E2E checks, and sync `DEV.md`, `WEB.md`, and `TESTING.md` #588
-
-### 3.0.37 - 2026-11-19
-
-- Add public community and contribution docs (`CONTRIBUTING.md`, `SUPPORT.md`, `SECURITY.md`, `.github/PULL_REQUEST_TEMPLATE.md`, updated `.github/ISSUE_TEMPLATE/config.yml`), exclude `project docs` and `project docs` from `capyboop/paint` public exports with matching `web/scripts/sanity.mjs` and `web/scripts/test.mjs` updates, add a public Contributing & Support section in `README.md`, and document the `capyboop/paint` vs. `capyboop/paint` two-way PR sync model across `DEV.md`, `PROJECT.md`, `CLOUD.md`, `TESTING.md`, and `TODO.md` #587
-
-### 3.0.36 - 2026-11-18
-
-- Harden release safety, Cloudflare Worker security, Android bridge & storage invariants: enforce strict SHA-256 CSP, HSTS, COOP, and cache rules in `web/public/_headers`, harden `web/public/sw.js` exact-query/standalone isolation and anti-HTML-poisoning (`canonicalIndexUrl`), gate `window.capyStorage` via `isDebugStorageExposed()`, add `StorageService.ts` strict settings/active-state schema allowlists, `quarantineCorruptLocalPayload`, atomic save-import validation (`assertValidSavedSnapshot`), and RLE/bounds DoS checks reconciled cleanly atop `v3.0.35` backup durability, preserve synchronous `liveCoopRef` + `syncUndoStack`/`syncRedoStack` Co-op state across same-frame Free/Normal bursts and `resetEpoch` anti-resurrection (`App.tsx`, `ProviderRegistry.ts`, `GoogleCloudSyncClient.ts`, `CloudProviderDrivers.ts`, `CapyCodec.ts`, `NativeBridge.ts`, `ShareLinkService.ts`, `StorageNamespace.ts`, `SvgPrintExporter.ts`), harden `worker/` Co-op `4`--`8`-char room validation, `API_RATE_LIMITER`, `ALLOW_LOCALHOST_ORIGINS`, `API_SECURITY_HEADERS`, host `seed_token` lock, and warm `pendingCheckpoint` 24h TTL, enforce Android WebView origin/document blocking, `RESOLUTION_POLICY_MANUAL`, and `Api26FileMover` (`CapyAndroidBridge.kt`, `MainActivity.kt`, `CapyAndroidBridgeTest.kt`), add `web/scripts/release-safety-hardening.test.mjs` + `[E2E 08]` Co-op burst tests (`web/scripts/test.mjs`), and sync `APP.md`, `CLOUD.md`, `TESTING.md`, `WEB.md`, `PLAY_STORE_LISTING.md`, `ROADMAP.md`, and `TODO.md` #579
-
-### 3.0.35 - 2026-11-18
-
-- Harden `StorageService.ts` local/backup durability (`loadRawWithBackupFallback` recency, validity, per-snapshot `resetEpoch` dominance, finite `filledRegionIds`, `hasOwnProperty` settings inspection, unconditional monotonic `metaUpdatedAt` across metadata, progress, `addSnapshot`, partial-delete, and archive/single-save imports using both pre-mutation list and raw persisted/unhealed post-clear snapshot timestamp floors via `getMaxPersistedSnapshotTimestamp`, storage-backed monotonic `savedAt` across `saveSettings`/`saveActiveState` including un-overwritten native backups after `clearActiveState`, and `quotaFailedLocalKeys` precedence with stale/corrupt `localStorage` and forced-empty recovery self-healing; `hasReadableNativeBackup()` capability gating for `CapyIOS` vs. `CapyAndroid`; strict `pendingBackupWrites` vs. `pendingLocalHealWrites` queue separation with 3-phase `flushPendingBackups` and bounded exponential backoff retries across Desktop Web, `CapyIOS`, and `CapyAndroid` + `SNAPSHOTS_KEY` `quotaFailedDeleteKeys` preservation; `saveSnapshots` `allowEmptyBackup`/`immediateBackup`/`clearLocalOnFailure` empty-overwrite guard; failed native `saveBackup` retry retention; read-only missing-ID `deleteSnapshot`/`updateSnapshotProgress`/`renameSnapshot`/`togglePinSnapshot`/`updateSnapshotViewport` no-ops; sanitized `isBootstrapBatch` `firstSnapshot` fallbacks; negative snapshot timestamp clamp) and add `[Unit 15/15]` durability tests in `web/scripts/test.mjs` #577
-- Retag `3.0.35` as `(Production, Beta)` and untag `3.0.29` via `compile-changelog.mjs --promote`, update `PLAY_STORE_LISTING.md` to `v3.0.35` (`30035`), align CI check titles across `web/scripts/test.mjs`, `DEV.md`, and `TESTING.md`, and sync `ROADMAP.md` and `TODO.md` for `beta -> main` release promotion #578
-
-### 3.0.34 - 2026-11-18
-
-- Skip `.github/workflows/release.yml` gracefully on tag pushes when Android signing secrets are absent (keeping `workflow_dispatch` fail-closed), exclude internal Beta channel links in `README.md`, `TODO.md`, and `ROADMAP.md` and sync-token ops notes from public public exports, harden public release export matching (case preservation, symlinked CLI detection, sync-token parity, and preserving public `capyboop/paint#2`--`#5` issue links), allow both primary and mirror GitHub Pages origins in `worker/coopRoomProtocol.ts`, add `validatePublicTrackerPolicy` in `web/scripts/sanity.mjs`, and expand unit and public staged verification in `web/scripts/test.mjs` #576
-
-### 3.0.33 - 2026-11-18
-
-- Add public GitHub issue templates (`.github/ISSUE_TEMPLATE/bug_report.yml`, `feature_request.yml`, `puzzle_idea.yml`, `config.yml`), add an About-tab **Report Bug / Ideas** button (`about-report-issue-link` -> `https://github.com/capyboop/paint/issues/new/choose`) in `SettingsModal.tsx`, point `web/public/privacy-policy.html` and `README.md` directly to `https://github.com/capyboop/paint/issues`, expand unit/E2E assertions in `web/scripts/test.mjs`, and sync `WEB.md`, `CLOUD.md`, `ROADMAP.md`, `TODO.md`, and `TESTING.md` (deferring `capyboop.com` out of active Sprint 1 scope) #575
-
-### 3.0.32 - 2026-11-18
-
-- Fix `RegionSegmenter` Phase 2 `maxRegions` overflow on `2048p` artwork (`O(R log R)` binary min-heap instead of legacy `8,000`-merge cutoff, preserving explicit `config.minRegionArea` in `PuzzleGenerator`), regenerate deterministic Max-settings `web/public/assets/sample_saves.capy` (all 4 samples, `<= 2000` regions) and `web/public/assets/daily_saves.capy` (all 20 static UTC combos, `<= 2000` regions, honest `Max Detail` / `Free Colour Line Art • Max Detail` labels, fixed `exportDate`) with `npm run test:unit` verification in `.github/workflows/asset generation`, add `SW_ASSETS_DIGEST` deterministic asset hashing (`vite.config.ts`) and Network-First (`cache: 'no-cache'`) `.capy` routing in `web/public/sw.js`, polish Create tab UX in `SettingsModal.tsx` (honest `create-style-hint-bar` copy, `Hint & Options` -> `hint-tooltip-algorithm` auto-reveal, `Puzzle of the Day` & upload `(i)` tooltips, synced `Detail Level Preset` + `Max Detail` quick button, and open-state `localConfig` resync) using shared `DEFAULT_GENERATOR_CONFIG`/`matchesGeneratorConfig` helpers (`types/index.ts`, `App.tsx`, `StorageService.ts`), expand unit/E2E assertions in `web/scripts/test.mjs`, and sync `WEB.md`, `PUZZLE.md`, and `TESTING.md` #573
-
-### 3.0.31 - 2026-11-18
-
-- Remove Android-only `Optional Ad (+2)` / `AI Credits` UI and `showRewardedAd` bridge hook (`ConsentRewardedAdAdapter` enforces `adFreePlatform: true` and `personalizedAdsConsent: false`), replace fabricated `Community Puzzle Ideas` votes/queue claims with a clean newest-first local **Puzzle Idea Notebook** (`+ Add Idea` / `Save Idea`, normalizing legacy cached votes to `0`), gate `About`-tab Co-op copy / `stat-coop-regions` (`col-span-2` symmetry on `Free Colour Art`), `release-channel-card` (`!NativeBridge.isAndroid`), startup `attemptAutoSignIn()` / `onCloudSnapshot`, and `MainActivity.kt` cold-start Play Games sign-in (`SUPPRESS_GAME_PROFILE_CREATION`), regenerate `phone_3_gallery_daily.png` and `tablet_2_create_gallery.png` store screenshots, and sync Play Store listing/docs and unit/E2E tests #571
-
-### 3.0.30 - 2026-11-16
-
-- Fix intermittent `[E2E 12]` Play Daily failure by waiting for the prebaked `daily-*` snapshot to become the active save before asserting, since `waitForPuzzleLoaded` could resolve against the previously mounted puzzle while `daily_saves.capy` was still being fetched and imported #569
-
-### 3.0.29 - 2026-11-16
-
-- Fix signed Android release builds failing `lintVitalRelease` (`InvalidFragmentVersionForActivityResult` on `registerForActivityResult` in `MainActivity.kt`) by pinning `androidx.fragment:fragment-ktx` `1.8.9` over the stale transitive Fragment from `play-services-games-v2`, run `app:lintVitalRelease` in the per-PR `Android Build & JUnit Tests` job so release-only lint blockers surface before tagging, and realign `CHANGELOG.md` channel markers to `v3.0.26` Production #566
-- Retag `CHANGELOG.md` channel markers for the `v3.0.29` Production promotion (`3.0.29` to `(Production, Beta)`, untag `3.0.26`) per the `PROJECT.md` Pre-Promotion checklist #568
-
-### 3.0.28 - 2026-11-16
-
-- Pre-generate all 4 built-in sample puzzles (`web/public/assets/sample_saves.capy`) and a rolling UTC window of daily puzzles (`web/public/assets/daily_saves.capy`) on Max settings (`2048p`, `2000` max regions, `64` colours, `24 px²` min region area) with zero-wait selective `filterSnapshotId` loading in `StorageService.ts` and `App.tsx`, add self-contained in-process Vite generation in `web/scripts/generate-sample-saves.mjs` plus scheduled `.github/workflows/asset generation`, surface an above-the-fold `create-style-hint-bar` + reorder **Preset Style Gallery & Visual Guide** above **Community Puzzle Ideas** + add tap-friendly `(i)` option hint tooltips in `SettingsModal.tsx`, and sync `WEB.md`, `TESTING.md`, and `web/scripts/test.mjs` #565
-
-### 3.0.27 - 2026-11-16
-
-- Standardize `web/scripts/test.mjs` into sequential `[Unit 01/15]`--`[Unit 15/15]` (`[Unit 01/10]`--`[Unit 10/10]` public) and `[E2E 01/21]`--`[E2E 21/21]` stages with execution-count assertions, gate optional `v3012_screenshots` writes behind `CAPY_V3012_SCREENSHOT_DIR`, isolate `bash --norc --noprofile` subprocess environments, add `{ quiet, logger }` options to `.github/scripts/cleanup-gh-pages-previews.mjs` and `.github/scripts/cleanup-branches.mjs`, and sync `TESTING.md` #563
-
-### 3.0.26 - 2026-11-16
-
-- Enable `.github/workflows/deploy-cloudflare.yml` builds directly from `capyboop/paint` (`10 x 5s` `/api/health` retries; public exported back to `capyboop/paint`), remove the redundant `/* /index.html 200` rule from `web/public/_redirects`, document Cloudflare Workers Builds (`Option 1` zero-token) vs. Actions (`Option 2` `CLOUDFLARE_API_TOKEN` scopes) and direct `capyboop.com` (`capyboop/paintgame`) setup across `CLOUD.md`, `WEB.md`, and `TODO.md` #550
-
-### 3.0.25 - 2026-11-16
-
-- Merge strict `100%` CI-approved PRs directly when GitHub auto-merge sits `blocked` on non-check ruleset requirements (extra approval for unattributed changes) once the latest head `Build & Test` is green, with unit coverage in `web/scripts/test.mjs` for beta/main merge methods, pending or failing checks, Owner holds, and non-blocked states, and sync `project docs` and `PROJECT.md` #560
-
-### 3.0.24 - 2026-11-16
-
-- Tag `3.0.24` as `(Production, Beta)`, untag `3.0.20`, and sync `ROADMAP.md` and `TODO.md` for `v3.0.24` `beta -> main` release promotion #559
-- Add an interactive **Preset Style Gallery & Visual Guide** in `SettingsModal` (`Create` tab) with 10 real segmented previews generated by `web/scripts/generate-preset-gallery.mjs` (`web/public/assets/presets/`), sync `Detail Level Preset` with `Target Palette Colours` so manual slider changes switch to `Custom` instead of being silently overridden, add Step 11 (`puzzle_presets`) to the 14-step `OnboardingTutorial` + `FeatureOffersService` `photo_upload` mapping, and sync `WEB.md`, `TESTING.md`, and `web/scripts/test.mjs` #557
-
-### 3.0.23 - 2026-11-16
-
-- Set default colour mode (`regionColorMode`) to Original Detail (`DETAIL`) and default colour sort order (`paletteSort`) to Rainbow / Hue (`HUE`) in `StorageService.ts` and `PaletteDock.tsx`, and sync `WEB.md` and `web/scripts/test.mjs` #555
-
-### 3.0.22 - 2026-11-16
-
-- Remove the expandable two-row deck and expand/minimize toggle from `ReplayControls.tsx` so replay always stays in the compact single-row scrubber bar, and sync `FloatingActions.tsx`, `App.tsx`, `WEB.md`, `TESTING.md`, and `web/scripts/test.mjs` #554
-
-### 3.0.21 - 2026-11-16
-
-- Add GitHub asynchronous stacked-PR merge (`PUT /pulls/{pull_number}/merge-async`) fallback and enforce mandatory outstanding-work (`- [ ]`) checklists on Draft PRs in the PR review workflow workflow, `project docs`, `PROJECT.md`, and `web/scripts/test.mjs` #553
-
-### 3.0.20 - 2026-11-16
-
-- Tag `3.0.20` as `(Production, Beta)`, untag `3.0.18`, and sync `ROADMAP.md` and `TODO.md` for `v3.0.20` `beta -> main` release promotion #548
-- Hide unfinished Cloud/Co-op hub (`cloud-coop-hub`), top-bar Friends button (`topbar-coop-btn`), and `cloud_coop` tutorial/feature offer behind opt-in dev flags until `EPIC-3`/`EPIC-5` while keeping `Share Progress Link` and `Printable SVG` visible in `Saves`, add Google Play Store graphics/screenshots and `PLAY_STORE_LISTING.md` under `docs/play-store/`, and defer Android TV D-pad/TV Party UI until post-Play-Store launch #547
-
-### 3.0.19 - 2026-11-15
-
-- Tag `3.0.18` as `(Production)`, untag `3.0.13`, move beta-only #544 under `3.0.19 (Beta)`, archive shipped EPIC-2 PRs (#535, #537--#540, #544, #545) in `ROADMAP.md` Section 6, and sync `US-3.6` / `US-4.4` in EPIC-3 and EPIC-4 #546
-- Declare Android TV Leanback launcher support (`LEANBACK_LAUNCHER`, optional `touchscreen`/`leanback` features) and add `320x180` `drawable-xhdpi/tv_banner.png`, update `privacy-policy.html` to reflect 100% ad-free builds, add `AndroidTvManifestAndBridgeTest.kt` and pure-Node TV checks, expand CI review workflow unit tests (`CI-3.8-flash`/`CI-4-argon` fallback, `ACTIONS_GITHUB_TOKEN` `403` fallback, Dependabot `403`, `synchronize` label reconciliation), and sync `APP.md`, `DEV.md`, `TESTING.md`, `ROADMAP.md`, and `TODO.md` #545
-- Add repo-scoped `dev environment config` for repeatable root `wrangler` and `web/` dependency setup, reclassify legacy `BUG-4` as clickable environment/ops Issue #543 — Production capypaint.com DNS, Cloudflare Worker & /env-setup cutover, and update `TODO.md`, `ROADMAP.md`, and `CLOUD.md` with clickable [capypaint.com](https://capypaint.com/), [capyboop.com](https://capyboop.com/), and preview/Pages deployment links #544
-
-### 3.0.18 - 2026-11-15
-
-- Wait two animation frames after the second wheel zoom in `web/scripts/test.mjs` so React's `useEffect` schedules the `350ms` `viewportSaveTimer` before `reload()` triggers `beforeunload`, eliminating the `1.2 vs 1.2` `flushPendingViewportSave` race #540
-
-### 3.0.17 - 2026-11-15
-
-- Replace brittle fixed UI-transition, long-press, modal, Co-op, resize, shortcut, and breadcrumb sleeps across `web/scripts/test.mjs` with deterministic Playwright locator, attribute, canvas-dimension, IndexedDB, and URL-hash waits while preserving intentional timer, debounce, live-playback, and starvation assertions, and sync `TESTING.md`, `TODO.md`, and `ROADMAP.md` #539
-
-### 3.0.16 - 2026-11-15
-
-- Target Android API 36 with modern `enableEdgeToEdge()`, IME window insets, `onSaveInstanceState` restoration, WebView navigation classification (`shouldOverrideUrlLoading`, Safe Browsing, `allowContentAccess = false`, `canGoBack()`), `cacheDir/shared/` FileProvider isolation with 24h cleanup and MIME-preserving `shareImage`, RFC-8259 bridge JSON escaping, `HapticSpec` value equality, and strict `web/package.json` SemVer parsing, add `backup_rules.xml`, `data_extraction_rules.xml`, `*.jks`/`*.keystore` gitignore entries, Gradle catalog pruning, and `NativeBridge.ts` cold-start queue buffering with Android OAuth/APK card gating, enforce required release signing secrets in `release.yml`, add `@JavascriptInterface` parity enforcement in `sanity.mjs`, and expand Kotlin JUnit, JS unit, and Android docs #537
-
-### 3.0.15 - 2026-11-15
-
-- Offload save thumbnails out of `capy_snapshots_v8` into IndexedDB (`preview_${id}`) with async hydration, debounced native backups (`flushPendingBackups`), persistent storage requests, and a `z-[60]` `QuotaExceededError` alert toast, optimize `PuzzleCanvas` hot paths with zero-allocation gesture rings, cached bounding rects, reusable highlight buffers, `React.memo` HUD wrappers, and `~20fps` idle pulse throttling, code-split `PuzzleGenerator` worker fallback, harden `App.tsx` O(1) region lookup, `Set`-equality viewport filters, and async cloud sync stroke preservation, and add Co-op sender identity binding and SQLite hibernation checkpoints #535
-
-### 3.0.14 - 2026-11-15
-
-- Fail closed on non-string PR bodies, re-evaluate review workflow on human body edits and disarm active auto-merge when non-passing, include hidden .well-known/assetlinks.json dotfiles across GitHub Pages uploads and cleanup sweeps, harden public repository sync auth, ls-remote checks, SIGPIPE-safe log scanning, and tag resets, expand workflow unit tests, and sync CI docs #534
-
-### 3.0.13 - 2026-11-15
-
-- Preserve active puzzle progress across debounced (`lastSavedViewportRef`) and beforeunload viewport saves, harden async puzzle transition and blob URL cleanup, remove idle polling from `TargetSpotlightOverlay`, speed up CI via async Android/E2E/Pages jobs with headless `--unit` blocking checks and hidden-files artifact preservation, harden PR review workflow Probe 9b clock-skew anchoring and strict `100%` CI auto-merge, tighten `project docs` `100%` sanity check and `stripHtmlComments`, expand Probe 2g/unit/workflow tests, and sync `PROJECT.md` and `TESTING.md` #530
-
-### 3.0.12 - 2026-11-14
-
-- Add non-blocking TargetSpotlightOverlay ring and directional arrow across all 14 OnboardingTutorial steps and 9 FeatureOfferBanner tips, auto-dismiss tutorial-opened ReplayControls past Step 6, compact Large Text toggle after Step 1, clarify Step 7 prompt copy, tighten 360px topbar channel pill fit, and update liveCoopRef synchronously #523
-
-### 3.0.11 - 2026-11-14
-
-- Upgrade OnboardingTutorial to a 14-step interactive guide with All Topics jump drawer and per-visit auto-advance across all steps, add 9 contextual non-blocking FeatureOfferBanner quick tips with scoped persistence and Jump to Guide, raise PR checklist and CI review workflows to strict 100%, and expand mobile overflow and E2E coverage #519
-
-### 3.0.10 - 2026-11-14
-
-- Add Low-Vision Large Text accessibility mode, keep PaletteDock strictly sorted and centered at 50% when scrollable, enable Undo by default with one-time migration, remove stale 1x zoom badge tutorial copy, and add capyboop review workflow unit tests #518
-
-### 3.0.9 - 2026-11-14
-
-- Keep PaletteDock visible above ReplayControls with swatch auto-dismiss, default Saves tab to Thumbnails list-first without sticky header occlusion, and expand E2E layout guards #517
-
-### 3.0.8 - 2026-11-13
-
-- Add CapyBoop Games company structure and contributor handbook (`project docs`) #521
-- Promote v3.0.8 beta release to Production #501
-- Remove topbar zoom pill badge, fix 360px mobile SettingsModal tab clipping, and add E2E overflow guard #497
-
-### 3.0.7 - 2026-11-13
-
-- Isolate alpha/beta preview browser storage (`StorageNamespace`), harden canvas DPR listeners and settings persistence, add `.changelog/` fragment compiler, fix `PaletteDock` accessibility labels, and sync Agile docs #495
-
-### 3.0.6 - 2026-11-13
-
-- Persist post-load replay controls until puzzle interaction, set Capy Forest as default puzzle, add interactive first-run tutorial, and move About tab first #489
-
-### 3.0.5 - 2026-11-13
-
-- Serve `/capy/alpha/` preview index manifest with `404.html` redirect from legacy `/capy/PR/NNN` and `/capy/pull/NNN` paths #491
-
-### 3.0.4 - 2026-11-13
-
-- Standardize GitHub Pages PR preview URLs to lowercase /capy/alpha/<num>/ with legacy /PR/ and /pull/ fallbacks and prune stale top-level pull/ and PR/ preview directories #492
-
-### 3.0.3 - 2026-11-13
-
-- Harden CI/CD workflow retries, Playwright E2E caching on beta PRs, main-to-beta sync workflow and dependency automation, and changelog/guide sanity checks #494
+### 3.0.8 - 2026-11-20 (Production, Beta)
+
+- #610 Standardize changelog formatting with sequential daily versions (`3.0.2`--`3.0.8`), leading PR links, and concise 1--2 sentence bullets, plus tooling, GitHub Releases gating, `SECURITY.md`, and project documentation sync
+- #608 Omit region boundary lines on completed regions so finished artwork renders seamlessly while unpainted regions keep crisp borders
+- #604 Add Bring-Your-Own-Cloud account login and automatic cross-device sync for Microsoft OneDrive, Apple CloudKit, and Google Drive with Android OAuth PKCE support
+- #605 Scale interactive buttons, icons, sliders, and palette swatches in Large Text mode, enable Fat-Finger assist by default, and fix single-tap double-paint and free-colour repaint regressions
+- #603 Add an anonymous in-game feedback card in Settings backed by a rate-limited Cloudflare Worker relay with a graceful prefilled fallback
+- #595 Bind the `paint.capyboop.com` custom domain on Cloudflare Workers and allowlist it across Co-op relay, channel detection, and CSP headers
+- #601 Rename the Android package, namespace, FileProvider authority, and store/architecture docs from `com.capypaint.capy` to `com.capyboop.paint`
+- #602 Add Fat-Finger Mode with configurable touch reach radius presets (`12px`, `22px`, `34px`) and zero-allocation radial near-miss hit-testing on small regions
+
+### 3.0.7 - 2026-11-19
+
+- #598 Align the root `README.md` heading (`# Capy Paint`) with the standalone `capyboop/paint` repository
+- #596 Retarget the public public repository, in-app Report Bug / Ideas link, privacy policy, and studio docs from `capyboop/paint` to `capyboop/paint`
+- #590 Allow the top-bar puzzle save title pill to expand across available left-lane width on mobile and desktop instead of truncating at fixed caps
+- #589 Replace the daily puzzle-regeneration cron schedule with on-demand and path-filtered triggers on `beta`
+- #588 Add `oxlint` guardrails, crash-safe `<ErrorBoundary>` recovery with emergency backup export, and consolidated storage/cloud helpers while migrating brittle source-string tests to behavioral checks
+- #587 Add public community docs (`CONTRIBUTING.md`, `SUPPORT.md`, `SECURITY.md`, PR/issue templates) and exclude internal contributor playbooks from public public exports
+
+### 3.0.6 - 2026-11-18
+
+- #579 Harden CSP/HSTS headers, service worker caching, local storage schema validation, Co-op burst sync and Worker rate limits, and Android WebView security invariants
+- #578 Promote Production channel markers, update the Play Store listing metadata, and align CI check titles and roadmap docs for release
+- #577 Harden local and native backup durability with monotonic timestamps, separated backup/heal retry queues, and empty-overwrite protection across Web, iOS, and Android
+- #576 Gracefully skip tag-triggered Android release builds when signing secrets are absent and harden public public repository filtering and origin checks
+- #575 Add public GitHub issue templates and an About-tab Report Bug / Ideas button linking directly to the public issue tracker
+- #573 Fix high-resolution `maxRegions` segmentation overflow with a binary min-heap, regenerate Max-detail sample and daily `.capy` archives, and polish Create-tab preset controls and tooltips
+- #571 Remove legacy rewarded-ad UI hooks, replace placeholder community votes with a local Puzzle Idea Notebook, gate Android startup prompts, and refresh Play Store screenshots
+
+### 3.0.5 - 2026-11-16
+
+- #569 Fix intermittent Play Daily E2E failures by waiting for the prebaked daily snapshot to mount before asserting
+- #568 Update changelog channel markers for the Production release promotion
+- #566 Fix signed Android release `lintVitalRelease` failures by pinning `androidx.fragment:fragment-ktx` `1.8.9` and running release lint in per-PR Android CI
+- #565 Pre-generate Max-detail sample and rolling daily `.capy` archives with selective zero-wait loading, and add tap-friendly Create-tab style hints and tooltips
+- #563 Standardize unit and E2E test stage numbering with execution-count assertions, opt-in screenshot capture, and isolated subprocess environments
+- #550 Enable Cloudflare Worker deployment directly from CI with health-check retries, remove redundant `_redirects` rules, and document Cloudflare Workers setup
+- #560 Add direct-merge fallback for strict `100%` CI-approved PRs when GitHub auto-merge is blocked on non-check ruleset rules and green checks exist
+- #559 Update changelog channel markers and sync roadmap docs for the Production release promotion
+- #557 Add an interactive Preset Style Gallery with 10 real segmented previews in the Create tab, sync manual palette counts to `Custom`, and add a matching tutorial step
+- #555 Set default colour mode to Original Detail and default palette sort order to Rainbow / Hue
+- #554 Keep replay controls in the compact single-row scrubber bar by removing the expandable two-row deck toggle
+- #553 Add asynchronous stacked-PR merge fallback and require outstanding-work checklists on Draft PRs in the review workflow
+- #548 Update changelog channel markers and sync roadmap docs for the Production release promotion
+- #547 Hide unfinished Cloud/Co-op UI behind opt-in dev flags while keeping share links and printable SVG visible, and add Google Play Store assets and listing copy
+
+### 3.0.4 - 2026-11-15
+
+- #546 Reconcile Production and Beta changelog channels and archive shipped Epic 2 pull requests in `ROADMAP.md`
+- #545 Declare Android TV Leanback launcher support with a TV banner, update the privacy policy for 100% ad-free builds, and expand Android TV and review workflow tests
+- #544 Add repo-scoped `dev environment config` setup config and update cloud/roadmap docs with clickable production domain links
+- #540 Wait two animation frames after wheel zoom in E2E tests to eliminate a viewport-save debounce race before reload
+- #539 Replace brittle fixed sleeps across the E2E suite with deterministic Playwright locator, attribute, IndexedDB, and URL-hash waits
+- #537 Target Android API 36 with edge-to-edge insets, hardened WebView navigation, isolated share cache cleanup, cold-start bridge queuing, and release-signing secret checks
+- #535 Offload save thumbnails to IndexedDB with quota alerts, optimize canvas rendering and HUD memoization, code-split the puzzle generator, and harden Co-op checkpoints
+- #534 Harden PR review workflow body validation, include `.well-known/assetlinks.json` in GitHub Pages deploys, and improve public repository sync reliability
+- #530 Preserve active puzzle progress across debounced and `beforeunload` viewport saves, remove idle spotlight polling, and speed up CI with async heavy jobs
+
+### 3.0.3 - 2026-11-14
+
+- #523 Add a non-blocking `TargetSpotlightOverlay` ring and arrow across all 14 tutorial steps and 9 feature tips, plus tighter mobile top-bar fit and synchronous Co-op state updates
+- #519 Upgrade the onboarding tutorial to a 14-step interactive guide with topic jumping and 9 contextual feature-offer tips, and raise PR review workflows to strict `100%`
+- #518 Add Low-Vision Large Text accessibility mode, keep the palette dock sorted and centered when scrollable, and enable Undo by default
+- #517 Keep the palette dock visible above replay controls with swatch auto-dismiss and default the Saves tab to a thumbnail-first layout
 
 ### 3.0.2 - 2026-11-13
 
-- Establish PROJECT.md governance charter, split 3.0.1 vs 3.0.2 changelog channels, and reconcile Epics and backlog links #493
-- Add 1-click GitHub PR approval workflow via bot-opened PRs, native review workflow tests, and prebaked sample viewport reset #490
-- Add Android Play Store release to v3.0.1 scope and remove shipped Sprint 1 bugfixes from active queue #487
+- #521 Add CapyBoop Games company structure and contributor handbook (`project docs`)
+- #501 Promote the beta release to Production
+- #497 Remove the top-bar zoom pill badge, fix `360px` mobile Settings tab clipping, and add an E2E overflow guard
+- #495 Isolate alpha/beta preview storage namespaces, harden canvas DPR listeners, add the `.changelog/` fragment compiler, and fix palette accessibility labels
+- #489 Keep post-load replay controls visible until interaction, set Capy Forest as the default puzzle, add the first-run tutorial, and move the About tab first
+- #491 Serve the `/capy/alpha/` preview index manifest with `404.html` redirects from legacy `/PR/` and `/pull/` paths
+- #492 Standardize GitHub Pages PR preview URLs to lowercase `/capy/alpha/<num>/` and prune stale legacy preview directories
+- #494 Harden CI workflow retries, Playwright caching on beta PRs, main-to-beta syncing, and changelog/guide sanity checks
+- #493 Establish the `PROJECT.md` governance charter, split `3.0.1` vs `3.0.2` changelog channels, and reconcile Epic backlog links
+- #490 Add bot-opened PR workflow automation, native review workflow tests, and prebaked sample viewport resets
+- #487 Add Android Play Store release to `v3.0.1` scope and clear shipped Sprint 1 bugfixes from the active queue
 
 ### 3.0.1 - 2026-11-12
 
-- Promote v3.0.1 mobile topbar and progress cap fixes to Production #488
-- Fix mobile topbar badge overlap, cap incomplete puzzle progress at 99%, and log capypaint.com DNS cutover #486
-- Prepare v3.0.0 beta release with Cloudflare Worker, Co-op relay hardening, mobile replay controls, and CI sanity gate #485
+- #488 Promote v3.0.1 mobile topbar and progress cap fixes to Production
+- #486 Fix mobile topbar badge overlap, cap incomplete puzzle progress at 99%, and log capypaint.com DNS cutover
+- #485 Prepare v3.0.0 beta release with Cloudflare Worker, Co-op relay hardening, mobile replay controls, and CI sanity gate
 
 ### 2.7 - 2026-11-12
 
-- Fix Co-op save and rewind sync, Android large cloud saves, CRDT reset epochs, and mobile replay controls #484
+- #484 Fix Co-op save and rewind sync, Android large cloud saves, CRDT reset epochs, and mobile replay controls
 
 ### 2.6 - 2026-11-12
 
-- Add capypaint.com Cloudflare Worker, Co-op relay security hardening, public export, and dual-approval CI gate #482
+- #482 Add capypaint.com Cloudflare Worker, Co-op relay security hardening, public export, and dual-approval CI gate
 
 ### 2.5 - 2026-11-11
 
-- Document 3-artefact roadmap triad, GitHub Epic Issue CLI playbooks, and sprint lifecycle #483
-- Add 3-tier Alpha/Beta/Production release pipeline, channel switcher, and GitHub Agile tracking #481
-- Add sub-tile parent breadcrumbs, printable SVG sheets, and Co-op undo sync #475
-- Split strategic ROADMAP.md from Sprint 1 TODO.md and add CIsprint playbooks #473
-- Add daily featured puzzle, reduced motion, keyboard shortcuts, and lifetime stats #474
-- Add zoom sensitivity, magnetic zoom stops, and procedural Web Audio tap effects #472
-- Fix cache-eviction E2E test, replay speed grid, and atomic Android backups #471
-- Standardize TODO.md under Lean Agile epics, stories, and collapsible task specs #470
-- Add DEV.md, streamline project docs, and overhaul repository documentation and privacy policy #467
-- Compact changelog headings for mobile, remove preamble, and group same-day patch releases #469
-- Standardize historical PR metadata, move changelog rules to project docs, and add full PR history #468
-- Resolve all remaining audit bugfixes from TODO #466
-- Fix resize clamping, IndexedDB palette recovery, and Pixel API 33+ haptics #465
-- Add YouTube-style playback scrubber and preserve viewport on replay #464
-- Consolidate test suite, enhance save-load replay, and add AAA TODO roadmap #463
+- #483 Document 3-artefact roadmap triad, GitHub Epic Issue CLI playbooks, and sprint lifecycle
+- #481 Add 3-tier Alpha/Beta/Production release pipeline, channel switcher, and GitHub Agile tracking
+- #475 Add sub-tile parent breadcrumbs, printable SVG sheets, and Co-op undo sync
+- #473 Split strategic ROADMAP.md from Sprint 1 TODO.md and add CIsprint playbooks
+- #474 Add daily featured puzzle, reduced motion, keyboard shortcuts, and lifetime stats
+- #472 Add zoom sensitivity, magnetic zoom stops, and procedural Web Audio tap effects
+- #471 Fix cache-eviction E2E test, replay speed grid, and atomic Android backups
+- #470 Standardize TODO.md under Lean Agile epics, stories, and collapsible task specs
+- #467 Add DEV.md, streamline project docs, and overhaul repository documentation and privacy policy
+- #469 Compact changelog headings for mobile, remove preamble, and group same-day patch releases
+- #468 Standardize historical PR metadata, move changelog rules to project docs, and add full PR history
+- #466 Resolve all remaining audit bugfixes from TODO
+- #465 Fix resize clamping, IndexedDB palette recovery, and Pixel API 33+ haptics
+- #464 Add YouTube-style playback scrubber and preserve viewport on replay
+- #463 Consolidate test suite, enhance save-load replay, and add AAA TODO roadmap
 
 ### 2.4 - 2026-11-10
 
-- Add modular cloud provider drivers and Google Drive cross-device sync #461
+- #461 Add modular cloud provider drivers and Google Drive cross-device sync
 
 ### 2.3 - 2026-11-10
 
-- Fix runtime sample resolution, canvas undo repaint, bundle splitting, and prioritize TODO.md #462
+- #462 Fix runtime sample resolution, canvas undo repaint, bundle splitting, and prioritize TODO.md
 
 ### 2.2 - 2026-11-10
 
-- Add shareable progress links, simultaneous Co-op, CRDT Cloud Sync, and Play Store compliance #460
+- #460 Add shareable progress links, simultaneous Co-op, CRDT Cloud Sync, and Play Store compliance
 
 ### 2.1 - 2026-11-10
 
-- Preload sample save archive for instant first-launch gameplay #459
+- #459 Preload sample save archive for instant first-launch gameplay
 
 ### 2.0 - 2026-11-10
 
-- Add Compact Binary Storage v2 (.capy v2) and fix engine edge cases #458
+- #458 Add Compact Binary Storage v2 (.capy v2) and fix engine edge cases
 
 ### 1.4 - 2026-11-09
 
-- Add min/max label size options, guarantee region fit, and redo circle-free hint color #457
-- Set Fast Mode puzzle generation progress as default #456
-- Show real generation metrics and live palette swatches during segmentation #455
-- Add loading progress detail toggle and fast mode #454
+- #457 Add min/max label size options, guarantee region fit, and redo circle-free hint color
+- #456 Set Fast Mode puzzle generation progress as default
+- #455 Show real generation metrics and live palette swatches during segmentation
+- #454 Add loading progress detail toggle and fast mode
 
 ### 1.3 - 2026-11-09
 
-- Update project docs: Refine contributor and contributor operational rules #453
-- Add PWA offline support and manifest #452
-- Add working thoughts display and Web engine conventions to project docs #451
-- Add ci and deps GitHub pull request labels to project docs #450
-- Add thumbnails grid view, save pinning, and toolbar to Saves gallery #449
+- #453 Update project docs: Refine contributor and contributor operational rules
+- #452 Add PWA offline support and manifest
+- #451 Add working thoughts display and Web engine conventions to project docs
+- #450 Add ci and deps GitHub pull request labels to project docs
+- #449 Add thumbnails grid view, save pinning, and toolbar to Saves gallery
 
 ### 1.2 - 2026-11-09
 
-- Fix Undo/Redo state synchronization and add post-replay auto-resume #448
-- Add undo timeline scrubber and multi-step redo #447
-- Add animated puzzle replay and region undo #446
+- #448 Fix Undo/Redo state synchronization and add post-replay auto-resume
+- #447 Add undo timeline scrubber and multi-step redo
+- #446 Add animated puzzle replay and region undo
 
 ### 1.1 - 2026-11-09
 
-- Add screenshot showcase gallery and capture script #445
-- Improve zoom pan gestures and color pickers #444
-- Add PR merge approval rule and preview lifecycle docs #443
-- Calibrate pan zoom gestures and sync preview assets #442
+- #445 Add screenshot showcase gallery and capture script
+- #444 Improve zoom pan gestures and color pickers
+- #443 Add PR merge approval rule and preview lifecycle docs
+- #442 Calibrate pan zoom gestures and sync preview assets
 
 ### 1.0 - 2026-11-08
 
-- Add web architecture documentation #441
-- Optimize CI builds and Pages deployment pipeline #440
-- Add Free Colour mode, custom palette swatches, and Mushroom Forest sample #439
-- Parallelize Web and Android CI workflows and streamline target execution #438
-- Update Web dependencies, enable parallel Gradle sync, and add maintenance guides #437
-- Add Android WebView debugging, bundle validation, and developer tooling #436
-- Realign root architecture documentation and prune completed roadmap items #435
-- Add automated closed pull request preview pruning for GitHub Pages #434
-- Fix active color sync and auto-pan jumps and add victory celebration export #433
-- Unify Web and Android single-codebase architecture with WebViewAssetLoader #432
-- Consolidate Web, Legacy Web1, and Android apps into unified monorepo #431
+- #441 Add web architecture documentation
+- #440 Optimize CI builds and Pages deployment pipeline
+- #439 Add Free Colour mode, custom palette swatches, and Mushroom Forest sample
+- #438 Parallelize Web and Android CI workflows and streamline target execution
+- #437 Update Web dependencies, enable parallel Gradle sync, and add maintenance guides
+- #436 Add Android WebView debugging, bundle validation, and developer tooling
+- #435 Realign root architecture documentation and prune completed roadmap items
+- #434 Add automated closed pull request preview pruning for GitHub Pages
+- #433 Fix active color sync and auto-pan jumps and add victory celebration export
+- #432 Unify Web and Android single-codebase architecture with WebViewAssetLoader
+- #431 Consolidate Web, Legacy Web1, and Android apps into unified monorepo
 
 ### 0.9.3 - 2026-09-24
 
-- Fix runtime bootstrap scope, default artwork loading, and UI load tests #430
-- Rename menu and relocate advanced settings toggle #429
-- Fix save manager SVG export handler #428
-- Reorder settings tabs around Saves and Create #427
-- Add SVG snapshot export to save manager #425
-- Fix autosave refresh and smoke coverage #424
-- Rework settings header layout #423
-- Simplify controls layout in settings menu #421
-- Move hint intensity controls to basics tab #420
-- Drop raster save artifacts and rebuild maps from vector scenes #419
+- #430 Fix runtime bootstrap scope, default artwork loading, and UI load tests
+- #429 Rename menu and relocate advanced settings toggle
+- #428 Fix save manager SVG export handler
+- #427 Reorder settings tabs around Saves and Create
+- #425 Add SVG snapshot export to save manager
+- #424 Fix autosave refresh and smoke coverage
+- #423 Rework settings header layout
+- #421 Simplify controls layout in settings menu
+- #420 Move hint intensity controls to basics tab
+- #419 Drop raster save artifacts and rebuild maps from vector scenes
 
 ### 0.9.2 - 2025-12-05
 
-- Wrap mobile settings tabs and update settings-menu.json schema #418
-- Reduce settings sheet minimum dimensions and safe-area gaps on mobile #417
-- Add configurable region cleanup controls #416
-- Lower generator defaults for simpler puzzles #415
-- Enforce upload resizing to stay within source image limit #414
-- Clarify branch baseline guidance #413
-- Render labels with SVG #412
-- Remove binary artifact and document policy #411
-- Polish vector sample rendering and docs #410
-- Add vector scene loader and refresh sample puzzle #409
+- #418 Wrap mobile settings tabs and update settings-menu.json schema
+- #417 Reduce settings sheet minimum dimensions and safe-area gaps on mobile
+- #416 Add configurable region cleanup controls
+- #415 Lower generator defaults for simpler puzzles
+- #414 Enforce upload resizing to stay within source image limit
+- #413 Clarify branch baseline guidance
+- #412 Render labels with SVG
+- #411 Remove binary artifact and document policy
+- #410 Polish vector sample rendering and docs
+- #409 Add vector scene loader and refresh sample puzzle
 
 ### 0.9.1 - 2025-12-04
 
-- Handle save quota failures by trimming previews #408
-- Fix deploy workflow concurrency scope and env URL #407
-- Prefer human-readable region maps #406
-- Enhance smoke test logging report #405
-- Add render preview support to svg renderer #404
-- Handle renderer resize safely #403
-- Auto-generate settings sheet from JSON definition #402
-- Prune unused runtime modules #401
-- Consolidate runtime into capy.js #400
-- Summarize processed branches in cleanup workflow #399
+- #408 Handle save quota failures by trimming previews
+- #407 Fix deploy workflow concurrency scope and env URL
+- #406 Prefer human-readable region maps
+- #405 Enhance smoke test logging report
+- #404 Add render preview support to svg renderer
+- #403 Handle renderer resize safely
+- #402 Auto-generate settings sheet from JSON definition
+- #401 Prune unused runtime modules
+- #400 Consolidate runtime into capy.js
+- #399 Summarize processed branches in cleanup workflow
 
 ### 0.9.0 - 2025-11-28
 
-- Expose runtime APIs as module exports #398
-- Rewrite Pages deployment workflow #397
-- Temporarily disable service worker and offline cache #396
-- Simplify runtime to SVG renderer #395
-- Expose runtime API via global object #394
-- Preserve gh-pages preview directories during main deploy #393
-- Export renderer controller inline #392
-- Harden renderer controller fallback #391
-- Avoid duplicate createRendererController export #390
-- Refresh start hint onboarding UI #389
+- #398 Expose runtime APIs as module exports
+- #397 Rewrite Pages deployment workflow
+- #396 Temporarily disable service worker and offline cache
+- #395 Simplify runtime to SVG renderer
+- #394 Expose runtime API via global object
+- #393 Preserve gh-pages preview directories during main deploy
+- #392 Export renderer controller inline
+- #391 Harden renderer controller fallback
+- #390 Avoid duplicate createRendererController export
+- #389 Refresh start hint onboarding UI
 
 ### 0.8.3 - 2025-11-28
 
-- Restore renderer pipeline and fixtures #388
-- Improve renderer wiring and tests #387
-- Delete merged branches without cutoff #386
-- Refine Playwright skip handling #385
-- Enhance branch cleanup diagnostics #384
-- Add debug listing to deploy workflow #383
-- Refine responsive settings navigation and input control styles #382
-- Handle gh-pages root cleanup #381
-- Fix deployment artifact path for branch previews #380
-- Remove outdated menu screenshot artifact #379
+- #388 Restore renderer pipeline and fixtures
+- #387 Improve renderer wiring and tests
+- #386 Delete merged branches without cutoff
+- #385 Refine Playwright skip handling
+- #384 Enhance branch cleanup diagnostics
+- #383 Add debug listing to deploy workflow
+- #382 Refine responsive settings navigation and input control styles
+- #381 Handle gh-pages root cleanup
+- #380 Fix deployment artifact path for branch previews
+- #379 Remove outdated menu screenshot artifact
 
 ### 0.8.2 - 2025-11-27
 
-- Add responsive tab stacking and themed input controls to settings sheet #378
-- Register renderer mode change handler #377
-- Add iterative development feedback loop guide #376
-- Clarify renderer controller exports #375
-- Simplify branch preview comment output #374
-- Simplify runtime exports #373
-- Fix service worker cache script loading on GitHub Pages #372
-- Add console error check to UI smoke test #371
-- Ensure deploy previews checkout into PR-specific pull directories #370
-- Consolidate runtime exports #369
+- #378 Add responsive tab stacking and themed input controls to settings sheet
+- #377 Register renderer mode change handler
+- #376 Add iterative development feedback loop guide
+- #375 Clarify renderer controller exports
+- #374 Simplify branch preview comment output
+- #373 Simplify runtime exports
+- #372 Fix service worker cache script loading on GitHub Pages
+- #371 Add console error check to UI smoke test
+- #370 Ensure deploy previews checkout into PR-specific pull directories
+- #369 Consolidate runtime exports
 
 ### 0.8.1 - 2025-11-26
 
-- Fix duplicate renderer controller export #368
-- Fix Pages artifact path for main deployments #367
-- Fix runtime controller export #366
-- Remove Pico CSS #365
-- Restore custom styles and remove Pico import #364
-- Add gh-pages artifact diagnostics to deploy workflows #363
-- Add preboot metric fallbacks for blocked storage #362
-- Fix branch deployment setup and linkify preview comments #361
-- Improve deploy preview logging #360
-- Gate Pages deploys to open PRs and refresh docs #359
+- #368 Fix duplicate renderer controller export
+- #367 Fix Pages artifact path for main deployments
+- #366 Fix runtime controller export
+- #365 Remove Pico CSS
+- #364 Restore custom styles and remove Pico import
+- #363 Add gh-pages artifact diagnostics to deploy workflows
+- #362 Add preboot metric fallbacks for blocked storage
+- #361 Fix branch deployment setup and linkify preview comments
+- #360 Improve deploy preview logging
+- #359 Gate Pages deploys to open PRs and refresh docs
 
 ### 0.8.0 - 2025-11-26
 
-- Add renderer follow-up tasks #358
-- Exclude project files from Pages deploy #357
-- Improve SVG renderer sizing and tests #356
-- Rename changelog file and update guidance #355
-- Use PR-numbered preview URLs and cleanup on close #354
-- Simplify branch preview URLs #353
-- Refine settings tabs and layout #352
-- Fix deploy workflow concurrency group expression #351
-- Fix branch preview deployment path #350
-- Adjust deploy target directory for main Pages deployment #349
+- #358 Add renderer follow-up tasks
+- #357 Exclude project files from Pages deploy
+- #356 Improve SVG renderer sizing and tests
+- #355 Rename changelog file and update guidance
+- #354 Use PR-numbered preview URLs and cleanup on close
+- #353 Simplify branch preview URLs
+- #352 Refine settings tabs and layout
+- #351 Fix deploy workflow concurrency group expression
+- #350 Fix branch preview deployment path
+- #349 Adjust deploy target directory for main Pages deployment
 
 ### 0.7.3 - 2025-11-24
 
-- Improve responsive settings layout #348
-- Fix duplicate createRendererController export #347
-- Remove legacy renderer module files #346
-- Simplify bootstrap to SVG renderer #345
-- Improve deployment log visibility #344
-- Remove unsupported screenshot artifact #343
-- Add session kick-off workflow reminder #342
-- Move contributor guide to root, mirror Pages HTML, and relocate planning docs #340
-- Trim and document remaining CSS #339
-- Add service worker status and debug logging #338
+- #348 Improve responsive settings layout
+- #347 Fix duplicate createRendererController export
+- #346 Remove legacy renderer module files
+- #345 Simplify bootstrap to SVG renderer
+- #344 Improve deployment log visibility
+- #343 Remove unsupported screenshot artifact
+- #342 Add session kick-off workflow reminder
+- #340 Move contributor guide to root, mirror Pages HTML, and relocate planning docs
+- #339 Trim and document remaining CSS
+- #338 Add service worker status and debug logging
 
 ### 0.7.2 - 2025-11-23
 
-- Move contributor guide to root and mirror Pages HTML #337
-- Remove deployment gating for branch deploys #336
-- Add gh-pages preview cleanup to branch maintenance workflow #335
-- Handle workflow dispatch triggers in post-deploy tests #334
-- Improve settings sheet mobile layout #333
-- Retarget branch cleanup to feature prefix #332
-- Fix deploy workflow eligibility for PR branches #331
-- Remove README link from help panel #329
-- Add rerun Pages deploy button to PR comments #328
-- Improve branch cleanup logging and cutoff #327
+- #337 Move contributor guide to root and mirror Pages HTML
+- #336 Remove deployment gating for branch deploys
+- #335 Add gh-pages preview cleanup to branch maintenance workflow
+- #334 Handle workflow dispatch triggers in post-deploy tests
+- #333 Improve settings sheet mobile layout
+- #332 Retarget branch cleanup to feature prefix
+- #331 Fix deploy workflow eligibility for PR branches
+- #329 Remove README link from help panel
+- #328 Add rerun Pages deploy button to PR comments
+- #327 Improve branch cleanup logging and cutoff
 
 ### 0.7.1 - 2025-11-21
 
-- Add manual dispatch for branch deploys and rerun button #326
-- Fix settings tab layout wrappers #325
-- Refactor render.js to lean SVG renderer #324
-- Add merge conflict handling checklist #323
-- Synchronize modular renderer refactor with updated deployment workflows #322
-- Clarify git remote and rebase expectations #321
-- Handle preview screenshot failures gracefully #320
-- Fix deploy workflow environment expression #318
-- Enhance post-deploy Playwright coverage #317
-- Adjust deploy workflow environment per branch #316
+- #326 Add manual dispatch for branch deploys and rerun button
+- #325 Fix settings tab layout wrappers
+- #324 Refactor render.js to lean SVG renderer
+- #323 Add merge conflict handling checklist
+- #322 Synchronize modular renderer refactor with updated deployment workflows
+- #321 Clarify git remote and rebase expectations
+- #320 Handle preview screenshot failures gracefully
+- #318 Fix deploy workflow environment expression
+- #317 Enhance post-deploy Playwright coverage
+- #316 Adjust deploy workflow environment per branch
 
 ### 0.7.0 - 2025-11-21
 
-- Stabilize settings toggle and mute test network noise #315
-- Simplify settings bootstrap with JSON export #314
-- Update deployment documentation #313
-- Add feedback form with analytics reporting #312
-- Improve deploy reporting and always deploy #311
-- Add global error toast for runtime failures #310
-- Allow deploy workflow on all branches #309
-- Adopt templating helper for save manager UI #308
-- Simplify post-deploy preview comment #307
-- Auto prune stale Pages previews #305
+- #315 Stabilize settings toggle and mute test network noise
+- #314 Simplify settings bootstrap with JSON export
+- #313 Update deployment documentation
+- #312 Add feedback form with analytics reporting
+- #311 Improve deploy reporting and always deploy
+- #310 Add global error toast for runtime failures
+- #309 Allow deploy workflow on all branches
+- #308 Adopt templating helper for save manager UI
+- #307 Simplify post-deploy preview comment
+- #305 Auto prune stale Pages previews
 
 ### 0.6.3 - 2025-11-18
 
-- Remove legacy autosave migration #303
-- Add settings sheet toggle test #302
-- Add drag deadzone for settings launcher #301
-- Move cleanup script into project scripts #298
-- Document deploy workflow env guardrails #296
-- Adopt rich save preview cards and flattened sticky settings layout #295
-- Remove job-level environment context reference from deploy sync step #294
-- Update README with offline and local dev notes #292
-- Compute deploy workflow concurrency group directly without env context #291
-- Add terminal output guidance to onboarding #290
+- #303 Remove legacy autosave migration
+- #302 Add settings sheet toggle test
+- #301 Add drag deadzone for settings launcher
+- #298 Move cleanup script into project scripts
+- #296 Document deploy workflow env guardrails
+- #295 Adopt rich save preview cards and flattened sticky settings layout
+- #294 Remove job-level environment context reference from deploy sync step
+- #292 Update README with offline and local dev notes
+- #291 Compute deploy workflow concurrency group directly without env context
+- #290 Add terminal output guidance to onboarding
 
 ### 0.6.2 - 2025-11-16
 
-- Refactor UI wiring into components #288
-- Make branch cleanup asynchronous #287
-- Optimize GitHub Pages deployment speed #286
-- Refine developer onboarding guidance #284
-- Add organic superpixel generator #283
-- Add project roadmap and TODO tracking #282
-- Add offline caching and local file access #280
-- Add simplicity guidance to workflow instructions #279
-- Consolidate runtime bootstrap into single module #278
-- Extract runtime styles into stylesheet #277
+- #288 Refactor UI wiring into components
+- #287 Make branch cleanup asynchronous
+- #286 Optimize GitHub Pages deployment speed
+- #284 Refine developer onboarding guidance
+- #283 Add organic superpixel generator
+- #282 Add project roadmap and TODO tracking
+- #280 Add offline caching and local file access
+- #279 Add simplicity guidance to workflow instructions
+- #278 Consolidate runtime bootstrap into single module
+- #277 Extract runtime styles into stylesheet
 
 ### 0.6.1 - 2025-11-16
 
-- Fix branch cleanup ref encoding #276
-- Combine renderer performance updates and testing stack #275
-- Handle WebGL label cache updates for UI scale changes #274
-- Update TECH.md for modular runtime documentation #273
-- Update Playwright setup script workflow #272
-- Organize runtime assets under dedicated directory #270
-- Add unit tests for render controller fallbacks #269
-- Add documentation for helper scripts #264
-- Run branch cleanup after deployments #262
-- Refresh TECH.md test harness and branch deployment documentation #261
+- #276 Fix branch cleanup ref encoding
+- #275 Combine renderer performance updates and testing stack
+- #274 Handle WebGL label cache updates for UI scale changes
+- #273 Update TECH.md for modular runtime documentation
+- #272 Update Playwright setup script workflow
+- #270 Organize runtime assets under dedicated directory
+- #269 Add unit tests for render controller fallbacks
+- #264 Add documentation for helper scripts
+- #262 Run branch cleanup after deployments
+- #261 Refresh TECH.md test harness and branch deployment documentation
 
 ### 0.6.0 - 2025-11-15
 
-- Restructure repository around project workspace #260
-- Reuse counters for tiny region merging #259
-- Center active palette colour #258
-- Unify settings, generator, saves, and help into one menu #257
-- Add nearby difficulty that auto-selects adjacent colours #256
-- Refactor neighbor iteration in segmentation routines #255
-- Optimize smoothing histogram reuse #254
-- Allow dots in post-deploy slug derivation #252
-- Fix post-deploy artifact naming sanitization #251
-- Ensure Playwright browsers install with docs #250
+- #260 Restructure repository around project workspace
+- #259 Reuse counters for tiny region merging
+- #258 Center active palette colour
+- #257 Unify settings, generator, saves, and help into one menu
+- #256 Add nearby difficulty that auto-selects adjacent colours
+- #255 Refactor neighbor iteration in segmentation routines
+- #254 Optimize smoothing histogram reuse
+- #252 Allow dots in post-deploy slug derivation
+- #251 Fix post-deploy artifact naming sanitization
+- #250 Ensure Playwright browsers install with docs
 
 ### 0.5.3 - 2025-11-15
 
-- Simplify branch overview page #249
-- Restore stable renderer pipeline with performance logging #248
-- Persist palette sort preference #245
-- Improve zoom smoothness with compositor-driven scaling #244
-- Flush autosave on page lifecycle events #243
-- Fix WebGL label rendering #242
-- Add branch slug preparation job to post-deploy tests workflow #241
-- Adjust zoom defaults and expose configurable max zoom #240
-- Preserve palette numbering when colours complete #239
-- Fix UI scale flash during boot #238
+- #249 Simplify branch overview page
+- #248 Restore stable renderer pipeline with performance logging
+- #245 Persist palette sort preference
+- #244 Improve zoom smoothness with compositor-driven scaling
+- #243 Flush autosave on page lifecycle events
+- #242 Fix WebGL label rendering
+- #241 Add branch slug preparation job to post-deploy tests workflow
+- #240 Adjust zoom defaults and expose configurable max zoom
+- #239 Preserve palette numbering when colours complete
+- #238 Fix UI scale flash during boot
 
 ### 0.5.2 - 2025-10-26
 
-- Rename palette sort label and renumber swatches #237
-- Switch CI workflow to Ubuntu runners #236
-- Limit Playwright smoke test to Chromium page load #235
-- Simplify Pages deployment workflow #234
-- Enhance palette sorting with spectrum and warmth modes #233
-- Prefer autosave when restoring sessions #232
-- Sanitize post-deploy concurrency group branch names #231
-- Improve region label placement and sizing #230
-- Improve region label placement with polylabel #229
-- Fix settings persistence when no puzzle is loaded #228
+- #237 Rename palette sort label and renumber swatches
+- #236 Switch CI workflow to Ubuntu runners
+- #235 Limit Playwright smoke test to Chromium page load
+- #234 Simplify Pages deployment workflow
+- #233 Enhance palette sorting with spectrum and warmth modes
+- #232 Prefer autosave when restoring sessions
+- #231 Sanitize post-deploy concurrency group branch names
+- #230 Improve region label placement and sizing
+- #229 Improve region label placement with polylabel
+- #228 Fix settings persistence when no puzzle is loaded
 
 ### 0.5.1 - 2025-10-25
 
-- Render region numbers continuously across all zoom levels #227
-- Remove user settings from exported save files #226
-- Fix post-deploy workflow concurrency expression #225
-- Configure Playwright UI review artifacts #224
-- Streamline Playwright smoke test for quick load check #223
-- Improve remote image URL workflow #222
-- Add support for loading puzzles from external image URLs #221
-- Adjust region label layout to respect zoom ratio #220
-- Support zoom-aware region label layout #219
-- Persist user settings in browser storage #217
+- #227 Render region numbers continuously across all zoom levels
+- #226 Remove user settings from exported save files
+- #225 Fix post-deploy workflow concurrency expression
+- #224 Configure Playwright UI review artifacts
+- #223 Streamline Playwright smoke test for quick load check
+- #222 Improve remote image URL workflow
+- #221 Add support for loading puzzles from external image URLs
+- #220 Adjust region label layout to respect zoom ratio
+- #219 Support zoom-aware region label layout
+- #217 Persist user settings in browser storage
 
 ### 0.5.0 - 2025-10-24
 
-- Fix right-click select colour when pan drag is configured #216
-- Default to medium detail with larger regions #215
-- Revamp Manage Saves autosave slot layout #214
-- Render puzzles over stored base image #212
-- Add compact puzzle export option #211
-- Add tabbed settings layout and refine UI scale defaults #210
-- Fix WebGL fill updates and refine zoom controls #209
-- Add renderer selector UI and SVG backend #208
-- Ensure branch deployments include JSON assets #207
-- Include all root JS assets in branch deploys #206
+- #216 Fix right-click select colour when pan drag is configured
+- #215 Default to medium detail with larger regions
+- #214 Revamp Manage Saves autosave slot layout
+- #212 Render puzzles over stored base image
+- #211 Add compact puzzle export option
+- #210 Add tabbed settings layout and refine UI scale defaults
+- #209 Fix WebGL fill updates and refine zoom controls
+- #208 Add renderer selector UI and SVG backend
+- #207 Ensure branch deployments include JSON assets
+- #206 Include all root JS assets in branch deploys
 
 ### 0.4.3 - 2025-10-21
 
-- Expand interface scale limits #205
-- Include JS assets in branch deployments #204
-- Add textured passes to WebGL renderer #203
-- Ensure allow_without_pr input is evaluated correctly #202
-- Fix deploy workflow expressions for manual inputs #201
-- Fix branch deploy workflow env quoting #200
-- Ensure post-deploy tests install Playwright browsers #199
-- Restore Playwright UI smoke coverage #198
-- Add WebGL renderer implementation #197
-- Stabilize UI smoke tests with automation helpers #196
+- #205 Expand interface scale limits
+- #204 Include JS assets in branch deployments
+- #203 Add textured passes to WebGL renderer
+- #202 Ensure allow_without_pr input is evaluated correctly
+- #201 Fix deploy workflow expressions for manual inputs
+- #200 Fix branch deploy workflow env quoting
+- #199 Ensure post-deploy tests install Playwright browsers
+- #198 Restore Playwright UI smoke coverage
+- #197 Add WebGL renderer implementation
+- #196 Stabilize UI smoke tests with automation helpers
 
 ### 0.4.2 - 2025-10-20
 
-- Document renderer controller and active Playwright smoke run #195
-- Add hint type toggles to settings sheet #194
-- Add Playwright tests for painting and save completion #193
-- Allow manual deploys to target any branch #192
-- Synchronize work branch with updated deployment workflows and scripts #191
-- Add post-deploy branch smoke tests workflow #188
-- Use fetch to build deployment metadata #187
-- Add multiple puzzle generation algorithms and documentation updates #186
-- Point deployment environment URL to branch preview #185
-- Allow pan and zoom gestures from viewport margins #184
+- #195 Document renderer controller and active Playwright smoke run
+- #194 Add hint type toggles to settings sheet
+- #193 Add Playwright tests for painting and save completion
+- #192 Allow manual deploys to target any branch
+- #191 Synchronize work branch with updated deployment workflows and scripts
+- #188 Add post-deploy branch smoke tests workflow
+- #187 Use fetch to build deployment metadata
+- #186 Add multiple puzzle generation algorithms and documentation updates
+- #185 Point deployment environment URL to branch preview
+- #184 Allow pan and zoom gestures from viewport margins
 
 ### 0.4.1 - 2025-10-18
 
-- Use GitHub Markdown API for README builds #183
-- Modularize puzzle renderer via controller abstraction #181
-- Rewrite README for player-focused guidance #180
-- Hide puzzle outlines for filled regions #179
-- Harden branch deployment workflow data handling #178
-- Fix deploy workflow by moving inline scripts to dedicated files #177
-- Fix deploy workflow heredoc terminators #176
-- Use actions/deploy-pages v4 #175
-- Fix deploy workflow README conversion block indentation #174
-- Fix deploy workflow manifest JSON generation #173
+- #183 Use GitHub Markdown API for README builds
+- #181 Modularize puzzle renderer via controller abstraction
+- #180 Rewrite README for player-focused guidance
+- #179 Hide puzzle outlines for filled regions
+- #178 Harden branch deployment workflow data handling
+- #177 Fix deploy workflow by moving inline scripts to dedicated files
+- #176 Fix deploy workflow heredoc terminators
+- #175 Use actions/deploy-pages v4
+- #174 Fix deploy workflow README conversion block indentation
+- #173 Fix deploy workflow manifest JSON generation
 
 ### 0.4.0 - 2025-10-17
 
-- Prune inactive branch deployments during Pages sync #172
-- Update GitHub Actions deploy-pages workflow action from v4 to v5 #171
-- Revamp branch deployment index layout with compact timeline rows #170
-- Fix README core asset reference #169
-- Generate README HTML during branch deployments #168
-- Limit branch previews to runtime assets #167
-- Embed hosted README inside help panel #166
-- Include weekday in branch deployment timestamps #164
-- Add npm scaffolding and placeholder test runner #163
-- Add prompt image prompt helper to generator tab #162
+- #172 Prune inactive branch deployments during Pages sync
+- #171 Update GitHub Actions deploy-pages workflow action from v4 to v5
+- #170 Revamp branch deployment index layout with compact timeline rows
+- #169 Fix README core asset reference
+- #168 Generate README HTML during branch deployments
+- #167 Limit branch previews to runtime assets
+- #166 Embed hosted README inside help panel
+- #164 Include weekday in branch deployment timestamps
+- #163 Add npm scaffolding and placeholder test runner
+- #162 Add prompt image prompt helper to generator tab
 
 ### 0.3.3 - 2025-10-17
 
-- Improve save management autosave experience #161
-- Auto-start generation and relocate saves export #160
-- Improve mobile gesture responsiveness #159
-- Add reset progress button to save manager #158
-- Simplify branch deploy index cards #157
-- Streamline branch deploy index metadata #156
-- Align main and preview commit metadata in branch deployment listings #155
-- Localize branch deployment commit timestamps to 12-hour browser time #154
-- Remove onboarding start hint and add quick start actions to Saves sheet #153
-- Improve branch deployment summary layout #152
+- #161 Improve save management autosave experience
+- #160 Auto-start generation and relocate saves export
+- #159 Improve mobile gesture responsiveness
+- #158 Add reset progress button to save manager
+- #157 Simplify branch deploy index cards
+- #156 Streamline branch deploy index metadata
+- #155 Align main and preview commit metadata in branch deployment listings
+- #154 Localize branch deployment commit timestamps to 12-hour browser time
+- #153 Remove onboarding start hint and add quick start actions to Saves sheet
+- #152 Improve branch deployment summary layout
 
 ### 0.3.2 - 2025-10-16
 
-- Document branch update workflow #151
-- Fix deploy workflow heredoc indentation #150
-- Render branch deployment dashboard metadata via jq pipeline #149
-- Replace jq branch page generation with Node #148
-- Restore branch index metadata generation and open-PR deploy gating #147
-- Prevent branch deployments without open PRs #144
-- Include PR links in branch deployment dashboard #142
-- Require import confirmation and show progress inside generator sheet #140
-- Remove idle Ready to paint status line #139
-- Simplify branch deployments #137
+- #151 Document branch update workflow
+- #150 Fix deploy workflow heredoc indentation
+- #149 Render branch deployment dashboard metadata via jq pipeline
+- #148 Replace jq branch page generation with Node
+- #147 Restore branch index metadata generation and open-PR deploy gating
+- #144 Prevent branch deployments without open PRs
+- #142 Include PR links in branch deployment dashboard
+- #140 Require import confirmation and show progress inside generator sheet
+- #139 Remove idle Ready to paint status line
+- #137 Simplify branch deployments
 
 ### 0.3.1 - 2025-10-15
 
-- Restrict status bar to generation progress #136
-- Enable concurrency cancellation for GitHub Pages deployments to prevent 400 errors #135
-- Fix GitHub Pages deployment workflow failure caused by rsync removing .git directory #130
-- Fix gh-pages deployment failure by auto-recovering from invalid git repository state #129
-- Prevent branch deployment cleanup job failures on missing directories #128
-- Update git remote guidance #127
-- Streamline command rail buttons #126
-- Improve tooltip contrast for light palette colors #123
-- Enhance hint highlights and add easy difficulty #122
-- Review and update branch-deployments.md documentation for accuracy #121
+- #136 Restrict status bar to generation progress
+- #135 Enable concurrency cancellation for GitHub Pages deployments to prevent 400 errors
+- #130 Fix GitHub Pages deployment workflow failure caused by rsync removing .git directory
+- #129 Fix gh-pages deployment failure by auto-recovering from invalid git repository state
+- #128 Prevent branch deployment cleanup job failures on missing directories
+- #127 Update git remote guidance
+- #126 Streamline command rail buttons
+- #123 Improve tooltip contrast for light palette colors
+- #122 Enhance hint highlights and add easy difficulty
+- #121 Review and update branch-deployments.md documentation for accuracy
 
 ### 0.3.0 - 2025-10-14
 
-- Add clickable commit and PR links to branch deployment history #119
-- Enhance branch deployment with commit and PR links in Recent History #118
-- Implement shared save metadata templates #117
-- Fix gh-pages cache validation to prevent "fatal: not in a git directory" errors #116
-- Enhance GitHub Pages branch deployment workflow with commit history and timezone conversion #115
-- Restore project links at the top of README.md #114
-- Unify start screen and save manager #113
-- Ensure preview render matches puzzle scale #112
-- Add configurable hint fade, intensity, and right-click color selection #111
-- Restore capy.json and add fallback puzzle metadata #110
+- #119 Add clickable commit and PR links to branch deployment history
+- #118 Enhance branch deployment with commit and PR links in Recent History
+- #117 Implement shared save metadata templates
+- #116 Fix gh-pages cache validation to prevent "fatal: not in a git directory" errors
+- #115 Enhance GitHub Pages branch deployment workflow with commit history and timezone conversion
+- #114 Restore project links at the top of README.md
+- #113 Unify start screen and save manager
+- #112 Ensure preview render matches puzzle scale
+- #111 Add configurable hint fade, intensity, and right-click color selection
+- #110 Restore capy.json and add fallback puzzle metadata
 
 ### 0.2.3 - 2025-10-13
 
-- Simplify preview mode to color canvas in place #109
-- Ensure palette swatches respond to right-click #105
-- Add region label support and palette-colored hint flashes #104
-- Add configurable region flash durations and hover hint previews #103
-- Allow right-click palette selection #102
-- Improve tap hit-testing performance by caching canvas bounds #101
-- Add toggle to control status bar visibility #100
-- Speed up wrong-color hint flashes and highlight matching regions on tap #99
-- Reconcile touch tap responsiveness handlers in index.html #98
-- Optimize deployment workflow for 40-60% faster builds #97
+- #109 Simplify preview mode to color canvas in place
+- #105 Ensure palette swatches respond to right-click
+- #104 Add region label support and palette-colored hint flashes
+- #103 Add configurable region flash durations and hover hint previews
+- #102 Allow right-click palette selection
+- #101 Improve tap hit-testing performance by caching canvas bounds
+- #100 Add toggle to control status bar visibility
+- #99 Speed up wrong-color hint flashes and highlight matching regions on tap
+- #98 Reconcile touch tap responsiveness handlers in index.html
+- #97 Optimize deployment workflow for 40-60% faster builds
 
 ### 0.2.2 - 2025-10-13
 
-- Trigger region fills on touch pointer events to remove tap delay #96
-- Centralize canvas fill validation for touch and click events #95
-- Render puzzle geometry at zoom scale #94
-- Add async generation progress feedback and modularize generator #93
-- Fix touch pan and pinch gesture behavior #91
-- Optimize outline rendering and allow unlimited zoom #90
-- Fix palette dock overflow on small viewports #89
-- Fix command rail layout wrapping #88
-- Handle command rail wrapping metrics #87
-- Constrain floating command rail within right safe-area inset #86
+- #96 Trigger region fills on touch pointer events to remove tap delay
+- #95 Centralize canvas fill validation for touch and click events
+- #94 Render puzzle geometry at zoom scale
+- #93 Add async generation progress feedback and modularize generator
+- #91 Fix touch pan and pinch gesture behavior
+- #90 Optimize outline rendering and allow unlimited zoom
+- #89 Fix palette dock overflow on small viewports
+- #88 Fix command rail layout wrapping
+- #87 Handle command rail wrapping metrics
+- #86 Constrain floating command rail within right safe-area inset
 
 ### 0.2.1 - 2025-10-11
 
-- Fix command rail overflow on narrow viewports #85
-- Simplify play surface layout #84
-- Fix branch index to save to branch.html instead of index.html #82
-- Prioritize main branch deployment and list PR metadata on branch index #81
-- Hide completed colours and shrink UI scale #80
-- Optimize deploy-branch workflow execution performance #79
-- Enable double-click sampling of puzzle colours #78
-- Summarize local save storage in help and drop cloud sync #77
-- Add region number visibility toggle #76
-- Add contributor repository instructions #75
+- #85 Fix command rail overflow on narrow viewports
+- #84 Simplify play surface layout
+- #82 Fix branch index to save to branch.html instead of index.html
+- #81 Prioritize main branch deployment and list PR metadata on branch index
+- #80 Hide completed colours and shrink UI scale
+- #79 Optimize deploy-branch workflow execution performance
+- #78 Enable double-click sampling of puzzle colours
+- #77 Summarize local save storage in help and drop cloud sync
+- #76 Add region number visibility toggle
+- #75 Add contributor repository instructions
 
 ### 0.2.0 - 2025-10-09
 
-- Apply edge-to-edge flat palette swatch layout to index.html #72
-- Show original artwork behind regions and streamline colour selection #71
-- Adopt edge-to-edge palette swatch styling and safe-area padding #69
-- Refine luminance-based swatch label contrast presets #68
-- Fix deploy-branch workflow to push newly initialized gh-pages branch #67
-- Fix git authentication in deploy-branch.yml workflow #66
-- Configure git credentials in deploy-branch workflow #65
-- Update deploy-branch workflow to use index.html instead of branchindex.html #63
-- Flatten palette dock into edge-to-edge swatches with adaptive contrast #62
-- Streamline palette dock to swatches only #60
+- #72 Apply edge-to-edge flat palette swatch layout to index.html
+- #71 Show original artwork behind regions and streamline colour selection
+- #69 Adopt edge-to-edge palette swatch styling and safe-area padding
+- #68 Refine luminance-based swatch label contrast presets
+- #67 Fix deploy-branch workflow to push newly initialized gh-pages branch
+- #66 Fix git authentication in deploy-branch.yml workflow
+- #65 Configure git credentials in deploy-branch workflow
+- #63 Update deploy-branch workflow to use index.html instead of branchindex.html
+- #62 Flatten palette dock into edge-to-edge swatches with adaptive contrast
+- #60 Streamline palette dock to swatches only
 
 ### 0.1.3 - 2025-10-08
 
-- Fix authentication for deploy-branch job using GITHUB_TOKEN #59
-- Collapse command rail into responsive icon buttons and harden zoom guard #58
-- Document resolved zoom guard handler structure in merge conflict report #56
-- Simplify Playwright smoke tests for faster runs #55
-- Fix deploy-branch workflow to handle missing gh-pages branch #54
-- Enhance palette focus and responsive command rail #53
-- Add horizontal wheel scrolling and status copy to palette dock #52
-- Strip stray UTF-8 BOM from package.json and add ripgrep ignore rules #51
-- Improve viewport sizing and zoom handling #50
-- Refresh contributor onboarding guidance #49
+- #59 Fix authentication for deploy-branch job using GITHUB_TOKEN
+- #58 Collapse command rail into responsive icon buttons and harden zoom guard
+- #56 Document resolved zoom guard handler structure in merge conflict report
+- #55 Simplify Playwright smoke tests for faster runs
+- #54 Fix deploy-branch workflow to handle missing gh-pages branch
+- #53 Enhance palette focus and responsive command rail
+- #52 Add horizontal wheel scrolling and status copy to palette dock
+- #51 Strip stray UTF-8 BOM from package.json and add ripgrep ignore rules
+- #50 Improve viewport sizing and zoom handling
+- #49 Refresh contributor onboarding guidance
 
 ### 0.1.2 - 2025-10-07
 
-- Add custom cursor tooltip for puzzle regions #48
-- Add automatic GitHub Pages deployment for all branches #44
-- Trim unused assets and refresh documentation #42
-- Improve region label readability and palette hints #41
-- Add sample detail presets, UI scale controls, and mobile zoom guard #39
-- Reconcile autosave and cloud-sync gameplay session documentation #38
-- Improve DOM rendering for save list entries #37
-- Document upstream git remote #34
-- Derive export titles from source metadata #33
-- Add sample detail presets and region legend #30
+- #48 Add custom cursor tooltip for puzzle regions
+- #44 Add automatic GitHub Pages deployment for all branches
+- #42 Trim unused assets and refresh documentation
+- #41 Improve region label readability and palette hints
+- #39 Add sample detail presets, UI scale controls, and mobile zoom guard
+- #38 Reconcile autosave and cloud-sync gameplay session documentation
+- #37 Improve DOM rendering for save list entries
+- #34 Document upstream git remote
+- #33 Derive export titles from source metadata
+- #30 Add sample detail presets and region legend
 
 ### 0.1.1 - 2025-10-06
 
-- Add autosave restore flow and cloud backup sync #29
-- Guard pan move updates without a loaded puzzle #28
-- Allow touch pans without blocking taps #27
-- Enhance capybara sample illustration #26
-- Add generator test hooks and end-to-end Playwright review suite #23
-- Rebuild fullscreen drop interface for puzzle generator #20
-- Flash palette hint when tapping wrong colors #19
-- Add terraced market starter art #18
-- Remove redundant header buttons and stabilize drag panning #17
-- Document starter scene regression checks in PR review notes #16
+- #29 Add autosave restore flow and cloud backup sync
+- #28 Guard pan move updates without a loaded puzzle
+- #27 Allow touch pans without blocking taps
+- #26 Enhance capybara sample illustration
+- #23 Add generator test hooks and end-to-end Playwright review suite
+- #20 Rebuild fullscreen drop interface for puzzle generator
+- #19 Flash palette hint when tapping wrong colors
+- #18 Add terraced market starter art
+- #17 Remove redundant header buttons and stabilize drag panning
+- #16 Document starter scene regression checks in PR review notes
 
 ### 0.1.0 - 2025-10-04
 
-- Update smoke test alias to target UI review harness #15
-- Restore Babel runtime and unblock starter art loading #14
-- Preserve stored starter titles when merging updates #11
-- Bundle Lagoon starter scenes and add local art library #10
-- Streamline canvas toolbar interactions #9
-- Refine lagoon segmentation and unblock progress #8
-- Enable SVG artwork imports and refresh help content #6
-- Refine capybara art layout #5
-- Surface README overview through an in-app options panel #3
-- Build simple color-by-number web app #1
+- #15 Update smoke test alias to target UI review harness
+- #14 Restore Babel runtime and unblock starter art loading
+- #11 Preserve stored starter titles when merging updates
+- #10 Bundle Lagoon starter scenes and add local art library
+- #9 Streamline canvas toolbar interactions
+- #8 Refine lagoon segmentation and unblock progress
+- #6 Enable SVG artwork imports and refresh help content
+- #5 Refine capybara art layout
+- #3 Surface README overview through an in-app options panel
+- #1 Build simple color-by-number web app
