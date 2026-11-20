@@ -2402,6 +2402,14 @@ async function runCodecAndEngineTests() {
     assert.equal(
       providerMod.resolveCoopRoomWsUrl(undefined, {
         protocol: 'https:',
+        host: 'paint.capyboop.com',
+        hostname: 'paint.capyboop.com',
+      }),
+      'wss://paint.capyboop.com/api/room'
+    );
+    assert.equal(
+      providerMod.resolveCoopRoomWsUrl(undefined, {
+        protocol: 'https:',
         host: 'capy-paint.example.workers.dev',
         hostname: 'capy-paint.example.workers.dev',
       }),
@@ -2561,6 +2569,7 @@ async function runCodecAndEngineTests() {
     assert.equal(relayProtoMod.isAllowedRelayOrigin('   '), false);
     assert.equal(relayProtoMod.isAllowedRelayOrigin('https://capypaint.com'), true);
     assert.equal(relayProtoMod.isAllowedRelayOrigin('https://www.capypaint.com'), true);
+    assert.equal(relayProtoMod.isAllowedRelayOrigin('https://paint.capyboop.com'), true);
     assert.equal(relayProtoMod.isAllowedRelayOrigin('https://capyboop.github.io'), true);
     
     assert.equal(relayProtoMod.isAllowedRelayOrigin('https://appassets.androidplatform.net'), true);
