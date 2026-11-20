@@ -202,7 +202,7 @@ Strategic product horizon for **Capy** ([`web/`](./web/) and [`app/`](./app/)). 
 
 - **Readiness**: `Ready for Release Ops (Store-Clean v3.0.35 Build, Phone/Tablet Store Listing, Graphics & Privacy Policy Staged; Keystore Secrets Configured, Awaiting Tag & Play Console Upload)`
 - **Description**: Verify release signing secrets (`CAPY_KEYSTORE_BASE64`, `CAPY_KEYSTORE_PASSWORD`, `CAPY_KEY_ALIAS`, `CAPY_KEY_PASSWORD`, already configured in repository Actions secrets), verify `./gradlew app:testDebugUnitTest app:assembleRelease app:bundleRelease` (plus `MainActivity` `onPause`/`onResume` lifecycle & hardware back navigation), tag `v3.0.35` from `main` to trigger [`.github/workflows/release.yml`](./.github/workflows/release.yml), and publish the Play-signed `.aab` to Google Play Console using [`docs/play-store/PLAY_STORE_LISTING.md`](./docs/play-store/PLAY_STORE_LISTING.md) (Phone & Tablet form factors only; Android TV form factor remains unchecked until `US-3.6` ships post-launch).
-- **Value**: Ships the unified Android wrapper (`com.capypaint.capy`) to Google Play Store alongside the web release.
+- **Value**: Ships the unified Android wrapper (`com.capyboop.paint`) to Google Play Store alongside the web release.
 - **Why Pushed to EPIC-3**: Moved out of EPIC-2 (`v3.0.x` bugfixes & stabilization) by the Project Owner so Play Store signing and release operations track alongside Sprint 2 readiness.
 
 <details>
@@ -211,7 +211,7 @@ Strategic product horizon for **Capy** ([`web/`](./web/) and [`app/`](./app/)). 
 - **Type & Priority**: `Task` | EPIC-3 (Milestone #3) | `priority: high` | `domain: android, ci`
 - **Complexity & Model**: `medium` | **Recommended Model**: `CI` + Owner Play Console / Keystore Setup
 - **Effort Estimate**: `~18,000 tokens` | `~10--15 min contributor`
-- **Target Files**: [`app/build.gradle.kts`](./app/build.gradle.kts), [`app/src/main/java/com/capypaint/capy/MainActivity.kt`](./app/src/main/java/com/capypaint/capy/MainActivity.kt), [`.github/workflows/release.yml`](./.github/workflows/release.yml), [`APP.md`](./APP.md), [`docs/play-store/PLAY_STORE_LISTING.md`](./docs/play-store/PLAY_STORE_LISTING.md)
+- **Target Files**: [`app/build.gradle.kts`](./app/build.gradle.kts), [`app/src/main/java/com/capyboop/paint/MainActivity.kt`](./app/src/main/java/com/capyboop/paint/MainActivity.kt), [`.github/workflows/release.yml`](./.github/workflows/release.yml), [`APP.md`](./APP.md), [`docs/play-store/PLAY_STORE_LISTING.md`](./docs/play-store/PLAY_STORE_LISTING.md)
 - **Acceptance Criteria**:
   - `release.yml` builds a Play-signed `.aab` and `.apk` matching [`web/package.json`](./web/package.json) SemVer and `versionCode` cleanly.
   - Release Android build passes on-device smoke QA (launch, coloring, save/resume, lifecycle `onPause`/`onResume`, hardware back navigation) and is uploaded to Google Play Console.
@@ -234,7 +234,7 @@ Strategic product horizon for **Capy** ([`web/`](./web/) and [`app/`](./app/)). 
 - **Type & Priority**: `Story` | EPIC-3 | `priority: medium-high` | `domain: tv, ui, android`
 - **Complexity & Model**: `high` / `moderate` | **Recommended Model**: `CI`
 - **Effort Estimate**: `~40,000 tokens` | `~20--28 min contributor` (`~5--7 hrs human`)
-- **Target Files**: [`web/src/App.tsx`](./web/src/App.tsx), [`web/src/components/PuzzleCanvas.tsx`](./web/src/components/PuzzleCanvas.tsx), [`web/src/index.css`](./web/src/index.css), [`app/src/main/java/com/capypaint/capy/MainActivity.kt`](./app/src/main/java/com/capypaint/capy/MainActivity.kt), [`web/scripts/test.mjs`](./web/scripts/test.mjs), [`APP.md`](./APP.md)
+- **Target Files**: [`web/src/App.tsx`](./web/src/App.tsx), [`web/src/components/PuzzleCanvas.tsx`](./web/src/components/PuzzleCanvas.tsx), [`web/src/index.css`](./web/src/index.css), [`app/src/main/java/com/capyboop/paint/MainActivity.kt`](./app/src/main/java/com/capyboop/paint/MainActivity.kt), [`web/scripts/test.mjs`](./web/scripts/test.mjs), [`APP.md`](./APP.md)
 - **Acceptance Criteria**:
   - Interactive HUD controls stay within `1920x1080` `5%` TV overscan safe bounds without regressing `360x780` mobile layout, and D-pad arrow keys traverse HUD controls and canvas reticle without focus traps.
 
@@ -341,7 +341,7 @@ Strategic product horizon for **Capy** ([`web/`](./web/) and [`app/`](./app/)). 
 
 - **Readiness**: `Blocked -- External Console Credentials & Root Domain Hosting`
 - **Unblock Prerequisite**: Human provisioning of Google Cloud Web OAuth Client ID (`VITE_GOOGLE_CLIENT_ID`), 12-digit Play Games Project ID (`CAPY_PLAY_GAMES_APP_ID`), release keystore SHA-256 fingerprint, and write access to root `https://capyboop.github.io/.well-known/assetlinks.json` (Android `autoVerify="true"` queries domain root rather than `/capy/.well-known/`).
-- **Description**: Configure live Google Cloud OAuth and Play Games repository variables and publish verified Digital Asset Links for `com.capypaint.capy`.
+- **Description**: Configure live Google Cloud OAuth and Play Games repository variables and publish verified Digital Asset Links for `com.capyboop.paint`.
 - **Value**: Unlocks live one-tap Google Drive cross-device save sync on web, native Play Games `SnapshotsClient` sync on Android, and seamless Android App Link opening for `#s=<token>` links.
 - **Why Now**: Client drivers (`GoogleCloudDriver`, `PlayGamesAndroidDriver`, `privacy-policy.html`) are already complete; CI variable wiring from EPIC-2 (`BUG-2`) shipped to `main` in #485.
 
@@ -353,7 +353,7 @@ Strategic product horizon for **Capy** ([`web/`](./web/) and [`app/`](./app/)). 
 - **Effort Estimate**: `~20,000 tokens` | `~10--15 min contributor` (`~2--4 hrs human`)
 - **Target Files**: [`app/build.gradle.kts`](./app/build.gradle.kts), [`app/src/main/AndroidManifest.xml`](./app/src/main/AndroidManifest.xml), [`CLOUD.md`](./CLOUD.md)
 - **Acceptance Criteria**:
-  - `https://capyboop.github.io/.well-known/assetlinks.json` (or custom domain) validates against `pm get-app-links com.capypaint.capy` and Google OAuth sign-in succeeds without sandbox overrides.
+  - `https://capyboop.github.io/.well-known/assetlinks.json` (or custom domain) validates against `pm get-app-links com.capyboop.paint` and Google OAuth sign-in succeeds without sandbox overrides.
 
 </details>
 
