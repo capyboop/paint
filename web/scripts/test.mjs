@@ -1977,7 +1977,7 @@ async function runCodecAndEngineTests() {
         `Daily '${dSnap.id}' must have 1..2000 regions (got ${dSnap.totalCount})`
       );
       assert.equal(
-        !/Cozy Quick|Balanced Classic/i.test(dSnap.title),
+        !/Cozy Quick|Balanced Classic|Max Detail \(Auto\)/i.test(dSnap.title),
         true,
         `Daily snapshot title must not leak stale label: '${dSnap.title}'`
       );
@@ -1989,6 +1989,16 @@ async function runCodecAndEngineTests() {
         `Daily '${dSnap.id}' decoded regionMeta rows must stay <= 2000`
       );
     }
+
+    const storageTitleMod = await vite.ssrLoadModule('/src/services/StorageService.ts');
+    assert.equal(
+      storageTitleMod.StorageService.normalizeSnapshotTitle('Capy Forest (Max Detail (Auto))'),
+      'Capy Forest'
+    );
+    assert.equal(
+      storageTitleMod.StorageService.normalizeSnapshotTitle('Capy Forest (Crisp Posterized (Max Detail))'),
+      'Capy Forest (Crisp Posterized (Max Detail))'
+    );
 
     // 9. PlayerStatsService SSR load, increment, clamping, persistence & monotonic mergeLifetimeStats
     const statsMod = await vite.ssrLoadModule('/src/services/PlayerStatsService.ts');
