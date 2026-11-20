@@ -118,6 +118,6 @@ All detailed architectural guides, computer vision algorithms, and native bridge
 - **Product Roadmap and Epic Issues**: [`ROADMAP.md`](./ROADMAP.md) -- Strategic Epics (EPIC-1--EPIC-5), User Stories, external readiness gates, Platform Icebox, and collapsed shipped milestones.
 - **Active Sprint Backlog**: [`TODO.md`](./TODO.md) -- Ready-for-dev Sprint 1 bugfixes, `1-PR` engineering slices, `[quick-win]` queue, and GitHub Sprint Milestone links.
 - **Project Management and Release Governance**: [`PROJECT.md`](./PROJECT.md) -- Lean Agile triad, sprint cadence, Epic triage, PR sync and readiness gates, release promotion, `CHANGELOG.md` governance, and continuous improvement retro log.
-- **Development and Maintenance Guide**: [`DEV.md`](./DEV.md) -- Human + AI co-development workflow, CImodel routing, session hygiene, shared technical guardrails, 3-tier CI/CD architecture, SemVer versioning, and troubleshooting.
+- **Development and Maintenance Guide**: [`DEV.md`](./DEV.md) -- Engineering workflow, shared technical guardrails, 3-tier CI/CD architecture, SemVer versioning, and troubleshooting.
 - **Privacy Policy and Data Safety**: [`web/public/privacy-policy.html`](./web/public/privacy-policy.html) -- Local-first photo processing and optional Google Drive `appDataFolder` / Play Games Cloud Sync disclosures.
 - **License**: [`LICENSE.md`](./LICENSE.md) -- Capybara Chill Preamble and CC BY-NC-SA 4.0 terms.
