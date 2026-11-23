@@ -115,9 +115,8 @@ All detailed architectural guides, computer vision algorithms, and native bridge
 - **Puzzle Generation Engine**: [`PUZZLE.md`](./PUZZLE.md) -- Web Worker 5-strategy segmentation, adaptive Otsu/Sobel line extraction, Red-Mean K-Means++ clustering, and watershed border alignment.
 - **Testing Architecture**: [`TESTING.md`](./TESTING.md) -- Unified Vite SSR + Playwright E2E verification suite, multi-touch gesture patterns, and CI pipelines.
 - **Versioning Scheme and Changelog**: [`CHANGELOG.md`](./CHANGELOG.md) -- Semantic Versioning (`MAJOR.MINOR.PATCH`), Android `versionCode` mapping, and chronological release history.
-- **Product Roadmap and Epic Issues**: [`ROADMAP.md`](./ROADMAP.md) -- Strategic Epics (EPIC-1--EPIC-5), User Stories, external readiness gates, Platform Icebox, and collapsed shipped milestones.
-- **Active Sprint Backlog**: [`TODO.md`](./TODO.md) -- Ready-for-dev Sprint 1 bugfixes, `1-PR` engineering slices, `[quick-win]` queue, and GitHub Sprint Milestone links.
-- **Project Management and Release Governance**: [`PROJECT.md`](./PROJECT.md) -- Lean Agile triad, sprint cadence, Epic triage, PR sync and readiness gates, release promotion, `CHANGELOG.md` governance, and continuous improvement retro log.
+- **Product Roadmap**: [`ROADMAP.md`](./ROADMAP.md) -- Concise high-level Now / Next / Later vision linked to [GitHub Issues](https://github.com/capyboop/paint/issues) and [`CHANGELOG.md`](./CHANGELOG.md).
+- **Project Management and Release Governance**: [`PROJECT.md`](./PROJECT.md) -- Lightweight issue/PR governance, PR sync and readiness gates, release promotion, `CHANGELOG.md` channel markers, and continuous improvement retro log.
 - **Development and Maintenance Guide**: [`DEV.md`](./DEV.md) -- Engineering workflow, shared technical guardrails, 3-tier CI/CD architecture, SemVer versioning, and troubleshooting.
 - **Privacy Policy and Data Safety**: [`web/public/privacy-policy.html`](./web/public/privacy-policy.html) -- Local-first photo processing and optional Google Drive `appDataFolder` / Play Games Cloud Sync disclosures.
 - **License**: [`LICENSE.md`](./LICENSE.md) -- Capybara Chill Preamble and CC BY-NC-SA 4.0 terms.
